@@ -1,17 +1,19 @@
 """
 GOAL BOT — main.py
 ──────────────────────────────────────────────────────────────────
-- Recupera TUTTE le leghe con match oggi + domani (solo campionati)
-- Stagione rilevata dinamicamente per ogni lega dalla prima chiamata API
+- Recupera match oggi + domani + dopodomani (solo campionati)
+- Stagione rilevata dinamicamente per ogni lega
 - Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
 - ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
-- Genera docs/index.html per GitHub Pages — raggruppato per giorno + fascia oraria
-- ThreadPoolExecutor per chiamate parallele (~10x più veloce)
-- Cache in memoria: evita chiamate duplicate per la stessa squadra
+- Verifica quote Bet365 solo sugli alert (chiamate minime)
+- Genera docs/index.html diviso per giorno + fascia oraria
+- ThreadPoolExecutor max_workers=3 (evita 429)
+- Cache in memoria per evitare chiamate duplicate
 """
 
 import json
 import os
+import time
 import requests
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
@@ -27,49 +29,57 @@ THRESHOLD = int(CFG.get("goal_threshold", 14))
 LAST_N    = int(CFG.get("last_matches_count", 5))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
+BET365_ID = 8
 
-# ── Cache in memoria ──────────────────────────────────────────────────────────
+SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
+
+# ── Cache ────────────────────────────────────────────────────────────────────
 _cache = {}
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
-def api_get(endpoint, params=None):
-    try:
-        r = requests.get(f"{BASE_URL}/{endpoint}",
-                         headers=HEADERS, params=params, timeout=15)
-        if r.status_code == 200:
-            return r.json().get("response", [])
-        print(f"    [HTTP {r.status_code}] {endpoint} {params}")
-    except Exception as e:
-        print(f"    [ERR] {endpoint}: {e}")
+def api_get(endpoint, params=None, retries=2):
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(f"{BASE_URL}/{endpoint}",
+                             headers=HEADERS, params=params, timeout=15)
+            if r.status_code == 200:
+                return r.json().get("response", [])
+            if r.status_code == 429:
+                wait = 10 * (attempt + 1)
+                print(f"    [429] rate limit — attendo {wait}s...")
+                time.sleep(wait)
+                continue
+            print(f"    [HTTP {r.status_code}] {endpoint} {params}")
+        except Exception as e:
+            print(f"    [ERR] {endpoint}: {e}")
     return []
 
-# ── Leghe con match oggi + domani (solo campionati) ───────────────────────────
-def get_leagues_and_fixtures():
-    today    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
-
-    data  = api_get("fixtures", {"date": today,    "status": "NS"})
-    data += api_get("fixtures", {"date": tomorrow, "status": "NS"})
+# ── Fixtures 3 giorni (solo campionati) ──────────────────────────────────────
+def get_all_fixtures():
+    today = datetime.now(timezone.utc)
+    dates = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(3)]
 
     league_seasons     = {}
     fixtures_by_league = defaultdict(list)
 
-    for fix in data:
-        league_name_lower = fix.get("league", {}).get("name", "").lower()
-        skip_keywords = ["u17", "u18", "u19", "u20", "u21", "u23", "youth", "reserve", "women", " w "]
-        if any(k in league_name_lower for k in skip_keywords):
-            continue
-        lid    = fix.get("league", {}).get("id")
-        season = fix.get("league", {}).get("season")
-        if lid is None:
-            continue
-        if lid not in league_seasons:
-            league_seasons[lid] = season
-        fix["_season"] = season
-        fixtures_by_league[lid].append(fix)
+    for date in dates:
+        data = api_get("fixtures", {"date": date, "status": "NS"})
+        print(f"  {date}: {len(data)} match raw")
+        for fix in data:
+            name_lower = fix.get("league", {}).get("name", "").lower()
+            if any(k in name_lower for k in SKIP_KEYWORDS):
+                continue
+            lid    = fix.get("league", {}).get("id")
+            season = fix.get("league", {}).get("season")
+            if lid is None:
+                continue
+            if lid not in league_seasons:
+                league_seasons[lid] = season
+            fix["_season"] = season
+            fixtures_by_league[lid].append(fix)
 
     total = sum(len(v) for v in fixtures_by_league.values())
-    print(f"  -> {len(league_seasons)} leghe | {total} match totali (oggi+domani, solo campionati)")
+    print(f"  -> {len(league_seasons)} leghe | {total} match filtrati (3 giorni, no youth/women)")
     return league_seasons, fixtures_by_league
 
 # ── Ultime N gare FT nella stessa lega (con cache) ───────────────────────────
@@ -102,9 +112,9 @@ def get_last_n(team_id, league_id, season):
         gh = int(goals.get("home") or 0)
         ga = int(goals.get("away") or 0)
         if is_home:
-            scored   += gh; conceded += ga
+            scored += gh; conceded += ga
         else:
-            scored   += ga; conceded += gh
+            scored += ga; conceded += gh
 
     result = {"scored": scored, "conceded": conceded,
               "total": scored + conceded,
@@ -112,7 +122,12 @@ def get_last_n(team_id, league_id, season):
     _cache[key] = result
     return result
 
-# ── Analisi parallela di un singolo match ────────────────────────────────────
+# ── Verifica quote Bet365 per un fixture ─────────────────────────────────────
+def has_bet365_odds(fixture_id):
+    data = api_get("odds", {"fixture": fixture_id, "bookmaker": BET365_ID})
+    return len(data) > 0
+
+# ── Analisi singolo match ────────────────────────────────────────────────────
 def analyze_fixture(fix):
     fixture     = fix.get("fixture", {})
     teams       = fix.get("teams", {})
@@ -124,20 +139,17 @@ def analyze_fixture(fix):
     home_name   = teams.get("home", {}).get("name", "?")
     away_name   = teams.get("away", {}).get("name", "?")
     league_name = league.get("name", "?")
+    fixture_id  = fixture.get("id")
 
     try:
         ko = datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
         ).strftime("%H:%M")
-    except Exception:
-        ko = "--:--"
-
-    try:
         match_date = datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
         ).strftime("%Y-%m-%d")
     except Exception:
-        match_date = "?"
+        ko = "--:--"; match_date = "?"
 
     hs  = get_last_n(home_id, league_id, season)
     as_ = get_last_n(away_id, league_id, season)
@@ -146,21 +158,24 @@ def analyze_fixture(fix):
         missing = []
         if hs  is None: missing.append(home_name)
         if as_ is None: missing.append(away_name)
-        return None, f"SKIP: <{LAST_N} gare FT per {', '.join(missing)}"
+        return None, f"SKIP: <{LAST_N} FT per {', '.join(missing)}"
 
-    info = (f"HOME {home_name}: +{hs['scored']} -{hs['conceded']} = {hs['total']} | "
-            f"AWAY {away_name}: +{as_['scored']} -{as_['conceded']} = {as_['total']}")
-
-    if hs["qualifies"] and as_["qualifies"]:
-        return {"home": home_name, "away": away_name,
-                "home_stats": hs, "away_stats": as_,
-                "league": league_name, "kickoff": ko,
-                "date": match_date}, f"✅ ALERT | {info}"
-    else:
+    if not (hs["qualifies"] and as_["qualifies"]):
         reasons = []
         if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
         if not as_["qualifies"]: reasons.append(f"{away_name}:{as_['total']}<{THRESHOLD}")
         return None, f"✗ {' | '.join(reasons)}"
+
+    # Passa il filtro goal — verifica quote Bet365
+    odds_ok = has_bet365_odds(fixture_id)
+    if not odds_ok:
+        return None, f"✅ goal OK ma ❌ no quote Bet365 — {home_name}:{hs['total']} {away_name}:{as_['total']}"
+
+    return {"home": home_name, "away": away_name,
+            "home_stats": hs, "away_stats": as_,
+            "league": league_name, "kickoff": ko,
+            "date": match_date, "fixture_id": fixture_id}, \
+           f"✅✅ ALERT+QUOTE | {home_name}:{hs['total']} {away_name}:{as_['total']}"
 
 # ── Helpers HTML ─────────────────────────────────────────────────────────────
 def badge_color(t):
@@ -174,8 +189,12 @@ def slot(ko):
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 def generate_html(matches, run_date, total_analyzed):
-    today_str    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    tomorrow_str = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    day_labels = {
+        today_str: "📅 OGGI",
+        (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d"): "📅 DOMANI",
+        (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d"): "📅 DOPODOMANI",
+    }
 
     css = (
         ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
@@ -226,6 +245,7 @@ def generate_html(matches, run_date, total_analyzed):
         ".pill.rc{background:rgba(255,71,87,.15);color:var(--red);}"
         ".pill.tot{color:#080d18;border-radius:6px;padding:2px 8px;font-size:.76rem;}"
         ".vs{font-size:1rem;color:var(--muted);font-weight:700;text-align:center;}"
+        ".bet{font-size:.65rem;color:#00e5a0;text-align:center;margin-top:5px;opacity:.7;}"
         ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
         ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
     )
@@ -235,7 +255,7 @@ def generate_html(matches, run_date, total_analyzed):
         '<span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>14–16 goal</span>'
         '<span class="leg-item"><span class="leg-dot" style="background:#ff8c00"></span>17–19 goal</span>'
         '<span class="leg-item"><span class="leg-dot" style="background:#ff4757"></span>≥20 goal</span>'
-        '<span class="leg-item" style="margin-left:8px">+F=fatti &nbsp;|&nbsp; -S=subiti &nbsp;|&nbsp; TOT=somma 5 gare</span>'
+        '<span class="leg-item" style="margin-left:8px">+F=fatti &nbsp;|&nbsp; -S=subiti &nbsp;|&nbsp; TOT=somma 5 gare &nbsp;|&nbsp; ✅ quote Bet365</span>'
         '</div>'
     )
 
@@ -257,12 +277,14 @@ def generate_html(matches, run_date, total_analyzed):
             f'<span class="pill g">+{as_["scored"]}</span>'
             f'<span class="pill rc">-{as_["conceded"]}</span>'
             f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>'
-            f'</div></div></div></div>'
+            f'</div></div></div>'
+            f'<div class="bet">✅ Bet365</div>'
+            f'</div>'
         )
 
     if not matches:
-        body = (f'<div class="empty"><h3>Nessun match qualificato oggi/domani</h3>'
-                f'<p>Nessuna coppia soddisfa ≥{THRESHOLD} goal per entrambe<br>'
+        body = (f'<div class="empty"><h3>Nessun match qualificato</h3>'
+                f'<p>Nessuna coppia soddisfa ≥{THRESHOLD} goal + quote Bet365<br>'
                 f'nelle ultime {LAST_N} gare stessa lega.<br>'
                 f'Match analizzati: <strong>{total_analyzed}</strong></p></div>')
     else:
@@ -274,18 +296,12 @@ def generate_html(matches, run_date, total_analyzed):
 
         sections = []
         for day in sorted(days):
-            if day == today_str:
-                day_label = "📅 OGGI"
-            elif day == tomorrow_str:
-                day_label = "📅 DOMANI"
-            else:
-                day_label = f"📅 {day}"
-
+            label     = day_labels.get(day, f"📅 {day}")
             day_total = sum(len(v) for v in days[day].values())
             day_html  = (
                 f'<div class="day-block">'
                 f'<div class="day-header">'
-                f'<span class="day-label">{day_label}</span>'
+                f'<span class="day-label">{label}</span>'
                 f'<span class="day-count">{day_total} alert</span>'
                 f'<div class="day-line"></div></div>'
             )
@@ -309,24 +325,25 @@ def generate_html(matches, run_date, total_analyzed):
         f'<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">'
         f'<style>{css}</style></head><body>'
         f'<header><div><div class="htitle">⚽ Goal Bot — {run_date}</div>'
-        f'<div class="hsub">Entrambe ≥{THRESHOLD} goal (fatti+subiti) nelle ultime {LAST_N} gare stessa lega'
+        f'<div class="hsub">Entrambe ≥{THRESHOLD} goal + quote Bet365 — ultime {LAST_N} gare stessa lega'
         f' — {total_analyzed} match analizzati</div></div>'
         f'<div class="hbadge">{len(matches)} ALERT</div></header>'
         f'<div class="cbar">'
         f'<span>Soglia: <strong>≥{THRESHOLD}</strong> per squadra</span>'
         f'<span>Ultime <strong>{LAST_N}</strong> gare stessa lega</span>'
-        f'<span>Solo campionati <strong>oggi+domani</strong></span>'
+        f'<span>Solo campionati <strong>3 giorni</strong></span>'
+        f'<span>Quote <strong>Bet365</strong> verificate</span>'
         f'</div>{legend}{body}</body></html>'
     )
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
-    print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare stessa lega")
+    print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare  |  Bet365")
     print("=" * 60)
 
-    print("\n[1] Recupero leghe e match oggi+domani...")
-    league_seasons, fixtures_by_league = get_leagues_and_fixtures()
+    print("\n[1] Recupero match oggi + domani + dopodomani...")
+    league_seasons, fixtures_by_league = get_all_fixtures()
 
     all_fixtures = []
     for lid, fixes in fixtures_by_league.items():
@@ -344,11 +361,11 @@ def main():
         out.write_text(generate_html([], run_date, 0), encoding="utf-8")
         return
 
-    print("\n[2] Analisi storico squadre (parallelo)...\n")
+    print("\n[2] Analisi storico squadre (parallelo, max 3 workers)...\n")
     qualified = []
     total = len(all_fixtures)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_fix = {executor.submit(analyze_fixture, fix): fix for fix in all_fixtures}
         done = 0
         for future in as_completed(future_to_fix):
@@ -365,7 +382,7 @@ def main():
                 print(f"[{done:>4}/{total}] {home_name} vs {away_name} — ERR: {e}")
 
     print(f"\n{'='*60}")
-    print(f"ALERT: {len(qualified)} / {total}")
+    print(f"ALERT FINALI (goal + Bet365): {len(qualified)} / {total}")
     print(f"{'='*60}")
     for m in sorted(qualified, key=lambda x: (x["date"], x["kickoff"])):
         print(f"  {m['date']} {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
