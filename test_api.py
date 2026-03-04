@@ -5,17 +5,34 @@ API_KEY = (os.environ.get("API_FOOTBALL_KEY") or "").strip()
 BASE    = "https://v3.football.api-sports.io"
 HDR     = {"x-apisports-key": API_KEY}
 
-today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
-day3 = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d")
 
-for date in [today, tomorrow, day3]:
-    r = requests.get(f"{BASE}/fixtures", headers=HDR,
-                     params={"date": date, "status": "NS"}, timeout=15)
-    data = r.json()
-    results = data.get("response", [])
-    total_api = data.get("results", 0)
-    print(f"\n=== {date} ===")
-    print(f"  results campo API: {total_api}")
-    print(f"  ricevuti: {len(results)}")
-    print(f"  paginazione necessaria: {'SI' if total_api > len(results) else 'NO'}")
+# Prendi i primi 10 match di domani
+r = requests.get(f"{BASE}/fixtures", headers=HDR,
+                 params={"date": tomorrow, "status": "NS"}, timeout=15)
+fixtures = r.json().get("response", [])[:10]
+fixture_ids = [str(f["fixture"]["id"]) for f in fixtures]
+
+print(f"Test odds su {len(fixture_ids)} fixture di domani")
+print(f"IDs: {fixture_ids}\n")
+
+# Controlla odds per ogni fixture
+for fid in fixture_ids:
+    r2 = requests.get(f"{BASE}/odds", headers=HDR,
+                      params={"fixture": fid, "bookmaker": 8}, timeout=15)  # 8 = Bet365
+    data = r2.json().get("response", [])
+    name = next((f["teams"]["home"]["name"] + " vs " + f["teams"]["away"]["name"]
+                 for f in fixtures if str(f["fixture"]["id"]) == fid), fid)
+    has_odds = len(data) > 0
+    print(f"  {'✅' if has_odds else '❌'} {name} — bet365 odds: {'SI' if has_odds else 'NO'}")
+
+# Verifica anche bookmaker IDs disponibili per un fixture
+print(f"\n--- Bookmaker disponibili per fixture {fixture_ids[0]} ---")
+r3 = requests.get(f"{BASE}/odds", headers=HDR,
+                  params={"fixture": fixture_ids[0]}, timeout=15)
+bk_data = r3.json().get("response", [])
+if bk_data:
+    for bk in bk_data[0].get("bookmakers", []):
+        print(f"  ID={bk['id']} — {bk['name']}")
+else:
+    print("  Nessun bookmaker trovato")
