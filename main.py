@@ -1,12 +1,7 @@
 """
 GOAL BOT — main.py
 ------------------
-- Recupera TUTTE le leghe con match oggi (copertura globale)
-- Stagione rilevata dinamicamente per ogni lega
-- Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
-  FIX: recupera last=50 senza filtro lega, poi filtra manualmente
-- ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
-- Genera docs/index.html per GitHub Pages
+DEBUG VERSION: mostra league_ids trovati per ogni SKIP
 """
 
 import json
@@ -54,29 +49,7 @@ def get_leagues_and_fixtures():
     print(f"  -> {len(league_seasons)} leghe | {total} match totali")
     return league_seasons, fixtures_by_league
 
-# FIX CORE: recupera last=50 senza filtro lega,
-# poi filtra manualmente per league_id fino ad avere LAST_N gare FT
-def get_last_n(team_id, league_id, season):
-    data = api_get("fixtures", {
-        "team":   team_id,
-        "season": season,
-        "status": "FT",
-        "last":   50,
-    })
-
-    collected = []
-    for m in data:
-        if m.get("fixture", {}).get("status", {}).get("short") != "FT":
-            continue
-        if m.get("league", {}).get("id") != league_id:
-            continue
-        collected.append(m)
-        if len(collected) == LAST_N:
-            break
-
-    if len(collected) < LAST_N:
-        return None
-
+def _calc(collected, team_id):
     scored = conceded = 0
     for m in collected:
         goals   = m.get("goals", {})
@@ -88,10 +61,37 @@ def get_last_n(team_id, league_id, season):
             scored += gh; conceded += ga
         else:
             scored += ga; conceded += gh
-
     total = scored + conceded
     return {"scored": scored, "conceded": conceded, "total": total,
             "qualifies": total >= THRESHOLD}
+
+def get_last_n(team_id, league_id, season):
+    data = api_get("fixtures", {
+        "team":   team_id,
+        "season": season,
+        "status": "FT",
+        "last":   50,
+    })
+
+    collected = []
+    league_ids_found = set()
+
+    for m in data:
+        if m.get("fixture", {}).get("status", {}).get("short") != "FT":
+            continue
+        found_lid = m.get("league", {}).get("id")
+        league_ids_found.add(found_lid)
+        if found_lid != league_id:
+            continue
+        collected.append(m)
+        if len(collected) == LAST_N:
+            break
+
+    if len(collected) < LAST_N:
+        print(f"             [DEBUG] cercavo league_id={league_id} season={season} | trovati ids={sorted(str(x) for x in league_ids_found)} | gare_lega={len(collected)} | totale_risposta={len(data)}")
+        return None
+
+    return _calc(collected, team_id)
 
 def badge_color(t):
     if t >= 20: return "#ff4757"
