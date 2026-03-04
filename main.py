@@ -9,57 +9,79 @@ def load_config():
     with open('config.json', 'r', encoding='utf-8-sig') as f:
         return json.load(f)
 
-class API:
-    def __init__(self, key):
-        self.headers = {'x-rapidapi-key': key, 'x-rapidapi-host': 'v3.football.api-sports.io'}
-        self.calls = 0
-    
-    def get(self, url, params={}):
-        try:
-            self.calls += 1
-            if self.calls > 95:
-                return []
-            r = requests.get(f'https://v3.football.api-sports.io{url}', headers=self.headers, params=params, timeout=15)
-            return r.json().get('response', []) if r.status_code == 200 else []
-        except:
-            return []
-    
-    def today_fixtures(self, league):
-        # Usa data Italia e stagione 2025
-        today = datetime.now(pytz.timezone('Europe/Rome')).strftime('%Y-%m-%d')
-        return self.get('/fixtures', {'league': league, 'season': 2025, 'date': today})
-    
-    def team_matches(self, team, league):
-        return [m for m in self.get('/fixtures', {'team': team, 'league': league, 'season': 2025, 'last': 5}) 
-                if m.get('fixture', {}).get('status', {}).get('short') == 'FT']
-
-def goals_sum(matches):
-    return sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in matches)
-
 async def main():
     cfg = load_config()
-    api = API(cfg['api_football_key'])
+    api_key = cfg['api_football_key']
     alerts = []
     th = cfg['goal_threshold']
+    calls = 0
     
-    print(f"🚀 Start - Data: {datetime.now(pytz.timezone('Europe/Rome')).strftime('%Y-%m-%d')}")
+    headers = {'x-rapidapi-key': api_key, 'x-rapidapi-host': 'v3.football.api-sports.io'}
+    today = datetime.now(pytz.timezone('Europe/Rome')).strftime('%Y-%m-%d')
     
-    for lid in cfg.get('leagues_to_monitor', []):
-        fixtures = api.today_fixtures(lid)
-        print(f"\n📊 League {lid}: {len(fixtures)} partite")
-        
-        for fx in fixtures:
-            h, a = fx['teams']['home'], fx['teams']['away']
-            hs = goals_sum(api.team_matches(h['id'], lid))
-            as_ = goals_sum(api.team_matches(a['id'], lid))
-            
-            print(f"  {h['name']} ({hs}) vs {a['name']} ({as_})")
-            
-            if hs >= th and as_ >= th:
-                alerts.append(f"🕒 {fx['fixture']['date'][:16].replace('T',' ')}\n{h['name']} ({hs}🔥) vs {a['name']} ({as_}🔥)\n{fx['league']['name']}\n")
+    print(f"🚀 Data: {today}")
+    print(f"🔑 API Key: {api_key[:10]}...")
     
-    msg = f"🔥 **ALERT: {len(alerts)}**\n\n" + "\n".join(alerts) if alerts else "📭 **Nessun alert**\n"
-    msg += f"\n_API: {api.calls}/100_"
+    # TEST API CONNECTION
+    print("\n📡 Test connessione API...")
+    try:
+        r = requests.get('https://v3.football.api-sports.io/fixtures/league', 
+                        headers=headers, params={'league': 140, 'season': 2025}, timeout=10)
+        print(f"Status: {r.status_code}")
+        if r.status_code == 401:
+            print("❌ API Key INVALIDA!")
+            msg = "❌ **Errore API Key**\n\nLa chiave non è valida o è scaduta."
+        elif r.status_code == 429:
+            print("❌ Rate Limit raggiunto")
+            msg = "❌ **Rate Limit**\n\nHai superato le 100 chiamate giornaliere."
+        else:
+            data = r.json()
+            print(f"Response: {data}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        msg = f"❌ **Errore connessione**: {e}"
+        await Bot(token=cfg['telegram_bot_token']).send_message(chat_id=cfg['telegram_chat_id'], text=msg, parse_mode='Markdown')
+        return
+    
+    # SCAN LEAGUES
+    print("\n📊 Scansione campionati...")
+    for lid in cfg.get('leagues_to_monitor', [])[:5]:  # Solo primi 5 per test
+        calls += 1
+        try:
+            r = requests.get('https://v3.football.api-sports.io/fixtures',
+                           headers=headers, params={'league': lid, 'season': 2025, 'date': today}, timeout=10)
+            if r.status_code == 200:
+                fixtures = r.json().get('response', [])
+                print(f"\n📊 League {lid}: {len(fixtures)} partite")
+                
+                for fx in fixtures:
+                    h, a = fx['teams']['home'], fx['teams']['away']
+                    print(f"  ⚽ {h['name']} vs {a['name']}")
+                    
+                    # Stats (altre chiamate API)
+                    calls += 1
+                    hm = requests.get('https://v3.football.api-sports.io/fixtures',
+                                    headers=headers, params={'team': h['id'], 'league': lid, 'season': 2025, 'last': 5}, timeout=10)
+                    am = requests.get('https://v3.football.api-sports.io/fixtures',
+                                    headers=headers, params={'team': a['id'], 'league': lid, 'season': 2025, 'last': 5}, timeout=10)
+                    
+                    h_matches = [m for m in hm.json().get('response', []) if m.get('fixture',{}).get('status',{}).get('short')=='FT']
+                    a_matches = [m for m in am.json().get('response', []) if m.get('fixture',{}).get('status',{}).get('short')=='FT']
+                    
+                    hs = sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in h_matches)
+                    as_ = sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in a_matches)
+                    
+                    print(f"     {h['name']}: {hs} | {a['name']}: {as_}")
+                    
+                    if hs >= th and as_ >= th:
+                        alerts.append(f"{h['name']} ({hs}) vs {a['name']} ({as_})")
+            else:
+                print(f"❌ League {lid}: Error {r.status_code}")
+        except Exception as e:
+            print(f"❌ League {lid}: {e}")
+    
+    msg = f"🔥 **Alert: {len(alerts)}**\n\n" + "\n".join(alerts) if alerts else "📭 **Nessun alert**\n"
+    msg += f"\n_API calls: {calls}/100_"
     
     try:
         await Bot(token=cfg['telegram_bot_token']).send_message(chat_id=cfg['telegram_chat_id'], text=msg, parse_mode='Markdown')
