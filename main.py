@@ -1,92 +1,349 @@
-﻿#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-import requests, json, asyncio
-from datetime import datetime
-import pytz
-from telegram import Bot
+"""
+GOAL BOT — main.py
+------------------
+- Recupera TUTTE le leghe con match oggi (copertura globale)
+- Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
+- ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
+- Genera docs/index.html per GitHub Pages
+"""
 
-def load_config():
-    with open('config.json', 'r', encoding='utf-8-sig') as f:
-        return json.load(f)
+import json
+import os
+import requests
+from datetime import datetime, timezone
+from collections import defaultdict
+from pathlib import Path
 
-async def main():
-    cfg = load_config()
-    api_key = cfg['api_football_key']
-    alerts = []
-    th = cfg['goal_threshold']
-    calls = 0
-    
-    headers = {'x-rapidapi-key': api_key, 'x-rapidapi-host': 'v3.football.api-sports.io'}
-    today = datetime.now(pytz.timezone('Europe/Rome')).strftime('%Y-%m-%d')
-    
-    print(f"🚀 Data: {today}")
-    print(f"🔑 API Key: {api_key[:10]}...")
-    
-    # TEST API CONNECTION
-    print("\n📡 Test connessione API...")
+# ── Config ────────────────────────────────────────────────────────────────────
+with open("config.json") as f:
+    CFG = json.load(f)
+
+API_KEY   = os.environ.get("API_FOOTBALL_KEY") or CFG.get("api_football_key", "")
+THRESHOLD = int(CFG.get("goal_threshold", 14))
+LAST_N    = int(CFG.get("last_matches_count", 5))
+BASE_URL  = "https://v3.football.api-sports.io"
+HEADERS   = {"x-apisports-key": API_KEY}
+SEASON    = datetime.now(timezone.utc).year
+
+# ── HTTP ──────────────────────────────────────────────────────────────────────
+def api_get(endpoint, params=None):
     try:
-        r = requests.get('https://v3.football.api-sports.io/fixtures/league', 
-                        headers=headers, params={'league': 140, 'season': 2025}, timeout=10)
-        print(f"Status: {r.status_code}")
-        if r.status_code == 401:
-            print("❌ API Key INVALIDA!")
-            msg = "❌ **Errore API Key**\n\nLa chiave non è valida o è scaduta."
-        elif r.status_code == 429:
-            print("❌ Rate Limit raggiunto")
-            msg = "❌ **Rate Limit**\n\nHai superato le 100 chiamate giornaliere."
+        r = requests.get(f"{BASE_URL}/{endpoint}",
+                         headers=HEADERS, params=params, timeout=15)
+        if r.status_code == 200:
+            return r.json().get("response", [])
+        print(f"    [HTTP {r.status_code}] {endpoint} {params}")
+    except Exception as e:
+        print(f"    [ERR] {endpoint}: {e}")
+    return []
+
+# ── Tutte le leghe con match oggi ─────────────────────────────────────────────
+def get_leagues_today():
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    data  = api_get("fixtures", {"date": today, "status": "NS"})
+    seen  = set()
+    leagues = []
+    for fix in data:
+        lid = fix.get("league", {}).get("id")
+        if lid and lid not in seen:
+            seen.add(lid)
+            leagues.append(lid)
+    print(f"  -> {len(leagues)} leghe con match oggi")
+    return leagues
+
+# ── Match NS del giorno per una lega ─────────────────────────────────────────
+def get_fixtures_today(league_id):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return api_get("fixtures", {
+        "league":  league_id,
+        "season":  SEASON,
+        "date":    today,
+        "status":  "NS",
+    })
+
+# ── Ultime N gare FT di un team nella stessa lega ────────────────────────────
+def get_last_n(team_id, league_id):
+    data = api_get("fixtures", {
+        "team":   team_id,
+        "league": league_id,
+        "season": SEASON,
+        "status": "FT",
+        "last":   LAST_N,
+    })
+
+    # Filtro esplicito — solo FT certi
+    finished = [
+        m for m in data
+        if m.get("fixture", {}).get("status", {}).get("short") == "FT"
+    ]
+
+    if len(finished) < LAST_N:
+        return None
+
+    scored = conceded = 0
+    for m in finished[:LAST_N]:
+        goals   = m.get("goals", {})
+        teams   = m.get("teams", {})
+        is_home = teams.get("home", {}).get("id") == team_id
+        gh = int(goals.get("home") or 0)
+        ga = int(goals.get("away") or 0)
+        if is_home:
+            scored   += gh
+            conceded += ga
         else:
-            data = r.json()
-            print(f"Response: {data}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        msg = f"❌ **Errore connessione**: {e}"
-        await Bot(token=cfg['telegram_bot_token']).send_message(chat_id=cfg['telegram_chat_id'], text=msg, parse_mode='Markdown')
-        return
-    
-    # SCAN LEAGUES
-    print("\n📊 Scansione campionati...")
-    for lid in cfg.get('leagues_to_monitor', [])[:5]:  # Solo primi 5 per test
-        calls += 1
-        try:
-            r = requests.get('https://v3.football.api-sports.io/fixtures',
-                           headers=headers, params={'league': lid, 'season': 2025, 'date': today}, timeout=10)
-            if r.status_code == 200:
-                fixtures = r.json().get('response', [])
-                print(f"\n📊 League {lid}: {len(fixtures)} partite")
-                
-                for fx in fixtures:
-                    h, a = fx['teams']['home'], fx['teams']['away']
-                    print(f"  ⚽ {h['name']} vs {a['name']}")
-                    
-                    # Stats (altre chiamate API)
-                    calls += 1
-                    hm = requests.get('https://v3.football.api-sports.io/fixtures',
-                                    headers=headers, params={'team': h['id'], 'league': lid, 'season': 2025, 'last': 5}, timeout=10)
-                    am = requests.get('https://v3.football.api-sports.io/fixtures',
-                                    headers=headers, params={'team': a['id'], 'league': lid, 'season': 2025, 'last': 5}, timeout=10)
-                    
-                    h_matches = [m for m in hm.json().get('response', []) if m.get('fixture',{}).get('status',{}).get('short')=='FT']
-                    a_matches = [m for m in am.json().get('response', []) if m.get('fixture',{}).get('status',{}).get('short')=='FT']
-                    
-                    hs = sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in h_matches)
-                    as_ = sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in a_matches)
-                    
-                    print(f"     {h['name']}: {hs} | {a['name']}: {as_}")
-                    
-                    if hs >= th and as_ >= th:
-                        alerts.append(f"{h['name']} ({hs}) vs {a['name']} ({as_})")
-            else:
-                print(f"❌ League {lid}: Error {r.status_code}")
-        except Exception as e:
-            print(f"❌ League {lid}: {e}")
-    
-    msg = f"🔥 **Alert: {len(alerts)}**\n\n" + "\n".join(alerts) if alerts else "📭 **Nessun alert**\n"
-    msg += f"\n_API calls: {calls}/100_"
-    
-    try:
-        await Bot(token=cfg['telegram_bot_token']).send_message(chat_id=cfg['telegram_chat_id'], text=msg, parse_mode='Markdown')
-        print("✅ Telegram OK")
-    except Exception as e:
-        print(f"❌ Telegram: {e}")
+            scored   += ga
+            conceded += gh
 
-asyncio.run(main())
+    total = scored + conceded
+    return {
+        "scored":    scored,
+        "conceded":  conceded,
+        "total":     total,
+        "qualifies": total >= THRESHOLD,
+    }
+
+# ── Helpers HTML ──────────────────────────────────────────────────────────────
+def badge_color(t):
+    if t >= 20: return "#ff4757"
+    if t >= 17: return "#ff8c00"
+    return "#00e5a0"
+
+def slot(ko):
+    try:    return f"{int(ko.split(':')[0]):02d}:00"
+    except: return "??:??"
+
+# ── Genera HTML ───────────────────────────────────────────────────────────────
+def generate_html(matches, run_date, total_analyzed):
+    css = (
+        ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
+        "--red:#ff4757;--orange:#ff8c00;--text:#dde3f0;--muted:#556080;"
+        "--border:rgba(255,255,255,0.06);}"
+        "*{box-sizing:border-box;margin:0;padding:0;}"
+        "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
+        "header{background:var(--surface);border-bottom:1px solid var(--border);"
+        "padding:14px 28px;display:flex;align-items:center;gap:14px;"
+        "position:sticky;top:0;z-index:20;}"
+        ".htitle{font-size:1.4rem;font-weight:700;color:var(--accent);}"
+        ".hsub{font-size:.72rem;color:var(--muted);margin-top:3px;}"
+        ".hbadge{margin-left:auto;background:var(--accent);color:#080d18;"
+        "font-weight:700;padding:6px 18px;border-radius:100px;font-size:1rem;white-space:nowrap;}"
+        ".cbar{background:rgba(0,229,160,0.04);border-bottom:1px solid var(--border);"
+        "padding:7px 28px;font-size:.73rem;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;}"
+        ".cbar strong{color:var(--accent);}"
+        ".legend{display:flex;gap:16px;padding:14px 20px 4px;flex-wrap:wrap;}"
+        ".leg-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted);}"
+        ".leg-dot{width:10px;height:10px;border-radius:3px;}"
+        ".ts{margin:18px 16px 0;}"
+        ".th{display:flex;align-items:center;gap:12px;margin-bottom:10px;}"
+        ".tl{font-size:1.15rem;font-weight:700;color:var(--accent);}"
+        ".tc{font-size:.72rem;color:var(--muted);background:rgba(255,255,255,0.05);"
+        "padding:2px 10px;border-radius:100px;}"
+        ".th::after{content:'';flex:1;height:1px;background:var(--border);}"
+        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;}"
+        ".card{background:var(--card);border:1px solid var(--border);border-radius:12px;"
+        "padding:11px 13px;transition:transform .15s,box-shadow .15s;}"
+        ".card:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,229,160,.12);}"
+        ".ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}"
+        ".league{font-size:.67rem;color:var(--muted);white-space:nowrap;"
+        "overflow:hidden;text-overflow:ellipsis;max-width:72%;}"
+        ".ko{font-size:.72rem;color:var(--accent);font-weight:700;}"
+        ".mu{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;}"
+        ".side{display:flex;flex-direction:column;gap:5px;}"
+        ".side.r{align-items:flex-end;text-align:right;}"
+        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;"
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:118px;}"
+        ".pills{display:flex;gap:3px;align-items:center;}"
+        ".side.r .pills{justify-content:flex-end;}"
+        ".pill{font-size:.7rem;font-weight:700;padding:2px 6px;border-radius:4px;}"
+        ".pill.g{background:rgba(0,229,160,.15);color:var(--accent);}"
+        ".pill.rc{background:rgba(255,71,87,.15);color:var(--red);}"
+        ".pill.tot{color:#080d18;border-radius:6px;padding:2px 8px;font-size:.76rem;}"
+        ".vs{font-size:1rem;color:var(--muted);font-weight:700;text-align:center;}"
+        ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
+        ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
+    )
+
+    legend = (
+        '<div class="legend">'
+        '<span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>14–16 goal</span>'
+        '<span class="leg-item"><span class="leg-dot" style="background:#ff8c00"></span>17–19 goal</span>'
+        '<span class="leg-item"><span class="leg-dot" style="background:#ff4757"></span>≥20 goal</span>'
+        '<span class="leg-item" style="margin-left:8px">'
+        '+F = fatti &nbsp;|&nbsp; -S = subiti &nbsp;|&nbsp; TOT = somma 5 gare'
+        '</span></div>'
+    )
+
+    if not matches:
+        body = (
+            f'<div class="empty"><h3>Nessun match qualificato oggi</h3>'
+            f'<p>Nessuna coppia soddisfa ≥{THRESHOLD} goal per entrambe<br>'
+            f'nelle ultime {LAST_N} gare stessa lega.<br>'
+            f'Match analizzati: <strong>{total_analyzed}</strong></p></div>'
+        )
+    else:
+        groups = defaultdict(list)
+        for m in sorted(matches, key=lambda x: x["kickoff"]):
+            groups[slot(m["kickoff"])].append(m)
+
+        sections = []
+        for ts in sorted(groups):
+            cards = []
+            for m in groups[ts]:
+                hs  = m["home_stats"]
+                as_ = m["away_stats"]
+                cards.append(
+                    f'<div class="card">'
+                    f'<div class="ct">'
+                    f'<span class="league">{m["league"]}</span>'
+                    f'<span class="ko">{m["kickoff"]}</span>'
+                    f'</div>'
+                    f'<div class="mu">'
+                    f'<div class="side">'
+                    f'<span class="tn">{m["home"]}</span>'
+                    f'<div class="pills">'
+                    f'<span class="pill g">+{hs["scored"]}</span>'
+                    f'<span class="pill rc">-{hs["conceded"]}</span>'
+                    f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>'
+                    f'</div></div>'
+                    f'<span class="vs">VS</span>'
+                    f'<div class="side r">'
+                    f'<span class="tn">{m["away"]}</span>'
+                    f'<div class="pills">'
+                    f'<span class="pill g">+{as_["scored"]}</span>'
+                    f'<span class="pill rc">-{as_["conceded"]}</span>'
+                    f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>'
+                    f'</div></div>'
+                    f'</div></div>'
+                )
+            sections.append(
+                f'<div class="ts">'
+                f'<div class="th">'
+                f'<span class="tl">⏱ {ts}</span>'
+                f'<span class="tc">{len(groups[ts])} match</span>'
+                f'</div>'
+                f'<div class="grid">{"".join(cards)}</div>'
+                f'</div>'
+            )
+        body = "\n".join(sections)
+
+    return (
+        f'<!DOCTYPE html><html lang="it"><head>'
+        f'<meta charset="UTF-8">'
+        f'<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<title>Goal Bot — {run_date}</title>'
+        f'<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">'
+        f'<style>{css}</style></head><body>'
+        f'<header><div>'
+        f'<div class="htitle">⚽ Goal Bot — {run_date}</div>'
+        f'<div class="hsub">'
+        f'Entrambe ≥{THRESHOLD} goal (fatti+subiti) nelle ultime {LAST_N} gare stessa lega'
+        f' — {total_analyzed} match analizzati'
+        f'</div>'
+        f'</div><div class="hbadge">{len(matches)} ALERT</div></header>'
+        f'<div class="cbar">'
+        f'<span>Soglia: <strong>≥{THRESHOLD}</strong> per squadra</span>'
+        f'<span>Ultime <strong>{LAST_N}</strong> gare stessa lega</span>'
+        f'<span>Solo gare <strong>FT</strong></span>'
+        f'</div>'
+        f'{legend}{body}</body></html>'
+    )
+
+# ── MAIN ──────────────────────────────────────────────────────────────────────
+def main():
+    print("=" * 60)
+    print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare stessa lega")
+    print(f"Stagione: {SEASON}")
+    print("=" * 60)
+
+    # 1. Tutte le leghe con match oggi
+    print("\n[1] Recupero leghe con match oggi...")
+    leagues = get_leagues_today()
+
+    if not leagues:
+        print("Nessuna lega trovata. Uscita.")
+        return
+
+    # 2. Tutti i fixture NS del giorno
+    print("\n[2] Recupero match per ogni lega...")
+    all_fixtures = []
+    for lid in leagues:
+        fixes = get_fixtures_today(lid)
+        for f in fixes:
+            f["_league_id"] = lid
+        all_fixtures.extend(fixes)
+        print(f"    Lega {lid}: {len(fixes)} match")
+
+    print(f"\nTotale match da analizzare: {len(all_fixtures)}")
+
+    # 3. Analisi
+    print("\n[3] Analisi storico squadre...\n")
+    qualified = []
+
+    for i, fix in enumerate(all_fixtures, 1):
+        fixture     = fix.get("fixture", {})
+        teams       = fix.get("teams", {})
+        league      = fix.get("league", {})
+        league_id   = fix["_league_id"]
+        home_id     = teams.get("home", {}).get("id")
+        away_id     = teams.get("away", {}).get("id")
+        home_name   = teams.get("home", {}).get("name", "?")
+        away_name   = teams.get("away", {}).get("name", "?")
+        league_name = league.get("name", "?")
+
+        try:
+            ko = datetime.fromtimestamp(
+                fixture.get("timestamp", 0), tz=timezone.utc
+            ).strftime("%H:%M")
+        except Exception:
+            ko = "--:--"
+
+        print(f"[{i:>4}/{len(all_fixtures)}] {home_name} vs {away_name} ({league_name})")
+
+        hs  = get_last_n(home_id, league_id)
+        as_ = get_last_n(away_id, league_id)
+
+        if hs is None or as_ is None:
+            missing = []
+            if hs  is None: missing.append(home_name)
+            if as_ is None: missing.append(away_name)
+            print(f"           SKIP: <{LAST_N} gare FT per {', '.join(missing)}")
+            continue
+
+        print(f"           HOME {home_name}: +{hs['scored']} -{hs['conceded']} = {hs['total']}")
+        print(f"           AWAY {away_name}: +{as_['scored']} -{as_['conceded']} = {as_['total']}")
+
+        if hs["qualifies"] and as_["qualifies"]:
+            print("           ✅ ALERT")
+            qualified.append({
+                "home":       home_name,
+                "away":       away_name,
+                "home_stats": hs,
+                "away_stats": as_,
+                "league":     league_name,
+                "kickoff":    ko,
+            })
+        else:
+            reasons = []
+            if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
+            if not as_["qualifies"]: reasons.append(f"{away_name}:{as_['total']}<{THRESHOLD}")
+            print(f"           ✗  {' | '.join(reasons)}")
+
+    # 4. Report
+    print(f"\n{'='*60}")
+    print(f"ALERT: {len(qualified)} / {len(all_fixtures)}")
+    print(f"{'='*60}")
+    for m in qualified:
+        print(f"  {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
+              f"{m['away']} ({m['away_stats']['total']})  [{m['league']}]")
+
+    run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    html     = generate_html(qualified, run_date, len(all_fixtures))
+
+    # Salva in docs/ per GitHub Pages
+    out = Path("docs/index.html")
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    print(f"\nReport salvato: {out}")
+
+if __name__ == "__main__":
+    main()
