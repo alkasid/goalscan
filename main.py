@@ -55,7 +55,9 @@ def get_leagues_and_fixtures():
     fixtures_by_league = defaultdict(list)
 
     for fix in data:
-        if fix.get("league", {}).get("type") != "League":
+        league_name_lower = fix.get("league", {}).get("name", "").lower()
+        skip_keywords = ["u17", "u18", "u19", "u20", "u21", "u23", "youth", "reserve", "women", " w "]
+        if any(k in league_name_lower for k in skip_keywords):
             continue
         lid    = fix.get("league", {}).get("id")
         season = fix.get("league", {}).get("season")
