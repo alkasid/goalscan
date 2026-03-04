@@ -11,24 +11,14 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout codice
-      uses: actions/checkout@v3
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
-    - name: Installa dipendenze
-      run: pip install -r requirements.txt
-    - name: Esegui Bot
+        python-version: '3.11'
+    - run: pip install -r requirements.txt
+    - name: Run Bot
       env:
         API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        GOAL_THRESHOLD: 14
-        LAST_MATCHES: 5
       run: python main.py
-    - name: Salva Cache
-      uses: actions/upload-artifact@v3
-      with:
-        name: cache
-        path: cache.json
