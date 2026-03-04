@@ -1,7 +1,13 @@
 """
 GOAL BOT — main.py
-------------------
-DEBUG VERSION: mostra league_ids trovati per ogni SKIP
+──────────────────────────────────────────────────────────────────
+- Recupera TUTTE le leghe con match oggi (copertura globale)
+- Stagione rilevata dinamicamente per ogni lega dalla prima chiamata API
+- Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
+- ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
+- Genera docs/index.html per GitHub Pages
+- ThreadPoolExecutor per chiamate parallele (~10x più veloce)
+- Cache in memoria: evita chiamate duplicate per la stessa squadra
 """
 
 import json
@@ -10,16 +16,22 @@ import requests
 from datetime import datetime, timezone
 from collections import defaultdict
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# ── Config ───────────────────────────────────────────────────────────────────
 with open("config.json", encoding="utf-8-sig") as f:
     CFG = json.load(f)
 
-API_KEY   = os.environ.get("API_FOOTBALL_KEY") or CFG.get("api_football_key", "")
+API_KEY   = (os.environ.get("API_FOOTBALL_KEY") or CFG.get("api_football_key", "")).strip()
 THRESHOLD = int(CFG.get("goal_threshold", 14))
 LAST_N    = int(CFG.get("last_matches_count", 5))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
 
+# ── Cache in memoria (evita chiamate duplicate stessa squadra+lega+stagione) ─
+_cache = {}
+
+# ── HTTP ─────────────────────────────────────────────────────────────────────
 def api_get(endpoint, params=None):
     try:
         r = requests.get(f"{BASE_URL}/{endpoint}",
@@ -31,11 +43,14 @@ def api_get(endpoint, params=None):
         print(f"    [ERR] {endpoint}: {e}")
     return []
 
+# ── Tutte le leghe con match oggi + stagione corretta ────────────────────────
 def get_leagues_and_fixtures():
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     data  = api_get("fixtures", {"date": today, "status": "NS"})
+
     league_seasons     = {}
     fixtures_by_league = defaultdict(list)
+
     for fix in data:
         lid    = fix.get("league", {}).get("id")
         season = fix.get("league", {}).get("season")
@@ -45,54 +60,94 @@ def get_leagues_and_fixtures():
             league_seasons[lid] = season
         fix["_season"] = season
         fixtures_by_league[lid].append(fix)
+
     total = sum(len(v) for v in fixtures_by_league.values())
     print(f"  -> {len(league_seasons)} leghe | {total} match totali")
     return league_seasons, fixtures_by_league
 
-def _calc(collected, team_id):
+# ── Ultime N gare FT di un team nella stessa lega (con cache) ────────────────
+def get_last_n(team_id, league_id, season):
+    key = (team_id, league_id, season)
+    if key in _cache:
+        return _cache[key]
+
+    data = api_get("fixtures", {
+        "team":   team_id,
+        "league": league_id,
+        "season": season,
+        "last":   LAST_N,
+    })
+
+    finished = [
+        m for m in data
+        if m.get("fixture", {}).get("status", {}).get("short") == "FT"
+    ]
+
+    if len(finished) < LAST_N:
+        _cache[key] = None
+        return None
+
     scored = conceded = 0
-    for m in collected:
+    for m in finished[:LAST_N]:
         goals   = m.get("goals", {})
         teams   = m.get("teams", {})
         is_home = teams.get("home", {}).get("id") == team_id
         gh = int(goals.get("home") or 0)
         ga = int(goals.get("away") or 0)
         if is_home:
-            scored += gh; conceded += ga
+            scored   += gh; conceded += ga
         else:
-            scored += ga; conceded += gh
-    total = scored + conceded
-    return {"scored": scored, "conceded": conceded, "total": total,
-            "qualifies": total >= THRESHOLD}
+            scored   += ga; conceded += gh
 
-def get_last_n(team_id, league_id, season):
-    data = api_get("fixtures", {
-        "team":   team_id,
-        "season": season,
-        "status": "FT",
-        "last":   50,
-    })
+    result = {"scored": scored, "conceded": conceded,
+              "total": scored + conceded,
+              "qualifies": (scored + conceded) >= THRESHOLD}
+    _cache[key] = result
+    return result
 
-    collected = []
-    league_ids_found = set()
+# ── Analisi parallela di un singolo match ────────────────────────────────────
+def analyze_fixture(fix):
+    fixture     = fix.get("fixture", {})
+    teams       = fix.get("teams", {})
+    league      = fix.get("league", {})
+    league_id   = fix["_league_id"]
+    season      = fix["_season"]
+    home_id     = teams.get("home", {}).get("id")
+    away_id     = teams.get("away", {}).get("id")
+    home_name   = teams.get("home", {}).get("name", "?")
+    away_name   = teams.get("away", {}).get("name", "?")
+    league_name = league.get("name", "?")
 
-    for m in data:
-        if m.get("fixture", {}).get("status", {}).get("short") != "FT":
-            continue
-        found_lid = m.get("league", {}).get("id")
-        league_ids_found.add(found_lid)
-        if found_lid != league_id:
-            continue
-        collected.append(m)
-        if len(collected) == LAST_N:
-            break
+    try:
+        ko = datetime.fromtimestamp(
+            fixture.get("timestamp", 0), tz=timezone.utc
+        ).strftime("%H:%M")
+    except Exception:
+        ko = "--:--"
 
-    if len(collected) < LAST_N:
-        print(f"             [DEBUG] cercavo league_id={league_id} season={season} | trovati ids={sorted(str(x) for x in league_ids_found)} | gare_lega={len(collected)} | totale_risposta={len(data)}")
-        return None
+    hs  = get_last_n(home_id, league_id, season)
+    as_ = get_last_n(away_id, league_id, season)
 
-    return _calc(collected, team_id)
+    if hs is None or as_ is None:
+        missing = []
+        if hs  is None: missing.append(home_name)
+        if as_ is None: missing.append(away_name)
+        return None, f"SKIP: <{LAST_N} gare FT per {', '.join(missing)}"
 
+    info = (f"HOME {home_name}: +{hs['scored']} -{hs['conceded']} = {hs['total']} | "
+            f"AWAY {away_name}: +{as_['scored']} -{as_['conceded']} = {as_['total']}")
+
+    if hs["qualifies"] and as_["qualifies"]:
+        return {"home": home_name, "away": away_name,
+                "home_stats": hs, "away_stats": as_,
+                "league": league_name, "kickoff": ko}, f"✅ ALERT | {info}"
+    else:
+        reasons = []
+        if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
+        if not as_["qualifies"]: reasons.append(f"{away_name}:{as_['total']}<{THRESHOLD}")
+        return None, f"✗ {' | '.join(reasons)}"
+
+# ── Helpers HTML ─────────────────────────────────────────────────────────────
 def badge_color(t):
     if t >= 20: return "#ff4757"
     if t >= 17: return "#ff8c00"
@@ -102,6 +157,7 @@ def slot(ko):
     try:    return f"{int(ko.split(':')[0]):02d}:00"
     except: return "??:??"
 
+# ── HTML ─────────────────────────────────────────────────────────────────────
 def generate_html(matches, run_date, total_analyzed):
     css = (
         ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
@@ -211,6 +267,7 @@ def generate_html(matches, run_date, total_analyzed):
         f'</div>{legend}{body}</body></html>'
     )
 
+# ── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
     print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare stessa lega")
@@ -225,7 +282,7 @@ def main():
             f["_league_id"] = lid
         all_fixtures.extend(fixes)
 
-    print(f"Totale match da analizzare: {len(all_fixtures)}")
+    print(f"\nTotale match da analizzare: {len(all_fixtures)}")
 
     if not all_fixtures:
         print("Nessun match trovato.")
@@ -235,65 +292,37 @@ def main():
         out.write_text(generate_html([], run_date, 0), encoding="utf-8")
         return
 
-    print("\n[2] Analisi storico squadre...\n")
+    print("\n[2] Analisi storico squadre (parallelo)...\n")
     qualified = []
+    total = len(all_fixtures)
 
-    for i, fix in enumerate(all_fixtures, 1):
-        fixture     = fix.get("fixture", {})
-        teams       = fix.get("teams", {})
-        league      = fix.get("league", {})
-        league_id   = fix["_league_id"]
-        season      = fix["_season"]
-        home_id     = teams.get("home", {}).get("id")
-        away_id     = teams.get("away", {}).get("id")
-        home_name   = teams.get("home", {}).get("name", "?")
-        away_name   = teams.get("away", {}).get("name", "?")
-        league_name = league.get("name", "?")
-
-        try:
-            ko = datetime.fromtimestamp(
-                fixture.get("timestamp", 0), tz=timezone.utc
-            ).strftime("%H:%M")
-        except Exception:
-            ko = "--:--"
-
-        print(f"[{i:>4}/{len(all_fixtures)}] {home_name} vs {away_name} ({league_name} {season})")
-
-        hs  = get_last_n(home_id, league_id, season)
-        as_ = get_last_n(away_id, league_id, season)
-
-        if hs is None or as_ is None:
-            missing = []
-            if hs  is None: missing.append(home_name)
-            if as_ is None: missing.append(away_name)
-            print(f"           SKIP: <{LAST_N} gare FT per {', '.join(missing)}")
-            continue
-
-        print(f"           HOME {home_name}: +{hs['scored']} -{hs['conceded']} = {hs['total']}")
-        print(f"           AWAY {away_name}: +{as_['scored']} -{as_['conceded']} = {as_['total']}")
-
-        if hs["qualifies"] and as_["qualifies"]:
-            print("           ✅ ALERT")
-            qualified.append({"home": home_name, "away": away_name,
-                               "home_stats": hs, "away_stats": as_,
-                               "league": league_name, "kickoff": ko})
-        else:
-            reasons = []
-            if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
-            if not as_["qualifies"]: reasons.append(f"{away_name}:{as_['total']}<{THRESHOLD}")
-            print(f"           ✗  {' | '.join(reasons)}")
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_fix = {executor.submit(analyze_fixture, fix): fix for fix in all_fixtures}
+        done = 0
+        for future in as_completed(future_to_fix):
+            done += 1
+            fix = future_to_fix[future]
+            home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
+            away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
+            try:
+                result, log = future.result()
+                print(f"[{done:>4}/{total}] {home_name} vs {away_name} — {log}")
+                if result:
+                    qualified.append(result)
+            except Exception as e:
+                print(f"[{done:>4}/{total}] {home_name} vs {away_name} — ERR: {e}")
 
     print(f"\n{'='*60}")
-    print(f"ALERT: {len(qualified)} / {len(all_fixtures)}")
+    print(f"ALERT: {len(qualified)} / {total}")
     print(f"{'='*60}")
-    for m in qualified:
+    for m in sorted(qualified, key=lambda x: x["kickoff"]):
         print(f"  {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
               f"{m['away']} ({m['away_stats']['total']})  [{m['league']}]")
 
     run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     out = Path("docs/index.html")
     out.parent.mkdir(exist_ok=True)
-    out.write_text(generate_html(qualified, run_date, len(all_fixtures)), encoding="utf-8")
+    out.write_text(generate_html(qualified, run_date, total), encoding="utf-8")
     print(f"\nReport salvato: {out}")
 
 if __name__ == "__main__":
