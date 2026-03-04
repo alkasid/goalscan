@@ -27,7 +27,7 @@ jobs:
       - name: Run Goal Bot
         env:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-        run: python test_api.py
+        - run: python main.py
 
       - name: Commit & push report
         run: |
