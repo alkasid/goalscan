@@ -1,11 +1,11 @@
 """
 GOAL BOT — main.py
 ──────────────────────────────────────────────────────────────────
-- Recupera TUTTE le leghe con match oggi (copertura globale)
+- Recupera TUTTE le leghe con match oggi + domani (solo campionati)
 - Stagione rilevata dinamicamente per ogni lega dalla prima chiamata API
 - Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
 - ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
-- Genera docs/index.html per GitHub Pages
+- Genera docs/index.html per GitHub Pages — raggruppato per giorno + fascia oraria
 - ThreadPoolExecutor per chiamate parallele (~10x più veloce)
 - Cache in memoria: evita chiamate duplicate per la stessa squadra
 """
@@ -13,7 +13,7 @@ GOAL BOT — main.py
 import json
 import os
 import requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -28,7 +28,7 @@ LAST_N    = int(CFG.get("last_matches_count", 5))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
 
-# ── Cache in memoria (evita chiamate duplicate stessa squadra+lega+stagione) ─
+# ── Cache in memoria ──────────────────────────────────────────────────────────
 _cache = {}
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -43,15 +43,20 @@ def api_get(endpoint, params=None):
         print(f"    [ERR] {endpoint}: {e}")
     return []
 
-# ── Tutte le leghe con match oggi + stagione corretta ────────────────────────
+# ── Leghe con match oggi + domani (solo campionati) ───────────────────────────
 def get_leagues_and_fixtures():
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    data  = api_get("fixtures", {"date": today, "status": "NS"})
+    today    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    data  = api_get("fixtures", {"date": today,    "status": "NS"})
+    data += api_get("fixtures", {"date": tomorrow, "status": "NS"})
 
     league_seasons     = {}
     fixtures_by_league = defaultdict(list)
 
     for fix in data:
+        if fix.get("league", {}).get("type") != "League":
+            continue
         lid    = fix.get("league", {}).get("id")
         season = fix.get("league", {}).get("season")
         if lid is None:
@@ -62,10 +67,10 @@ def get_leagues_and_fixtures():
         fixtures_by_league[lid].append(fix)
 
     total = sum(len(v) for v in fixtures_by_league.values())
-    print(f"  -> {len(league_seasons)} leghe | {total} match totali")
+    print(f"  -> {len(league_seasons)} leghe | {total} match totali (oggi+domani, solo campionati)")
     return league_seasons, fixtures_by_league
 
-# ── Ultime N gare FT di un team nella stessa lega (con cache) ────────────────
+# ── Ultime N gare FT nella stessa lega (con cache) ───────────────────────────
 def get_last_n(team_id, league_id, season):
     key = (team_id, league_id, season)
     if key in _cache:
@@ -125,6 +130,13 @@ def analyze_fixture(fix):
     except Exception:
         ko = "--:--"
 
+    try:
+        match_date = datetime.fromtimestamp(
+            fixture.get("timestamp", 0), tz=timezone.utc
+        ).strftime("%Y-%m-%d")
+    except Exception:
+        match_date = "?"
+
     hs  = get_last_n(home_id, league_id, season)
     as_ = get_last_n(away_id, league_id, season)
 
@@ -140,7 +152,8 @@ def analyze_fixture(fix):
     if hs["qualifies"] and as_["qualifies"]:
         return {"home": home_name, "away": away_name,
                 "home_stats": hs, "away_stats": as_,
-                "league": league_name, "kickoff": ko}, f"✅ ALERT | {info}"
+                "league": league_name, "kickoff": ko,
+                "date": match_date}, f"✅ ALERT | {info}"
     else:
         reasons = []
         if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
@@ -159,6 +172,9 @@ def slot(ko):
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 def generate_html(matches, run_date, total_analyzed):
+    today_str    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    tomorrow_str = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+
     css = (
         ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
         "--red:#ff4757;--text:#dde3f0;--muted:#556080;--border:rgba(255,255,255,0.06);}"
@@ -176,22 +192,31 @@ def generate_html(matches, run_date, total_analyzed):
         ".legend{display:flex;gap:16px;padding:14px 20px 4px;flex-wrap:wrap;}"
         ".leg-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted);}"
         ".leg-dot{width:10px;height:10px;border-radius:3px;}"
-        ".ts{margin:18px 16px 0;}"
-        ".th{display:flex;align-items:center;gap:12px;margin-bottom:10px;}"
-        ".tl{font-size:1.15rem;font-weight:700;color:var(--accent);}"
-        ".tc{font-size:.72rem;color:var(--muted);background:rgba(255,255,255,0.05);padding:2px 10px;border-radius:100px;}"
+        ".day-block{margin:24px 0 0;}"
+        ".day-header{padding:10px 16px 6px;display:flex;align-items:center;gap:12px;}"
+        ".day-label{font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:.04em;}"
+        ".day-count{font-size:.72rem;color:var(--muted);background:rgba(255,255,255,0.07);"
+        "padding:2px 10px;border-radius:100px;}"
+        ".day-line{flex:1;height:2px;background:linear-gradient(90deg,rgba(0,229,160,.35),transparent);}"
+        ".ts{margin:10px 16px 0;}"
+        ".th{display:flex;align-items:center;gap:10px;margin-bottom:8px;}"
+        ".tl{font-size:.85rem;font-weight:700;color:var(--accent);}"
+        ".tc{font-size:.68rem;color:var(--muted);background:rgba(255,255,255,0.05);"
+        "padding:2px 8px;border-radius:100px;}"
         ".th::after{content:'';flex:1;height:1px;background:var(--border);}"
         ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;}"
         ".card{background:var(--card);border:1px solid var(--border);border-radius:12px;"
         "padding:11px 13px;transition:transform .15s,box-shadow .15s;}"
         ".card:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,229,160,.12);}"
         ".ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}"
-        ".league{font-size:.67rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72%;}"
+        ".league{font-size:.67rem;color:var(--muted);white-space:nowrap;overflow:hidden;"
+        "text-overflow:ellipsis;max-width:72%;}"
         ".ko{font-size:.72rem;color:var(--accent);font-weight:700;}"
         ".mu{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;}"
         ".side{display:flex;flex-direction:column;gap:5px;}"
         ".side.r{align-items:flex-end;text-align:right;}"
-        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:118px;}"
+        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;white-space:nowrap;"
+        "overflow:hidden;text-overflow:ellipsis;max-width:118px;}"
         ".pills{display:flex;gap:3px;align-items:center;}"
         ".side.r .pills{justify-content:flex-end;}"
         ".pill{font-size:.7rem;font-weight:700;padding:2px 6px;border-radius:4px;}"
@@ -202,6 +227,7 @@ def generate_html(matches, run_date, total_analyzed):
         ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
         ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
     )
+
     legend = (
         '<div class="legend">'
         '<span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>14–16 goal</span>'
@@ -210,44 +236,68 @@ def generate_html(matches, run_date, total_analyzed):
         '<span class="leg-item" style="margin-left:8px">+F=fatti &nbsp;|&nbsp; -S=subiti &nbsp;|&nbsp; TOT=somma 5 gare</span>'
         '</div>'
     )
+
+    def make_card(m):
+        hs = m["home_stats"]; as_ = m["away_stats"]
+        return (
+            f'<div class="card"><div class="ct">'
+            f'<span class="league">{m["league"]}</span>'
+            f'<span class="ko">{m["kickoff"]}</span></div>'
+            f'<div class="mu"><div class="side">'
+            f'<span class="tn">{m["home"]}</span>'
+            f'<div class="pills">'
+            f'<span class="pill g">+{hs["scored"]}</span>'
+            f'<span class="pill rc">-{hs["conceded"]}</span>'
+            f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>'
+            f'</div></div><span class="vs">VS</span>'
+            f'<div class="side r"><span class="tn">{m["away"]}</span>'
+            f'<div class="pills">'
+            f'<span class="pill g">+{as_["scored"]}</span>'
+            f'<span class="pill rc">-{as_["conceded"]}</span>'
+            f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>'
+            f'</div></div></div></div>'
+        )
+
     if not matches:
-        body = (f'<div class="empty"><h3>Nessun match qualificato oggi</h3>'
+        body = (f'<div class="empty"><h3>Nessun match qualificato oggi/domani</h3>'
                 f'<p>Nessuna coppia soddisfa ≥{THRESHOLD} goal per entrambe<br>'
                 f'nelle ultime {LAST_N} gare stessa lega.<br>'
                 f'Match analizzati: <strong>{total_analyzed}</strong></p></div>')
     else:
-        groups = defaultdict(list)
-        for m in sorted(matches, key=lambda x: x["kickoff"]):
-            groups[slot(m["kickoff"])].append(m)
+        days = {}
+        for m in sorted(matches, key=lambda x: (x["date"], x["kickoff"])):
+            d = m["date"]
+            s = slot(m["kickoff"])
+            days.setdefault(d, {}).setdefault(s, []).append(m)
+
         sections = []
-        for ts in sorted(groups):
-            cards = []
-            for m in groups[ts]:
-                hs = m["home_stats"]; as_ = m["away_stats"]
-                cards.append(
-                    f'<div class="card"><div class="ct">'
-                    f'<span class="league">{m["league"]}</span>'
-                    f'<span class="ko">{m["kickoff"]}</span></div>'
-                    f'<div class="mu"><div class="side">'
-                    f'<span class="tn">{m["home"]}</span>'
-                    f'<div class="pills">'
-                    f'<span class="pill g">+{hs["scored"]}</span>'
-                    f'<span class="pill rc">-{hs["conceded"]}</span>'
-                    f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>'
-                    f'</div></div><span class="vs">VS</span>'
-                    f'<div class="side r"><span class="tn">{m["away"]}</span>'
-                    f'<div class="pills">'
-                    f'<span class="pill g">+{as_["scored"]}</span>'
-                    f'<span class="pill rc">-{as_["conceded"]}</span>'
-                    f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>'
-                    f'</div></div></div></div>'
-                )
-            sections.append(
-                f'<div class="ts"><div class="th">'
-                f'<span class="tl">⏱ {ts}</span>'
-                f'<span class="tc">{len(groups[ts])} match</span>'
-                f'</div><div class="grid">{"".join(cards)}</div></div>'
+        for day in sorted(days):
+            if day == today_str:
+                day_label = "📅 OGGI"
+            elif day == tomorrow_str:
+                day_label = "📅 DOMANI"
+            else:
+                day_label = f"📅 {day}"
+
+            day_total = sum(len(v) for v in days[day].values())
+            day_html  = (
+                f'<div class="day-block">'
+                f'<div class="day-header">'
+                f'<span class="day-label">{day_label}</span>'
+                f'<span class="day-count">{day_total} alert</span>'
+                f'<div class="day-line"></div></div>'
             )
+            for ts in sorted(days[day]):
+                cards = "".join(make_card(m) for m in days[day][ts])
+                day_html += (
+                    f'<div class="ts"><div class="th">'
+                    f'<span class="tl">⏱ {ts}</span>'
+                    f'<span class="tc">{len(days[day][ts])} match</span>'
+                    f'</div><div class="grid">{cards}</div></div>'
+                )
+            day_html += '</div>'
+            sections.append(day_html)
+
         body = "\n".join(sections)
 
     return (
@@ -263,7 +313,7 @@ def generate_html(matches, run_date, total_analyzed):
         f'<div class="cbar">'
         f'<span>Soglia: <strong>≥{THRESHOLD}</strong> per squadra</span>'
         f'<span>Ultime <strong>{LAST_N}</strong> gare stessa lega</span>'
-        f'<span>Solo gare <strong>FT</strong></span>'
+        f'<span>Solo campionati <strong>oggi+domani</strong></span>'
         f'</div>{legend}{body}</body></html>'
     )
 
@@ -273,7 +323,7 @@ def main():
     print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare stessa lega")
     print("=" * 60)
 
-    print("\n[1] Recupero leghe e match oggi...")
+    print("\n[1] Recupero leghe e match oggi+domani...")
     league_seasons, fixtures_by_league = get_leagues_and_fixtures()
 
     all_fixtures = []
@@ -315,8 +365,8 @@ def main():
     print(f"\n{'='*60}")
     print(f"ALERT: {len(qualified)} / {total}")
     print(f"{'='*60}")
-    for m in sorted(qualified, key=lambda x: x["kickoff"]):
-        print(f"  {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
+    for m in sorted(qualified, key=lambda x: (x["date"], x["kickoff"])):
+        print(f"  {m['date']} {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
               f"{m['away']} ({m['away_stats']['total']})  [{m['league']}]")
 
     run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
