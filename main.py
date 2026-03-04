@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 # ── Config ────────────────────────────────────────────────────────────────────
-with open("config.json") as f:
+with open("config.json", encoding="utf-8-sig") as f:
     CFG = json.load(f)
 
 API_KEY   = os.environ.get("API_FOOTBALL_KEY") or CFG.get("api_football_key", "")
