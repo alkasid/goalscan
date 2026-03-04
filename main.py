@@ -12,13 +12,11 @@ import pytz
 from telegram import Bot
 
 def load_config():
-    """Carica configurazione"""
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
     with open(config_path, 'r', encoding='utf-8-sig') as f:
         return json.load(f)
 
 def load_cache():
-    """Carica cache"""
     cache_path = os.path.join(os.path.dirname(__file__), 'cache.json')
     if os.path.exists(cache_path):
         with open(cache_path, 'r', encoding='utf-8-sig') as f:
@@ -26,7 +24,6 @@ def load_cache():
     return {"teams": {}}
 
 def save_cache(cache):
-    """Salva cache"""
     cache_path = os.path.join(os.path.dirname(__file__), 'cache.json')
     cache["last_update"] = datetime.now().isoformat()
     with open(cache_path, 'w', encoding='utf-8') as f:
@@ -51,7 +48,7 @@ class APIFootballClient:
             return []
     
     def get_fixtures_today(self, league_id, timezone='Europe/Rome'):
-        today = datetime.now(timezone=pytz.timezone(timezone)).strftime('%Y-%m-%d')
+        today = datetime.now(pytz.timezone(timezone)).strftime('%Y-%m-%d')
         return self._request('/fixtures', {'league': league_id, 'season': datetime.now().year, 'date': today})
     
     def get_team_last_matches(self, team_id, league_id, last=5):
@@ -62,9 +59,7 @@ def calculate_team_goals_sum(matches):
     total = 0
     for match in matches:
         goals = match.get('goals', {})
-        home = goals.get('home', 0) or 0
-        away = goals.get('away', 0) or 0
-        total += home + away
+        total += (goals.get('home', 0) or 0) + (goals.get('away', 0) or 0)
     return total
 
 def analyze_match(fixture, api_client, cache, config):
@@ -79,9 +74,9 @@ def analyze_match(fixture, api_client, cache, config):
     if not all([home_id, away_id, league_id]):
         return None
     
+    teams_cache = cache.get('teams', {})
     cache_key_home = f"{home_id}_{league_id}"
     cache_key_away = f"{away_id}_{league_id}"
-    teams_cache = cache.get('teams', {})
     
     if cache_key_home in teams_cache:
         home_sum = teams_cache[cache_key_home]['sum']
@@ -109,7 +104,6 @@ def analyze_match(fixture, api_client, cache, config):
             'combined': home_sum + away_sum,
             'league': fixture.get('league', {}).get('name'),
             'time': fixture.get('fixture', {}).get('date', '')[:16].replace('T', ' '),
-            'status': fixture.get('fixture', {}).get('status', {}).get('long', 'NS')
         }
     return None
 
@@ -137,22 +131,17 @@ def generate_markdown_table(alerts):
         for m in matches:
             home_icon = "🔥" if m['home_sum'] >= 18 else "✅"
             away_icon = "🔥" if m['away_sum'] >= 18 else "✅"
-            combined_icon = "🚨" if m['combined'] >= 35 else "⚡"
-            
-            output.append(f"| {m['home_team']} vs {m['away_team']} | **{m['home_sum']}** {home_icon} | **{m['away_sum']}** {away_icon} | **{m['combined']}** {combined_icon} |")
-        
+            output.append(f"| {m['home_team']} vs {m['away_team']} | **{m['home_sum']}** {home_icon} | **{m['away_sum']}** {away_icon} | **{m['combined']}** ⚡ |")
         output.append("")
     
     output.append("=" * 50)
-    output.append("\n📈 *Legenda: 🔥 Super Form (>=18) | ✅ Form OK (>=14) | 🚨 Potenziale Altissimo*")
-    
     return "\n".join(output)
 
 async def send_telegram_alert(message, config):
     try:
         bot = Bot(token=config['telegram_bot_token'])
         await bot.send_message(chat_id=config['telegram_chat_id'], text=message, parse_mode='Markdown')
-        print("✅ Alert inviato su Telegram")
+        print("✅ Alert inviato")
         return True
     except Exception as e:
         print(f"❌ Telegram Error: {e}")
@@ -172,7 +161,6 @@ async def main():
             result = analyze_match(fixture, api, cache, config)
             if result:
                 all_alerts.append(result)
-                print(f"✅ ALERT: {result['home_team']} vs {result['away_team']}")
     
     save_cache(cache)
     
