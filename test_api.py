@@ -11,7 +11,7 @@ Squadra test: Inter (team=505), Serie A (league=135), stagione 2024
 import json, os, sys, requests
 from datetime import datetime, timezone
 
-API_KEY = os.environ.get("API_FOOTBALL_KEY") or input("Inserisci API key: ").strip()
+API_KEY = (os.environ.get("API_FOOTBALL_KEY") or input("Inserisci API key: ")).strip()
 BASE    = "https://v3.football.api-sports.io"
 HDR     = {"x-apisports-key": API_KEY}
 
