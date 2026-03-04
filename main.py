@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-GOAL BOT v3 - Debug Completo
+GOAL BOT v4 - Versione Corretta e Ottimizzata
 """
 
 import requests, json, os, asyncio
@@ -13,124 +13,95 @@ def load_config():
     with open('config.json', 'r', encoding='utf-8-sig') as f:
         return json.load(f)
 
-def load_cache():
-    if os.path.exists('cache.json'):
-        with open('cache.json', 'r', encoding='utf-8-sig') as f:
-            return json.load(f)
-    return {"teams": {}, "api_calls": 0}
-
-def save_cache(cache):
-    cache["last_update"] = datetime.now().isoformat()
-    with open('cache.json', 'w', encoding='utf-8') as f:
-        json.dump(cache, f, indent=2, ensure_ascii=False)
-
 class APIFootballClient:
     BASE_URL = "https://v3.football.api-sports.io"
     
-    def __init__(self, api_key, cache):
+    def __init__(self, api_key):
         self.headers = {'x-rapidapi-key': api_key, 'x-rapidapi-host': 'v3.football.api-sports.io'}
-        self.cache = cache
+        self.calls = 0
     
     def _request(self, endpoint, params=None):
         try:
-            self.cache['api_calls'] = self.cache.get('api_calls', 0) + 1
-            if self.cache['api_calls'] > 100:
-                print(f"⛔ STOP API: Limite 100 raggiunto")
+            self.calls += 1
+            if self.calls > 95:
+                print(f"⛔ Limite API: {self.calls}/100")
                 return []
-            response = requests.get(f"{self.BASE_URL}{endpoint}", headers=self.headers, params=params, timeout=10)
+            response = requests.get(f"{self.BASE_URL}{endpoint}", headers=self.headers, params=params, timeout=15)
             if response.status_code == 429:
-                print("❌ API Rate Limit 429")
+                print("❌ Rate Limit 429")
                 return []
-            return response.json().get('response', [])
+            data = response.json()
+            return data.get('response', [])
         except Exception as e:
-            print(f"❌ API Error: {e}")
+            print(f"❌ Error: {e}")
             return []
     
     def get_fixtures_today(self, league_id):
         today = datetime.now(pytz.timezone('Europe/Rome')).strftime('%Y-%m-%d')
-        return self._request('/fixtures', {'league': league_id, 'season': datetime.now().year, 'date': today})
+        return self._request('/fixtures', {'league': league_id, 'season': 2025, 'date': today})
     
-    def get_team_last_matches(self, team_id, league_id, last=5):
-        matches = self._request('/fixtures', {'team': team_id, 'league': league_id, 'season': datetime.now().year, 'last': last})
-        return [m for m in matches if m.get('fixture', {}).get('status', {}).get('short') == 'FT']
+    def get_team_matches(self, team_id, league_id, last=5):
+        fixtures = self._request('/fixtures', {'team': team_id, 'league': league_id, 'season': 2025, 'last': last})
+        return [f for f in fixtures if f.get('fixture', {}).get('status', {}).get('short') == 'FT']
 
-def calculate_goals_sum(matches):
-    total = 0
-    for m in matches:
-        goals = m.get('goals', {})
-        total += (goals.get('home', 0) or 0) + (goals.get('away', 0) or 0)
-    return total
+def calc_goals(matches):
+    return sum((m['goals']['home'] or 0) + (m['goals']['away'] or 0) for m in matches)
 
 async def main():
-    print("🚀 GOAL BOT v3 - DEBUG MODE")
+    print("🚀 GOAL BOT v4 - START")
     config = load_config()
-    cache = load_cache()
-    api = APIFootballClient(config['api_football_key'], cache)
+    api = APIFootballClient(config['api_football_key'])
     
     alerts = []
+    leagues = config.get('leagues_to_monitor', [140])
     threshold = config['goal_threshold']
     
-    for league_id in config.get('leagues_to_monitor', []):
-        print(f"\n{'='*60}")
-        print(f"📊 CAMPIONATO ID: {league_id}")
-        print('='*60)
+    print(f"📋 Campionati da scansionare: {len(leagues)}")
+    
+    for lid in leagues:
+        print(f"\n📊 League {lid}...")
+        fixtures = api.get_fixtures_today(lid)
+        print(f"   Trovate {len(fixtures)} partite")
         
-        fixtures = api.get_fixtures_today(league_id)
-        print(f" Partite trovate oggi: {len(fixtures)}")
-        
-        for fixture in fixtures:
-            home = fixture.get('teams', {}).get('home', {})
-            away = fixture.get('teams', {}).get('away', {})
-            home_name = home.get('name', '?')
-            away_name = away.get('name', '?')
-            home_id = home.get('id')
-            away_id = away.get('id')
+        for fx in fixtures:
+            home = fx['teams']['home']
+            away = fx['teams']['away']
+            h_name, h_id = home['name'], home['id']
+            a_name, a_id = away['name'], away['id']
             
-            print(f"\n⚽ {home_name} vs {away_name}")
+            # Stats ultime 5
+            h_matches = api.get_team_matches(h_id, lid, 5)
+            a_matches = api.get_team_matches(a_id, lid, 5)
             
-            # Stats Casa
-            home_matches = api.get_team_last_matches(home_id, league_id, 5)
-            home_sum = calculate_goals_sum(home_matches)
-            print(f"   🏠 {home_name}: {len(home_matches)} partite | Goal sum: {home_sum}")
+            h_sum = calc_goals(h_matches)
+            a_sum = calc_goals(a_matches)
             
-            # Stats Ospite
-            away_matches = api.get_team_last_matches(away_id, league_id, 5)
-            away_sum = calculate_goals_sum(away_matches)
-            print(f"   ✈️  {away_name}: {len(away_matches)} partite | Goal sum: {away_sum}")
+            print(f"   ⚽ {h_name} vs {a_name}: {h_sum} | {a_sum}")
             
-            # Check criterio
-            if home_sum >= threshold and away_sum >= threshold:
-                print(f"   ✅ ALERT: {home_sum} + {away_sum} >= {threshold}")
+            if h_sum >= threshold and a_sum >= threshold:
                 alerts.append({
-                    'home': home_name, 'away': away_name,
-                    'home_sum': home_sum, 'away_sum': away_sum,
-                    'league': fixture.get('league', {}).get('name'),
-                    'time': fixture.get('fixture', {}).get('date', '')[:16].replace('T', ' ')
+                    'h': h_name, 'a': a_name,
+                    'hs': h_sum, 'as': a_sum,
+                    'time': fx['fixture']['date'][:16].replace('T', ' '),
+                    'league': fx['league']['name']
                 })
-            else:
-                print(f"   ❌ Scartata: {home_sum} o {away_sum} < {threshold}")
+                print(f"   ✅ ALERT!")
     
-    save_cache(cache)
+    # Telegram
+    msg = f"🔥 **GOAL ALERT - {len(alerts)} match**\n\n" if alerts else "📭 **Nessun alert oggi**\n\n"
+    for a in alerts:
+        msg += f"🕒 {a['time']} | {a['league']}\n{a['h']} ({a['hs']}🔥) vs {a['a']} ({a['as']}🔥)\n\n"
     
-    # Report Telegram
-    if alerts:
-        msg = f"🔥 **ALERT: {len(alerts)} partite**\n\n"
-        for a in alerts:
-            msg += f"🕒 {a['time']} | {a['league']}\n{a['home']} ({a['home_sum']}🔥) vs {a['away']} ({a['away_sum']}🔥)\n\n"
-    else:
-        msg = f"📭 **Nessun alert oggi**\n\nAPI calls: {cache.get('api_calls', 0)}/100"
+    msg += f"\n_API calls: {api.calls}/100_"
     
-    print(f"\n{'='*60}")
-    print(f"📊 TOTALE: {len(alerts)} alert | API: {cache.get('api_calls', 0)}/100")
-    print('='*60)
+    print(f"\n📊 Totale: {api.calls} API calls")
     
-    # Invia Telegram
     try:
         bot = Bot(token=config['telegram_bot_token'])
         await bot.send_message(chat_id=config['telegram_chat_id'], text=msg, parse_mode='Markdown')
         print("✅ Telegram inviato!")
     except Exception as e:
-        print(f"❌ Telegram Error: {e}")
+        print(f"❌ Telegram: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
