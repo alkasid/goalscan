@@ -30,6 +30,10 @@ LAST_N    = int(CFG.get("last_matches_count", 5))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
 BET365_ID = 8
+TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
 
 SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
 
@@ -139,6 +143,7 @@ def analyze_fixture(fix):
     home_name   = teams.get("home", {}).get("name", "?")
     away_name   = teams.get("away", {}).get("name", "?")
     league_name = league.get("name", "?")
+    country     = league.get("country", "?")
     fixture_id  = fixture.get("id")
 
     try:
@@ -173,9 +178,83 @@ def analyze_fixture(fix):
 
     return {"home": home_name, "away": away_name,
             "home_stats": hs, "away_stats": as_,
-            "league": league_name, "kickoff": ko,
+            "league": league_name, "country": country, "kickoff": ko,
             "date": match_date, "fixture_id": fixture_id}, \
            f"✅✅ ALERT+QUOTE | {home_name}:{hs['total']} {away_name}:{as_['total']}"
+
+
+
+# ── Telegram ─────────────────────────────────────────────────────────────────
+def _tg_send(text):
+    url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage"
+    try:
+        r = requests.post(url, json={
+            "chat_id": TELEGRAM_CHAT,
+            "text": text,
+            "parse_mode": "Markdown"
+        }, timeout=15)
+        if r.status_code == 200:
+            print("  [TG] Messaggio inviato")
+        else:
+            print("  [TG] Errore " + str(r.status_code) + ": " + r.text[:200])
+    except Exception as e:
+        print("  [TG] Exception: " + str(e))
+
+
+def send_telegram(matches, total_analyzed, run_date):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT:
+        print("  [TG] Token o Chat ID mancante — skip")
+        return
+
+    today_s = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    d1_s    = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+    d2_s    = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d")
+    day_label = {today_s: "OGGI", d1_s: "DOMANI", d2_s: "DOPODOMANI"}
+
+    if not matches:
+        _tg_send("Nessun alert su " + str(total_analyzed) + " match analizzati.")
+        return
+
+    lines = []
+    lines.append("*⚽ GOAL BOT ALERT* — " + run_date)
+    lines.append("Criteri: >=" + str(THRESHOLD) + " goal ultime " + str(LAST_N) + " gare + Bet365")
+    lines.append("Analizzati: " + str(total_analyzed) + " | Alert: " + str(len(matches)))
+
+    # Raggruppa: giorno → paese → lega → match per orario
+    days = {}
+    for m in sorted(matches, key=lambda x: (x["date"], x.get("country","?"), x["league"], x["kickoff"])):
+        d   = m["date"]
+        c   = m.get("country", "?")
+        lg  = m["league"]
+        days.setdefault(d, {}).setdefault(c, {}).setdefault(lg, []).append(m)
+
+    for day in sorted(days):
+        label = day_label.get(day, day)
+        lines.append("")
+        lines.append("━━━ " + label + " ━━━")
+        for country in sorted(days[day]):
+            lines.append("")
+            lines.append("🌍 *" + country + "*")
+            for league in sorted(days[day][country]):
+                lines.append("  🏆 " + league)
+                for m in days[day][country][league]:
+                    hs  = m["home_stats"]
+                    as_ = m["away_stats"]
+                    lines.append(
+                        "    🕐 " + m["kickoff"] +
+                        "  " + m["home"] + " vs " + m["away"]
+                    )
+                    lines.append(
+                        "    🏠 +" + str(hs["scored"]) + "-" + str(hs["conceded"]) +
+                        "=*" + str(hs["total"]) + "*" +
+                        "  ✈️ +" + str(as_["scored"]) + "-" + str(as_["conceded"]) +
+                        "=*" + str(as_["total"]) + "*"
+                    )
+
+    msg = "\n".join(lines)
+    if len(msg) > 4000:
+        msg = msg[:4000] + "..."
+    _tg_send(msg)
 
 # ── Helpers HTML ─────────────────────────────────────────────────────────────
 def badge_color(t):
@@ -393,6 +472,9 @@ def main():
     out.parent.mkdir(exist_ok=True)
     out.write_text(generate_html(qualified, run_date, total), encoding="utf-8")
     print(f"\nReport salvato: {out}")
+
+    print("\n[4] Invio Telegram...")
+    send_telegram(qualified, total, run_date)
 
 if __name__ == "__main__":
     main()
