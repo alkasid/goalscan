@@ -2,8 +2,9 @@
 GOAL BOT — main.py
 ------------------
 - Recupera TUTTE le leghe con match oggi (copertura globale)
-- Stagione rilevata dinamicamente per ogni lega dalla prima chiamata API
+- Stagione rilevata dinamicamente per ogni lega
 - Per ogni match: ultime 5 gare FT di HOME e AWAY nella stessa lega
+  FIX: recupera last=50 senza filtro lega, poi filtra manualmente
 - ALERT se ENTRAMBE hanno (goal fatti + goal subiti) >= soglia
 - Genera docs/index.html per GitHub Pages
 """
@@ -15,7 +16,6 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from pathlib import Path
 
-# ── Config ────────────────────────────────────────────────────────────────────
 with open("config.json", encoding="utf-8-sig") as f:
     CFG = json.load(f)
 
@@ -25,7 +25,6 @@ LAST_N    = int(CFG.get("last_matches_count", 5))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
 
-# ── HTTP ──────────────────────────────────────────────────────────────────────
 def api_get(endpoint, params=None):
     try:
         r = requests.get(f"{BASE_URL}/{endpoint}",
@@ -37,14 +36,11 @@ def api_get(endpoint, params=None):
         print(f"    [ERR] {endpoint}: {e}")
     return []
 
-# ── Tutte le leghe con match oggi + stagione corretta per ognuna ──────────────
 def get_leagues_and_fixtures():
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     data  = api_get("fixtures", {"date": today, "status": "NS"})
-
     league_seasons     = {}
     fixtures_by_league = defaultdict(list)
-
     for fix in data:
         lid    = fix.get("league", {}).get("id")
         season = fix.get("league", {}).get("season")
@@ -54,46 +50,49 @@ def get_leagues_and_fixtures():
             league_seasons[lid] = season
         fix["_season"] = season
         fixtures_by_league[lid].append(fix)
-
     total = sum(len(v) for v in fixtures_by_league.values())
     print(f"  -> {len(league_seasons)} leghe | {total} match totali")
     return league_seasons, fixtures_by_league
 
-# ── Ultime N gare FT di un team nella stessa lega ────────────────────────────
+# FIX CORE: recupera last=50 senza filtro lega,
+# poi filtra manualmente per league_id fino ad avere LAST_N gare FT
 def get_last_n(team_id, league_id, season):
     data = api_get("fixtures", {
         "team":   team_id,
-        "league": league_id,
         "season": season,
         "status": "FT",
-        "last":   LAST_N,
+        "last":   50,
     })
 
-    finished = [
-        m for m in data
-        if m.get("fixture", {}).get("status", {}).get("short") == "FT"
-    ]
+    collected = []
+    for m in data:
+        if m.get("fixture", {}).get("status", {}).get("short") != "FT":
+            continue
+        if m.get("league", {}).get("id") != league_id:
+            continue
+        collected.append(m)
+        if len(collected) == LAST_N:
+            break
 
-    if len(finished) < LAST_N:
+    if len(collected) < LAST_N:
         return None
 
     scored = conceded = 0
-    for m in finished[:LAST_N]:
+    for m in collected:
         goals   = m.get("goals", {})
         teams   = m.get("teams", {})
         is_home = teams.get("home", {}).get("id") == team_id
         gh = int(goals.get("home") or 0)
         ga = int(goals.get("away") or 0)
         if is_home:
-            scored   += gh;  conceded += ga
+            scored += gh; conceded += ga
         else:
-            scored   += ga;  conceded += gh
+            scored += ga; conceded += gh
 
     total = scored + conceded
     return {"scored": scored, "conceded": conceded, "total": total,
             "qualifies": total >= THRESHOLD}
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 def badge_color(t):
     if t >= 20: return "#ff4757"
     if t >= 17: return "#ff8c00"
@@ -103,7 +102,6 @@ def slot(ko):
     try:    return f"{int(ko.split(':')[0]):02d}:00"
     except: return "??:??"
 
-# ── HTML ──────────────────────────────────────────────────────────────────────
 def generate_html(matches, run_date, total_analyzed):
     css = (
         ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
@@ -213,7 +211,6 @@ def generate_html(matches, run_date, total_analyzed):
         f'</div>{legend}{body}</body></html>'
     )
 
-# ── MAIN ──────────────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
     print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare stessa lega")
@@ -227,9 +224,8 @@ def main():
         for f in fixes:
             f["_league_id"] = lid
         all_fixtures.extend(fixes)
-        print(f"    Lega {lid} (stagione {league_seasons[lid]}): {len(fixes)} match")
 
-    print(f"\nTotale match da analizzare: {len(all_fixtures)}")
+    print(f"Totale match da analizzare: {len(all_fixtures)}")
 
     if not all_fixtures:
         print("Nessun match trovato.")
@@ -255,7 +251,9 @@ def main():
         league_name = league.get("name", "?")
 
         try:
-            ko = datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc).strftime("%H:%M")
+            ko = datetime.fromtimestamp(
+                fixture.get("timestamp", 0), tz=timezone.utc
+            ).strftime("%H:%M")
         except Exception:
             ko = "--:--"
 
