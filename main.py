@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 # ── Config ───────────────────────────────────────────────────────────────────
 with open("config.json", encoding="utf-8-sig") as f:
@@ -32,31 +33,32 @@ HEADERS   = {"x-apisports-key": API_KEY}
 BET365_ID = 8
 TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
 TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
-TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
-TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
 
 SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
 
 # ── Cache ────────────────────────────────────────────────────────────────────
 _cache = {}
+_api_sem = threading.Semaphore(3)  # max 3 chiamate contemporanee
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
-def api_get(endpoint, params=None, retries=2):
-    for attempt in range(retries + 1):
-        try:
-            r = requests.get(f"{BASE_URL}/{endpoint}",
-                             headers=HEADERS, params=params, timeout=15)
-            if r.status_code == 200:
-                return r.json().get("response", [])
-            if r.status_code == 429:
-                wait = 10 * (attempt + 1)
-                print(f"    [429] rate limit — attendo {wait}s...")
-                time.sleep(wait)
-                continue
-            print(f"    [HTTP {r.status_code}] {endpoint} {params}")
-        except Exception as e:
-            print(f"    [ERR] {endpoint}: {e}")
-    return []
+def api_get(endpoint, params=None, retries=3):
+    with _api_sem:
+        time.sleep(0.15)  # max ~6 req/sec per thread
+        for attempt in range(retries + 1):
+            try:
+                r = requests.get(f"{BASE_URL}/{endpoint}",
+                                 headers=HEADERS, params=params, timeout=15)
+                if r.status_code == 200:
+                    return r.json().get("response", [])
+                if r.status_code == 429:
+                    wait = 15 * (attempt + 1)
+                    print(f"    [429] rate limit — attendo {wait}s...")
+                    time.sleep(wait)
+                    continue
+                print(f"    [HTTP {r.status_code}] {endpoint} {params}")
+            except Exception as e:
+                print(f"    [ERR] {endpoint}: {e}")
+        return []
 
 # ── Fixtures 3 giorni (solo campionati) ──────────────────────────────────────
 def get_all_fixtures():
