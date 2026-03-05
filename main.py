@@ -149,12 +149,12 @@ def analyze_fixture(fix):
     fixture_id  = fixture.get("id")
 
     try:
-        ko = datetime.fromtimestamp(
+        ko = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ).strftime("%H:%M")
-        match_date = datetime.fromtimestamp(
+        ) - timedelta(hours=1)).strftime("%H:%M")
+        match_date = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ).strftime("%Y-%m-%d")
+        ) - timedelta(hours=1)).strftime("%Y-%m-%d")
     except Exception:
         ko = "--:--"; match_date = "?"
 
@@ -222,36 +222,32 @@ def send_telegram(matches, total_analyzed, run_date):
     lines.append("Criteri: >=" + str(THRESHOLD) + " goal ultime " + str(LAST_N) + " gare + Bet365")
     lines.append("Analizzati: " + str(total_analyzed) + " | Alert: " + str(len(matches)))
 
-    # Raggruppa: giorno → paese → lega → match per orario
+    # Raggruppa per giorno, ordina per orario
     days = {}
-    for m in sorted(matches, key=lambda x: (x["date"], x.get("country","?"), x["league"], x["kickoff"])):
-        d   = m["date"]
-        c   = m.get("country", "?")
-        lg  = m["league"]
-        days.setdefault(d, {}).setdefault(c, {}).setdefault(lg, []).append(m)
+    for m in sorted(matches, key=lambda x: (x["date"], x["kickoff"])):
+        d = m["date"]
+        days.setdefault(d, []).append(m)
 
     for day in sorted(days):
         label = day_label.get(day, day)
         lines.append("")
         lines.append("━━━ " + label + " ━━━")
-        for country in sorted(days[day]):
+        for m in days[day]:
+            hs  = m["home_stats"]
+            as_ = m["away_stats"]
             lines.append("")
-            lines.append("🌍 *" + country + "*")
-            for league in sorted(days[day][country]):
-                lines.append("  🏆 " + league)
-                for m in days[day][country][league]:
-                    hs  = m["home_stats"]
-                    as_ = m["away_stats"]
-                    lines.append(
-                        "    🕐 " + m["kickoff"] +
-                        "  " + m["home"] + " vs " + m["away"]
-                    )
-                    lines.append(
-                        "    🏠 +" + str(hs["scored"]) + "-" + str(hs["conceded"]) +
-                        "=*" + str(hs["total"]) + "*" +
-                        "  ✈️ +" + str(as_["scored"]) + "-" + str(as_["conceded"]) +
-                        "=*" + str(as_["total"]) + "*"
-                    )
+            lines.append(
+                "🕐 *" + m["kickoff"] + "*  " + m["home"] + " vs " + m["away"]
+            )
+            lines.append(
+                "🏆 " + m["league"] + " | 🌍 " + m.get("country", "?")
+            )
+            lines.append(
+                "🏠 +" + str(hs["scored"]) + "-" + str(hs["conceded"]) +
+                "=*" + str(hs["total"]) + "*" +
+                "  ✈️ +" + str(as_["scored"]) + "-" + str(as_["conceded"]) +
+                "=*" + str(as_["total"]) + "*"
+            )
 
     msg = "\n".join(lines)
     if len(msg) > 4000:
