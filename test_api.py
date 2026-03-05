@@ -1,19 +1,22 @@
 import os, requests
-from datetime import datetime, timezone, timedelta
 
 API_KEY = (os.environ.get("API_FOOTBALL_KEY") or "").strip()
 BASE    = "https://v3.football.api-sports.io"
 HDR     = {"x-apisports-key": API_KEY}
 
-tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
-
-r = requests.get(f"{BASE}/odds", headers=HDR,
-                 params={"date": tomorrow, "bookmaker": 8}, timeout=15)
-data = r.json()
-results = data.get("response", [])
-total   = data.get("results", 0)
-
-print(f"Odds Bet365 domani: {total} fixture totali API")
-print(f"Ricevuti: {len(results)}")
-if results:
-    print(f"Esempio fixture IDs con quote: {[r['fixture']['id'] for r in results[:5]]}")
+# Club America = 1 | Juarez = 2294 | Liga MX = 262 | season 2025
+for team_id, name in [(1, "Club America"), (2294, "Juarez")]:
+    r = requests.get(f"{BASE}/fixtures", headers=HDR,
+                     params={"team": team_id, "league": 262, "season": 2025, "last": 5}, timeout=15)
+    data = r.json().get("response", [])
+    ft = [m for m in data if m.get("fixture",{}).get("status",{}).get("short") == "FT"]
+    print(f"\n{name} — ultimi 5 richiesti, FT trovati: {len(ft)}")
+    scored = conceded = 0
+    for m in ft:
+        gh = int(m["goals"]["home"] or 0)
+        ga = int(m["goals"]["away"] or 0)
+        is_home = m["teams"]["home"]["id"] == team_id
+        if is_home: scored += gh; conceded += ga
+        else:       scored += ga; conceded += gh
+        print(f"  {m['fixture']['date'][:10]} {m['teams']['home']['name']} {gh}-{ga} {m['teams']['away']['name']} — status: {m['fixture']['status']['short']}")
+    print(f"  TOTALE: fatti={scored} subiti={conceded} ratio={scored+conceded}")
