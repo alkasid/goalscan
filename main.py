@@ -470,10 +470,36 @@ def main():
               f"{m['away']} ({m['away_stats']['total']})  [{m['league']}]")
 
     run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-    out = Path("docs/index.html")
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(generate_html(qualified, run_date, total), encoding="utf-8")
-    print(f"\nReport salvato: {out}")
+    run_slug = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    docs = Path("docs")
+    docs.mkdir(exist_ok=True)
+
+    # Salva report con timestamp (archivio permanente)
+    archive_file = docs / f"report-{run_slug}.html"
+    html_content = generate_html(qualified, run_date, total)
+    archive_file.write_text(html_content, encoding="utf-8")
+
+    # Aggiorna index.html = ultimo report + link archivio
+    # Raccoglie tutti i report esistenti
+    reports = sorted(docs.glob("report-*.html"), reverse=True)
+    archive_links = ""
+    for r in reports:
+        label = r.stem.replace("report-", "")
+        dt = label[:8] + " " + label[9:11] + ":" + label[11:13] + " UTC"
+        active = " style='font-weight:bold;color:#f59e0b'" if r == archive_file else ""
+        archive_links += f"<li><a href='{r.name}'{active}>📄 {dt}</a></li>\n"
+
+    index_html = html_content.replace(
+        "</body>",
+        f"""<div style='max-width:900px;margin:2rem auto;padding:1rem;background:#1e293b;border-radius:8px;'>
+<h3 style='color:#94a3b8;margin-bottom:0.5rem'>📁 Report precedenti</h3>
+<ul style='color:#cbd5e1;line-height:2'>{archive_links}</ul>
+</div></body>"""
+    )
+
+    out = docs / "index.html"
+    out.write_text(index_html, encoding="utf-8")
+    print(f"\nReport salvato: {archive_file.name} → aggiornato index.html")
 
     print("\n[4] Invio Telegram...")
     send_telegram(qualified, total, run_date)
