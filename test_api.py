@@ -5,15 +5,32 @@ API_KEY = (os.environ.get("API_FOOTBALL_KEY") or "").strip()
 BASE    = "https://v3.football.api-sports.io"
 HDR     = {"x-apisports-key": API_KEY}
 
-print(f"API_KEY presente: {'SI' if API_KEY else 'NO — PROBLEMA'}")
-print(f"API_KEY lunghezza: {len(API_KEY)}")
+# Ieri
+yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
 
-tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
 r = requests.get(f"{BASE}/fixtures", headers=HDR,
-                 params={"date": tomorrow, "status": "NS"}, timeout=15)
+                 params={"date": yesterday}, timeout=15)
+data = r.json().get("response", [])
 
-print(f"HTTP status: {r.status_code}")
-print(f"Response keys: {list(r.json().keys())}")
-print(f"Results: {r.json().get('results', 'N/A')}")
-print(f"Errors: {r.json().get('errors', 'nessuno')}")
-print(f"Paging: {r.json().get('paging', 'N/A')}")
+print(f"Ieri {yesterday}: {len(data)} match totali\n")
+
+# Calcola ratio per ogni match con risultato FT
+results = []
+for fix in data:
+    if fix["fixture"]["status"]["short"] != "FT":
+        continue
+    gh = int(fix["goals"]["home"] or 0)
+    ga = int(fix["goals"]["away"] or 0)
+    results.append({
+        "league": fix["league"]["name"],
+        "country": fix["league"]["country"],
+        "home": fix["teams"]["home"]["name"],
+        "away": fix["teams"]["away"]["name"],
+        "goals": gh + ga
+    })
+
+# Ordina per goal totali nel match
+results.sort(key=lambda x: x["goals"], reverse=True)
+print(f"Top 20 match per goal segnati ieri:")
+for r in results[:20]:
+    print(f"  {r['goals']} goal — {r['home']} vs {r['away']} [{r['league']} / {r['country']}]")
