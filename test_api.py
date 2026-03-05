@@ -1,22 +1,15 @@
 import os, requests
-from datetime import datetime, timezone, timedelta
 
 API_KEY = (os.environ.get("API_FOOTBALL_KEY") or "").strip()
 BASE    = "https://v3.football.api-sports.io"
 HDR     = {"x-apisports-key": API_KEY}
 
-# Trova il fixture Club America vs Juarez — cerca nei prossimi giorni
-for days in range(5):
-    date = (datetime.now(timezone.utc) + timedelta(days=days)).strftime("%Y-%m-%d")
+for team_id, name in [(2287, "Club America"), (2298, "FC Juarez")]:
+    # Senza filtro lega — ultime 10 partite qualsiasi
     r = requests.get(f"{BASE}/fixtures", headers=HDR,
-                     params={"date": date, "status": "NS"}, timeout=15)
-    for fix in r.json().get("response", []):
-        home = fix["teams"]["home"]["name"]
-        away = fix["teams"]["away"]["name"]
-        if "america" in home.lower() or "america" in away.lower() or \
-           "juarez" in home.lower() or "juarez" in away.lower():
-            print(f"TROVATO: {home} vs {away}")
-            print(f"  league_id={fix['league']['id']} league_name={fix['league']['name']}")
-            print(f"  season={fix['league']['season']}")
-            print(f"  home_id={fix['teams']['home']['id']} away_id={fix['teams']['away']['id']}")
-            print(f"  date={date}")
+                     params={"team": team_id, "season": 2025, "last": 10}, timeout=15)
+    data = r.json().get("response", [])
+    ft = [m for m in data if m["fixture"]["status"]["short"] == "FT"]
+    print(f"\n{name} — FT trovati: {len(ft)}")
+    for m in ft:
+        print(f"  {m['fixture']['date'][:10]}  {m['teams']['home']['name']} {m['goals']['home']}-{m['goals']['away']} {m['teams']['away']['name']}  league_id={m['league']['id']} ({m['league']['name']})")
