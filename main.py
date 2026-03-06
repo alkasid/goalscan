@@ -418,6 +418,23 @@ def generate_html(matches, run_date, total_analyzed):
         ".pill.rc{background:rgba(255,71,87,.15);color:var(--red);}"
         ".pill.tot{color:#080d18;border-radius:6px;padding:2px 8px;font-size:.76rem;}"
         ".vs{font-size:1rem;color:var(--muted);font-weight:700;text-align:center;}"
+        ".live-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;"
+        "background:rgba(255,71,87,.15);color:#ff4757;padding:2px 7px;border-radius:100px;"
+        "animation:pulse 1.4s infinite;}"
+        ".live-badge.ht{background:rgba(255,140,0,.15);color:#ff8c00;animation:none;}"
+        ".live-badge.ft{background:rgba(85,96,128,.15);color:var(--muted);animation:none;}"
+        "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}"
+        ".score{font-size:1.1rem;font-weight:700;color:#fff;text-align:center;line-height:1;}"
+        ".score.goal-home{background:rgba(0,229,160,.12);border-radius:6px;}"
+        ".score.goal-away{background:rgba(0,229,160,.12);border-radius:6px;}"
+        ".card.scoring{border-color:rgba(0,229,160,.5);box-shadow:0 0 16px rgba(0,229,160,.15);"
+        "background:rgba(0,229,160,.06);}"
+        ".plane-bg{position:absolute;font-size:4rem;opacity:0.08;bottom:6px;right:10px;"
+        "animation:fly 3s ease-in-out infinite;pointer-events:none;}"
+        "@keyframes fly{0%{transform:translateX(0) rotate(-10deg)}"
+        "50%{transform:translateX(8px) rotate(-5deg)}"
+        "100%{transform:translateX(0) rotate(-10deg)}}"
+        ".card{position:relative;overflow:hidden;}"
         ".bet{font-size:.65rem;color:#00e5a0;text-align:center;margin-top:5px;opacity:.7;}"
         ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
         ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
@@ -434,17 +451,23 @@ def generate_html(matches, run_date, total_analyzed):
 
     def make_card(m):
         hs = m["home_stats"]; as_ = m["away_stats"]
+        fid = m.get("fixture_id","")
         return (
-            f'<div class="card"><div class="ct">'
+            f'<div class="card" data-fid="{fid}"><div class="ct">'
             f'<span class="league">{m["league"]}</span>'
-            f'<span class="ko">{m["kickoff"]}</span></div>'
+            f'<div style="display:flex;align-items:center;gap:6px;">'
+            f'<span class="live-score" style="display:none"></span>'
+            f'<span class="ko">{m["kickoff"]}</span></div></div>'
             f'<div class="mu"><div class="side">'
             f'<span class="tn">{m["home"]}</span>'
             f'<div class="pills">'
             f'<span class="pill g">+{hs["scored"]}</span>'
             f'<span class="pill rc">-{hs["conceded"]}</span>'
             f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>'
-            f'</div></div><span class="vs">VS</span>'
+            f'</div></div>'
+            f'<div style="text-align:center">'
+            f'<span class="vs">VS</span>'
+            f'<div class="score" data-score style="display:none"></div></div>'
             f'<div class="side r"><span class="tn">{m["away"]}</span>'
             f'<div class="pills">'
             f'<span class="pill g">+{as_["scored"]}</span>'
@@ -454,6 +477,7 @@ def generate_html(matches, run_date, total_analyzed):
             f'<div class="bet">✅ Bet365</div>'
             f'</div>'
         )
+
 
     if not matches:
         body = (f'<div class="empty"><h3>Nessun match qualificato</h3>'
@@ -491,6 +515,8 @@ def generate_html(matches, run_date, total_analyzed):
 
         body = "\n".join(sections)
 
+    live_script = '<script>\nconst PROXY=\'https://spring-hall-b29e.nwgir.workers.dev\';\nasync function updateLive(){\n  try{\n    var ids=[].slice.call(document.querySelectorAll(\'.card[data-fid]\')).map(function(c){return c.getAttribute(\'data-fid\');}).filter(Boolean).join(\'-\');\n    if(!ids)return;\n    fetch(PROXY+\'?endpoint=fixtures&ids=\'+ids).then(function(r){return r.json();}).then(function(data){\n      (data.response||[]).forEach(function(fix){\n        var fid=String(fix.fixture.id);\n        var card=document.querySelector(\'[data-fid="\'+fid+\'"]\');\n        if(!card)return;\n        var st=fix.fixture.status.short,min=fix.fixture.status.elapsed,hg=fix.goals.home,ag=fix.goals.away;\n        var b=card.querySelector(\'.live-score\');\n        if(!b)return;\n        var live=[\'1H\',\'2H\',\'ET\',\'P\'].indexOf(st)>=0,ht=st===\'HT\',ft=st===\'FT\';\n        if(live||ht||ft){b.style.display=\'inline-flex\';b.className=\'live-badge\'+(ht?\' ht\':ft?\' ft\':\'\');b.textContent=ft?\'FT\':ht?\'HT\':(min?min+"\'":st);}\n        if(hg!=null&&ag!=null){\n          var s=card.querySelector(\'[data-score]\');\n          if(s){s.textContent=hg+\' - \'+ag;s.style.display=\'block\';var v=card.querySelector(\'.vs\');if(v)v.style.display=\'none\';}\n          var ok=(hg===1&&ag===0)||(hg===0&&ag===1);\n          if(ok&&!card.classList.contains(\'scoring\')){card.classList.add(\'scoring\');var p=document.createElement(\'div\');p.className=\'plane-bg\';p.innerHTML=\'&#9992;&#65039;\';card.appendChild(p);}\n          else if(!ok){card.classList.remove(\'scoring\');var pl=card.querySelector(\'.plane-bg\');if(pl)pl.remove();}\n        }\n      });\n      var ts=document.getElementById(\'live-ts\');\n      if(ts)ts.textContent=\'\\ud83d\\udd04 \'+new Date().toLocaleTimeString();\n    });\n  }catch(e){console.log(\'live\',e);}\n}\nupdateLive();setInterval(updateLive,30000);\n</script>'
+
     return (
         f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -506,7 +532,7 @@ def generate_html(matches, run_date, total_analyzed):
         f'<span>Ultime <strong>{LAST_N}</strong> gare stessa lega</span>'
         f'<span>Solo campionati <strong>3 giorni</strong></span>'
         f'<span>Quote <strong>Bet365</strong> verificate</span>'
-        f'</div>{legend}{body}</body></html>'
+        f'</div>{legend}{body}{live_script}</body></html>'
     )
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
@@ -592,6 +618,11 @@ def main():
     out = docs / "index.html"
     out.write_text(index_html, encoding="utf-8")
     print(f"\nReport salvato: {archive_file.name} → aggiornato index.html")
+
+    # Salva lista fixture_id per live_updater.py
+    ids = [m["fixture_id"] for m in qualified if m.get("fixture_id")]
+    (docs / "alert_ids.json").write_text(json.dumps(ids))
+    print(f"alert_ids.json: {len(ids)} fixture da monitorare")
 
     print("\n[4] Invio Telegram...")
     send_telegram(qualified, total, run_date)
