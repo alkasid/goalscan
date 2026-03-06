@@ -92,7 +92,7 @@ def get_all_fixtures():
     fixtures_by_league = defaultdict(list)
 
     for date in dates:
-        data = api_get("fixtures", {"date": date, "status": "NS"})
+        data = api_get("fixtures", {"date": date, "status": "NS-1H-HT-2H-ET-P-FT"})
         print(f"  {date}: {len(data)} match raw")
         for fix in data:
             name_lower = fix.get("league", {}).get("name", "").lower()
