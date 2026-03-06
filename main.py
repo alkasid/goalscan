@@ -183,12 +183,12 @@ def analyze_fixture(fix):
     fixture_id  = fixture.get("id")
 
     try:
-        ko = datetime.fromtimestamp(
+        ko = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ).strftime("%H:%M")
-        match_date = datetime.fromtimestamp(
+        ) + timedelta(hours=1)).strftime("%H:%M")
+        match_date = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ).strftime("%Y-%m-%d")
+        ) + timedelta(hours=1)).strftime("%Y-%m-%d")
     except Exception:
         ko = "--:--"; match_date = "?"
 
