@@ -183,12 +183,12 @@ def analyze_fixture(fix):
     fixture_id  = fixture.get("id")
 
     try:
-        ko = (datetime.fromtimestamp(
+        ko = datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ) - timedelta(hours=1)).strftime("%H:%M")
-        match_date = (datetime.fromtimestamp(
+        ).strftime("%H:%M")
+        match_date = datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ) - timedelta(hours=1)).strftime("%Y-%m-%d")
+        ).strftime("%Y-%m-%d")
     except Exception:
         ko = "--:--"; match_date = "?"
 
@@ -251,10 +251,57 @@ def send_telegram(matches, total_analyzed, run_date):
         _tg_send("Nessun alert su " + str(total_analyzed) + " match analizzati.")
         return
 
+    # Mappa paese → bandiera
+    FLAGS = {
+        "Afghanistan":"🇦🇫","Albania":"🇦🇱","Algeria":"🇩🇿","Argentina":"🇦🇷",
+        "Armenia":"🇦🇲","Australia":"🇦🇺","Austria":"🇦🇹","Azerbaijan":"🇦🇿",
+        "Bangladesh":"🇧🇩","Belarus":"🇧🇾","Belgium":"🇧🇪","Bolivia":"🇧🇴",
+        "Bosnia and Herzegovina":"🇧🇦","Brazil":"🇧🇷","Bulgaria":"🇧🇬",
+        "Cambodia":"🇰🇭","Cameroon":"🇨🇲","Canada":"🇨🇦","Chile":"🇨🇱",
+        "China":"🇨🇳","Colombia":"🇨🇴","Costa Rica":"🇨🇷","Croatia":"🇭🇷",
+        "Cyprus":"🇨🇾","Czech Republic":"🇨🇿","Denmark":"🇩🇰","Ecuador":"🇪🇨",
+        "Egypt":"🇪🇬","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Estonia":"🇪🇪","Ethiopia":"🇪🇹",
+        "Finland":"🇫🇮","France":"🇫🇷","Gambia":"🇬🇲","Georgia":"🇬🇪",
+        "Germany":"🇩🇪","Ghana":"🇬🇭","Gibraltar":"🇬🇮","Greece":"🇬🇷",
+        "Guatemala":"🇬🇹","Guinea":"🇬🇳","Honduras":"🇭🇳","Hungary":"🇭🇺",
+        "Iceland":"🇮🇸","India":"🇮🇳","Indonesia":"🇮🇩","Iran":"🇮🇷",
+        "Iraq":"🇮🇶","Ireland":"🇮🇪","Israel":"🇮🇱","Italy":"🇮🇹",
+        "Jamaica":"🇯🇲","Japan":"🇯🇵","Jordan":"🇯🇴","Kazakhstan":"🇰🇿",
+        "Kenya":"🇰🇪","Kosovo":"🇽🇰","Kuwait":"🇰🇼","Kyrgyzstan":"🇰🇬",
+        "Laos":"🇱🇦","Latvia":"🇱🇻","Lesotho":"🇱🇸","Lithuania":"🇱🇹",
+        "Luxembourg":"🇱🇺","Macedonia":"🇲🇰","Malaysia":"🇲🇾","Mali":"🇲🇱",
+        "Malta":"🇲🇹","Mexico":"🇲🇽","Moldova":"🇲🇩","Montenegro":"🇲🇪",
+        "Morocco":"🇲🇦","Myanmar":"🇲🇲","Netherlands":"🇳🇱","New Zealand":"🇳🇿",
+        "Nicaragua":"🇳🇮","Nigeria":"🇳🇬","Northern Ireland":"🇬🇧","Norway":"🇳🇴",
+        "Oman":"🇴🇲","Panama":"🇵🇦","Paraguay":"🇵🇾","Peru":"🇵🇪",
+        "Philippines":"🇵🇭","Poland":"🇵🇱","Portugal":"🇵🇹","Romania":"🇷🇴",
+        "Russia":"🇷🇺","Rwanda":"🇷🇼","Saudi Arabia":"🇸🇦","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+        "Senegal":"🇸🇳","Serbia":"🇷🇸","Singapore":"🇸🇬","Slovakia":"🇸🇰",
+        "Slovenia":"🇸🇮","South Africa":"🇿🇦","South Korea":"🇰🇷","Spain":"🇪🇸",
+        "Sweden":"🇸🇪","Switzerland":"🇨🇭","Syria":"🇸🇾","Tajikistan":"🇹🇯",
+        "Tanzania":"🇹🇿","Thailand":"🇹🇭","Trinidad and Tobago":"🇹🇹",
+        "Tunisia":"🇹🇳","Turkey":"🇹🇷","Uganda":"🇺🇬","Ukraine":"🇺🇦",
+        "United Arab Emirates":"🇦🇪","Uruguay":"🇺🇾","USA":"🇺🇸",
+        "Uzbekistan":"🇺🇿","Venezuela":"🇻🇪","Vietnam":"🇻🇳","Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+        "World":"🌍","Yemen":"🇾🇪","Zambia":"🇿🇲","Zimbabwe":"🇿🇼",
+        "Burundi":"🇧🇮","Congo DR":"🇨🇩","Faroe Islands":"🇫🇴",
+        "Bosnia":"🇧🇦","Andorra":"🇦🇩","Bahrain":"🇧🇭","Benin":"🇧🇯",
+    }
+
+    # Formato data leggibile
+    def fmt_day(date_str):
+        try:
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            giorni = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"]
+            mesi   = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"]
+            return giorni[dt.weekday()] + " " + str(dt.day) + " " + mesi[dt.month-1]
+        except:
+            return date_str
+
     lines = []
-    lines.append("*⚽ GOAL BOT ALERT* — " + run_date)
-    lines.append("Criteri: >=" + str(THRESHOLD) + " goal ultime " + str(LAST_N) + " gare + Bet365")
-    lines.append("Analizzati: " + str(total_analyzed) + " | Alert: " + str(len(matches)))
+    lines.append("⚽ *GOAL SCAN* — " + run_date)
+    lines.append("📊 Analizzati: *" + str(total_analyzed) + "* | 🎯 Alert: *" + str(len(matches)) + "*")
+    lines.append("📌 Soglia: ≥" + str(THRESHOLD) + " goal | ultime " + str(LAST_N) + " gare | Bet365")
 
     # Raggruppa per giorno, ordina per orario
     days = {}
@@ -263,30 +310,45 @@ def send_telegram(matches, total_analyzed, run_date):
         days.setdefault(d, []).append(m)
 
     for day in sorted(days):
-        label = day_label.get(day, day)
+        base_label = day_label.get(day, day)
+        day_str    = fmt_day(day)
         lines.append("")
-        lines.append("━━━ " + label + " ━━━")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append("📅 *" + base_label + "* — " + day_str)
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━")
         for m in days[day]:
-            hs  = m["home_stats"]
-            as_ = m["away_stats"]
+            hs   = m["home_stats"]
+            as_  = m["away_stats"]
+            flag = FLAGS.get(m.get("country",""), "🏳️")
             lines.append("")
+            lines.append(flag + " *" + m["home"] + "* vs *" + m["away"] + "*")
+            lines.append("🕐 " + m["kickoff"] + "  |  🏆 " + m["league"])
             lines.append(
-                "🕐 *" + m["kickoff"] + "*  " + m["home"] + " vs " + m["away"]
-            )
-            lines.append(
-                "🏆 " + m["league"] + " | 🌍 " + m.get("country", "?")
-            )
-            lines.append(
-                "🏠 +" + str(hs["scored"]) + "-" + str(hs["conceded"]) +
-                "=*" + str(hs["total"]) + "*" +
-                "  ✈️ +" + str(as_["scored"]) + "-" + str(as_["conceded"]) +
-                "=*" + str(as_["total"]) + "*"
+                "📈 Casa: +" + str(hs["scored"]) + " -" + str(hs["conceded"]) +
+                " = *" + str(hs["total"]) + "*" +
+                "  |  Trasferta: +" + str(as_["scored"]) + " -" + str(as_["conceded"]) +
+                " = *" + str(as_["total"]) + "*"
             )
 
     msg = "\n".join(lines)
-    if len(msg) > 4000:
-        msg = msg[:4000] + "..."
-    _tg_send(msg)
+    # Telegram limite 4096 — se supera spezza in più messaggi
+    if len(msg) <= 4096:
+        _tg_send(msg)
+    else:
+        # Primo blocco: header + primo giorno
+        chunks = []
+        chunk = []
+        for line in lines:
+            chunk.append(line)
+            if len("\n".join(chunk)) > 3800 and line == "":
+                chunks.append("\n".join(chunk))
+                chunk = []
+        if chunk:
+            chunks.append("\n".join(chunk))
+        for i, c in enumerate(chunks):
+            if i > 0:
+                c = "_(continua...)_\n" + c
+            _tg_send(c)
 
 # ── Helpers HTML ─────────────────────────────────────────────────────────────
 def badge_color(t):
