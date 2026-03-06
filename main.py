@@ -36,9 +36,32 @@ TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
 
 SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
 
-# ── Cache ────────────────────────────────────────────────────────────────────
+# ── Cache in memoria ─────────────────────────────────────────────────────────
 _cache = {}
 _api_sem = threading.Semaphore(3)  # max 3 chiamate contemporanee
+
+# ── Cache persistente su disco (24h) ─────────────────────────────────────────
+_DISK_CACHE_FILE = Path("cache_teams.json")
+
+def _load_disk_cache():
+    if _DISK_CACHE_FILE.exists():
+        try:
+            data = json.loads(_DISK_CACHE_FILE.read_text())
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            if data.get("date") == today:
+                return data.get("teams", {})
+        except Exception:
+            pass
+    return {}
+
+def _save_disk_cache(teams_data):
+    try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        _DISK_CACHE_FILE.write_text(json.dumps({"date": today, "teams": teams_data}))
+    except Exception:
+        pass
+
+_disk_cache = _load_disk_cache()
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 def api_get(endpoint, params=None, retries=3):
@@ -94,6 +117,13 @@ def get_last_n(team_id, league_id, season):
     if key in _cache:
         return _cache[key]
 
+    # Controlla cache su disco (stessa giornata)
+    disk_key = f"{team_id}_{league_id}_{season}"
+    if disk_key in _disk_cache:
+        result = _disk_cache[disk_key]
+        _cache[key] = result
+        return result
+
     data = api_get("fixtures", {
         "team":   team_id,
         "league": league_id,
@@ -108,6 +138,8 @@ def get_last_n(team_id, league_id, season):
 
     if len(finished) < LAST_N:
         _cache[key] = None
+        _disk_cache[disk_key] = None
+        _save_disk_cache(_disk_cache)
         return None
 
     scored = conceded = 0
@@ -126,6 +158,8 @@ def get_last_n(team_id, league_id, season):
               "total": scored + conceded,
               "qualifies": (scored + conceded) >= THRESHOLD}
     _cache[key] = result
+    _disk_cache[disk_key] = result
+    _save_disk_cache(_disk_cache)
     return result
 
 # ── Verifica quote Bet365 per un fixture ─────────────────────────────────────
