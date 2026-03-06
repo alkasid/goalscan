@@ -7,7 +7,9 @@ HDR     = {"x-apisports-key": API_KEY}
 
 # Status key
 r = requests.get(f"{BASE}/status", headers=HDR, timeout=15)
-print("Status key:", r.json().get("response", {}).get("requests", "?"))
+resp = r.json().get("response", [{}])
+if isinstance(resp, list): resp = resp[0] if resp else {}
+print("Status key:", resp.get("requests", "?"))
 
 # Fixtures domani senza filtro status
 tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
