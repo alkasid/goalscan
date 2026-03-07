@@ -212,10 +212,12 @@ def analyze_fixture(fix):
     if not odds_ok:
         return None, f"✅ goal OK ma ❌ no quote Bet365 — {home_name}:{hs['total']} {away_name}:{as_['total']}"
 
+    match_status = fixture.get("status", {}).get("short", "NS")
     return {"home": home_name, "away": away_name,
             "home_stats": hs, "away_stats": as_,
             "league": league_name, "country": country, "kickoff": ko,
-            "date": match_date, "fixture_id": fixture_id}, \
+            "date": match_date, "fixture_id": fixture_id,
+            "status": match_status}, \
            f"✅✅ ALERT+QUOTE | {home_name}:{hs['total']} {away_name}:{as_['total']}"
 
 
@@ -485,13 +487,33 @@ def generate_html(matches, run_date, total_analyzed):
                 f'nelle ultime {LAST_N} gare stessa lega.<br>'
                 f'Match analizzati: <strong>{total_analyzed}</strong></p></div>')
     else:
+        LIVE_STATUS = {"1H", "HT", "2H", "ET", "P"}
+
+        # Separa live dal resto
+        live_matches = [m for m in matches if m.get("status") in LIVE_STATUS]
+        other_matches = [m for m in matches if m.get("status") not in LIVE_STATUS]
+
+        sections = []
+
+        # Sezione LIVE in cima
+        if live_matches:
+            live_cards = "".join(make_card(m) for m in live_matches)
+            sections.append(
+                f'<div class="day-block">'
+                f'<div class="day-header" style="border-left:3px solid #ff4757;padding-left:12px">'
+                f'<span class="day-label" style="color:#ff4757">🔴 LIVE</span>'
+                f'<span class="day-count">{len(live_matches)} in corso</span>'
+                f'<div class="day-line" style="background:linear-gradient(90deg,rgba(255,71,87,.5),transparent)"></div></div>'
+                f'<div class="ts"><div class="grid">{live_cards}</div></div></div>'
+            )
+
+        # Resto ordinato per data/orario
         days = {}
-        for m in sorted(matches, key=lambda x: (x["date"], x["kickoff"])):
+        for m in sorted(other_matches, key=lambda x: (x["date"], x["kickoff"])):
             d = m["date"]
             s = slot(m["kickoff"])
             days.setdefault(d, {}).setdefault(s, []).append(m)
 
-        sections = []
         for day in sorted(days):
             label     = day_labels.get(day, f"📅 {day}")
             day_total = sum(len(v) for v in days[day].values())
