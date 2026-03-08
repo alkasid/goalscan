@@ -611,6 +611,10 @@ def generate_html(matches, run_date, total_analyzed):
     live_script = '''<script>
 const PROXY='https://spring-hall-b29e.nwgir.workers.dev';
 const LIVE_ST=['1H','2H','ET','P','HT'];
+const FT_ST=['FT','AET','PEN'];
+const PLANE='\u2708\uFE0F';
+const REFRESH='\uD83D\uDD04';
+
 async function updateLive(){
   try{
     var all=[].slice.call(document.querySelectorAll('.card[data-fid]'));
@@ -624,39 +628,9 @@ async function updateLive(){
       var data=await r.json();
       fixtures=fixtures.concat(data.response||[]);
     }
-    var fixtureMap={};
-    fixtures.forEach(function(fix){fixtureMap[String(fix.fixture.id)]=fix;});
+    var fmap={};
+    fixtures.forEach(function(f){fmap[String(f.fixture.id)]=f;});
 
-    // Aggiorna ogni card
-    all.forEach(function(card){
-      var fid=card.getAttribute('data-fid');
-      var fix=fixtureMap[fid]; if(!fix)return;
-      var st=fix.fixture.status.short,min=fix.fixture.status.elapsed;
-      var hg=fix.goals.home,ag=fix.goals.away;
-      var b=card.querySelector('.live-score');
-      if(!b)return;
-      var isLive=LIVE_ST.indexOf(st)>=0,ht=st==='HT',ft=st==='FT';
-      if(isLive||ht||ft){
-        b.style.display='inline-flex';
-        b.className='live-score'+(ht?' ht':ft?' ft':'');
-        b.textContent=ft?'FT':ht?'HT':(min?min+"'":st);
-      }
-      if(hg!=null&&ag!=null){
-        var s=card.querySelector('[data-score]');
-        var v=card.querySelector('.vs');
-        if(s){s.textContent=hg+' — '+ag;s.style.display='block';if(v)v.style.display='none';}
-        var hasGoal=(hg+ag)>0;
-        if(hasGoal&&!card.querySelector('.plane-bg')){
-          card.classList.add('scoring');
-          var p=document.createElement('div');p.className='plane-bg';p.textContent='\u2708\ufe0f';card.appendChild(p);
-        } else if(!hasGoal){
-          card.classList.remove('scoring');
-          var pl=card.querySelector('.plane-bg');if(pl)pl.remove();
-        }
-      }
-    });
-
-    // Sposta card live nelle due griglie: 00 e goal
     var liveSection=document.getElementById('live-section');
     var grid00=document.getElementById('live-grid-00');
     var gridGoal=document.getElementById('live-grid-goal');
@@ -664,39 +638,72 @@ async function updateLive(){
     var subGoal=document.getElementById('sub-goal');
     if(!liveSection||!grid00||!gridGoal)return;
 
-    fixtures.forEach(function(fix){
-      var fid=String(fix.fixture.id);
+    all.forEach(function(card){
+      var fid=card.getAttribute('data-fid');
+      var fix=fmap[fid]; if(!fix)return;
       var st=fix.fixture.status.short;
-      var hg=fix.goals.home||0, ag=fix.goals.away||0;
-      if(LIVE_ST.indexOf(st)<0)return;
-      var card=document.querySelector('.card[data-fid="'+fid+'"]');
-      if(!card)return;
-      var hasGoal=(hg+ag)>0;
-      var targetGrid=hasGoal?gridGoal:grid00;
-      if(card.parentElement!==targetGrid){
-        var oldParent=card.parentElement;
-        targetGrid.appendChild(card);
-        liveSection.style.display='';
-        if(oldParent&&oldParent!==grid00&&oldParent!==gridGoal){
-          if(oldParent.querySelectorAll('.card').length===0){
-            var ts=oldParent.closest('.tgroup');
-            if(ts)ts.style.display='none';
+      var min=fix.fixture.status.elapsed;
+      var hg=fix.goals.home; var ag=fix.goals.away;
+      var isLive=LIVE_ST.indexOf(st)>=0;
+      var isHT=st==='HT';
+      var isFT=FT_ST.indexOf(st)>=0;
+      var hasGoal=((hg||0)+(ag||0))>0;
+
+      // Badge minuto
+      var b=card.querySelector('.live-score');
+      if(b&&(isLive||isHT||isFT)){
+        b.style.display='inline-flex';
+        b.className='live-score'+(isHT?' ht':isFT?' ft':'');
+        b.textContent=isFT?'FT':isHT?'HT':(min?min+"'":st);
+      }
+
+      // Punteggio
+      if(hg!=null&&ag!=null){
+        var s=card.querySelector('[data-score]');
+        var v=card.querySelector('.vs');
+        if(s){s.textContent=hg+' - '+ag;s.style.display='block';if(v)v.style.display='none';}
+      }
+
+      // Sposta in live se partita iniziata
+      if(isLive||isHT){
+        var targetGrid=hasGoal?gridGoal:grid00;
+        if(card.parentElement!==grid00&&card.parentElement!==gridGoal){
+          // Arriva da una sezione oraria — spostala
+          var oldGrid=card.parentElement;
+          targetGrid.appendChild(card);
+          liveSection.style.display='';
+          if(oldGrid){
+            var tg=oldGrid.closest('.tgroup');
+            if(tg&&tg.querySelectorAll('.card[data-fid]').length===0)tg.style.display='none';
+            var db=oldGrid.closest('.day-block');
+            if(db&&db.querySelectorAll('.tgroup:not([style*="none"])').length===0)db.style.display='none';
           }
+        } else if(hasGoal&&card.parentElement===grid00){
+          // Era 0-0, ora ha segnato
+          gridGoal.appendChild(card);
+        } else if(!hasGoal&&card.parentElement===gridGoal){
+          grid00.appendChild(card);
+        }
+
+        // Stile card
+        if(hasGoal){
+          card.classList.remove('zerozero');card.classList.add('scoring');
+          if(!card.querySelector('.plane-bg')){
+            var p=document.createElement('div');p.className='plane-bg';p.textContent=PLANE;card.appendChild(p);
+          }
+        } else {
+          card.classList.add('zerozero');card.classList.remove('scoring');
+          var pl=card.querySelector('.plane-bg');if(pl)pl.remove();
         }
       }
-      // zerozero class
-      if(!hasGoal){card.classList.add('zerozero');card.classList.remove('scoring');}
-      else{card.classList.remove('zerozero');}
     });
 
-    // Mostra/nascondi sub-label goal
-    if(gridGoal.querySelectorAll('.card').length>0){subGoal.style.display='';}
-    else{subGoal.style.display='none';}
-    if(grid00.querySelectorAll('.card').length>0){sub00.style.display='';}
-    else{sub00.style.display='none';}
+    // Sub-label visibilità
+    subGoal.style.display=gridGoal.querySelectorAll('.card').length>0?'':'none';
+    sub00.style.display=grid00.querySelectorAll('.card').length>0?'':'none';
 
     var ts=document.getElementById('live-ts');
-    if(ts)ts.textContent='\ud83d\udd04 '+new Date().toLocaleTimeString();
+    if(ts)ts.textContent=REFRESH+' '+new Date().toLocaleTimeString();
   }catch(e){console.log('live',e);}
 }
 updateLive();setInterval(updateLive,15000);
