@@ -796,7 +796,7 @@ def main():
     # Salva report con timestamp (archivio permanente)
     archive_file = docs / f"report-{run_slug}.html"
     html_content = generate_html(qualified, run_date, total)
-    archive_file.write_text(html_content, encoding="utf-8")
+    archive_file.write_text(html_content.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
 
     # Aggiorna index.html = ultimo report + link archivio
     # Raccoglie tutti i report esistenti
@@ -817,7 +817,7 @@ def main():
     )
 
     out = docs / "index.html"
-    out.write_text(index_html, encoding="utf-8")
+    out.write_text(index_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
     print(f"\nReport salvato: {archive_file.name} → aggiornato index.html")
 
     # Salva lista fixture_id per live_updater.py
