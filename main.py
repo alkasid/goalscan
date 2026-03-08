@@ -570,10 +570,17 @@ def generate_html(matches, run_date, total_analyzed):
         # Pre-popola con match live già noti al momento del run
         # (il JS poi riordina dinamicamente)
         if live_matches:
-            pre_00   = "".join(make_card(m, "LIVE") for m in live_matches)
+            pre_00   = "".join(make_card(m, "LIVE") for m in live_matches
+                                if (m.get('goals_home',0) or 0)+(m.get('goals_away',0) or 0)==0)
+            pre_goal = "".join(make_card(m, "LIVE") for m in live_matches
+                                if (m.get('goals_home',0) or 0)+(m.get('goals_away',0) or 0)>0)
             live_section = live_section.replace(
                 '<div class="grid" id="live-grid-00"></div>',
                 f'<div class="grid" id="live-grid-00">{pre_00}</div>'
+            )
+            live_section = live_section.replace(
+                '<div class="grid" id="live-grid-goal"></div>',
+                f'<div class="grid" id="live-grid-goal">{pre_goal}</div>'
             )
 
         sections.append(live_section)
@@ -665,7 +672,7 @@ async function updateLive(){
       }
 
       // Sposta in live se partita iniziata
-      if(isLive||isHT){
+      if((isLive||isHT)&&!isFT){
         var targetGrid=hasGoal?gridGoal:grid00;
         if(card.parentElement!==grid00&&card.parentElement!==gridGoal){
           // Arriva da una sezione oraria — spostala
