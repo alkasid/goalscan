@@ -364,101 +364,160 @@ def slot(ko):
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 def generate_html(matches, run_date, total_analyzed):
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from datetime import datetime, timezone, timedelta
+    today     = datetime.now(timezone.utc)
+    today_str = today.strftime("%Y-%m-%d")
+    d1_str    = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+    d2_str    = (today + timedelta(days=2)).strftime("%Y-%m-%d")
+
+    def fmt_short(d):
+        try:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            mesi = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"]
+            return f"{dt.day} {mesi[dt.month-1]}"
+        except: return d
+
     day_labels = {
         today_str: "📅 OGGI",
-        (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d"): "📅 DOMANI",
-        (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d"): "📅 DOPODOMANI",
+        d1_str:    "📅 DOMANI",
+        d2_str:    "📅 DOPODOMANI",
     }
 
+    # Range copertura bot
+    date_range = f"{fmt_short(today_str)} → {fmt_short(d2_str)}"
+
     css = (
-        ":root{--bg:#080d18;--surface:#0f1623;--card:#151e2e;--accent:#00e5a0;"
-        "--red:#ff4757;--text:#dde3f0;--muted:#556080;--border:rgba(255,255,255,0.06);}"
+        "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');"
+        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#00e5a0;"
+        "--red:#ff3a3a;--orange:#ff8c00;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}"
         "*{box-sizing:border-box;margin:0;padding:0;}"
         "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
-        "header{background:var(--surface);border-bottom:1px solid var(--border);"
-        "padding:14px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;}"
-        ".htitle{font-size:1.4rem;font-weight:700;color:var(--accent);}"
-        ".hsub{font-size:.72rem;color:var(--muted);margin-top:3px;}"
-        ".hbadge{margin-left:auto;background:var(--accent);color:#080d18;"
-        "font-weight:700;padding:6px 18px;border-radius:100px;font-size:1rem;white-space:nowrap;}"
-        ".cbar{background:rgba(0,229,160,0.04);border-bottom:1px solid var(--border);"
-        "padding:7px 28px;font-size:.73rem;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;}"
-        ".cbar strong{color:var(--accent);}"
-        ".legend{display:flex;gap:16px;padding:14px 20px 4px;flex-wrap:wrap;}"
-        ".leg-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted);}"
-        ".leg-dot{width:10px;height:10px;border-radius:3px;}"
-        ".day-block{margin:24px 0 0;}"
-        ".day-header{padding:10px 16px 6px;display:flex;align-items:center;gap:12px;}"
-        ".day-label{font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:.04em;}"
-        ".day-count{font-size:.72rem;color:var(--muted);background:rgba(255,255,255,0.07);"
-        "padding:2px 10px;border-radius:100px;}"
-        ".day-line{flex:1;height:2px;background:linear-gradient(90deg,rgba(0,229,160,.35),transparent);}"
-        ".ts{margin:10px 16px 0;}"
+        # header
+        "header{background:rgba(8,13,24,0.95);backdrop-filter:blur(16px);"
+        "border-bottom:1px solid var(--border);padding:12px 24px;"
+        "display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:50;}"
+        ".logo{display:flex;align-items:center;gap:10px;}"
+        ".logo-icon{font-size:1.4rem;}"
+        ".logo-text{font-size:1.25rem;font-weight:700;"
+        "background:linear-gradient(90deg,#fff 0%,var(--accent) 100%);"
+        "-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.01em;}"
+        ".logo-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);"
+        "letter-spacing:.15em;display:block;margin-top:-3px;-webkit-text-fill-color:var(--muted);}"
+        ".hdivider{width:1px;height:28px;background:var(--border);}"
+        ".hstats{display:flex;gap:20px;}"
+        ".hstat{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);"
+        "display:flex;align-items:center;gap:5px;}"
+        ".hstat strong{color:var(--accent);font-size:.85rem;}"
+        ".hright{margin-left:auto;display:flex;align-items:center;gap:12px;}"
+        ".pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--red);"
+        "box-shadow:0 0 6px var(--red);animation:pdot 1.4s infinite;}"
+        "@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}"
+        ".live-tag{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);font-weight:500;letter-spacing:.1em;}"
+        ".update-time{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}"
+        # scanbar
+        ".scanbar{background:rgba(0,229,160,0.03);border-bottom:1px solid rgba(0,229,160,0.08);"
+        "padding:6px 24px;display:flex;gap:0;align-items:center;"
+        "font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);overflow:hidden;white-space:nowrap;flex-wrap:wrap;}"
+        ".scanbar-item{display:flex;align-items:center;gap:4px;padding:0 14px;border-right:1px solid rgba(255,255,255,0.06);}"
+        ".scanbar-item:first-child{padding-left:0;}"
+        ".scanbar-item::before{content:'›';color:var(--accent);margin-right:3px;}"
+        ".scanbar span{color:var(--accent);}"
+        # wrap
+        ".wrap{padding:0 20px;}"
+        # section head
+        ".section-head{display:flex;align-items:center;gap:12px;padding:18px 0 10px;}"
+        ".section-label{font-size:1rem;font-weight:700;letter-spacing:.02em;}"
+        ".section-label.slive{color:var(--red);}"
+        ".section-label.sday{color:var(--text);}"
+        ".section-badge{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);"
+        "background:rgba(255,255,255,0.04);padding:2px 9px;border-radius:100px;border:1px solid var(--border);}"
+        ".section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,0.07),transparent);}"
+        ".section-line.red{background:linear-gradient(90deg,rgba(255,58,58,0.3),transparent);}"
+        # subsection
+        ".sub-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);"
+        "letter-spacing:.1em;text-transform:uppercase;padding:6px 0 8px;"
+        "display:flex;align-items:center;gap:8px;}"
+        ".sub-label::after{content:'';flex:1;height:1px;background:var(--border);}"
+        ".sub-label.bl{color:#6aa3ff;}"
+        ".sub-label.gr{color:var(--accent);}"
+        # time group
+        ".tgroup{margin-bottom:18px;}"
         ".th{display:flex;align-items:center;gap:10px;margin-bottom:8px;}"
-        ".tl{font-size:.85rem;font-weight:700;color:var(--accent);}"
-        ".tc{font-size:.68rem;color:var(--muted);background:rgba(255,255,255,0.05);"
-        "padding:2px 8px;border-radius:100px;}"
+        ".tl{font-family:'DM Mono',monospace;font-size:.78rem;font-weight:500;color:var(--accent);}"
+        ".tc{font-size:.65rem;color:var(--muted);}"
         ".th::after{content:'';flex:1;height:1px;background:var(--border);}"
-        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;}"
-        ".card{background:var(--card);border:1px solid var(--border);border-radius:12px;"
-        "padding:11px 13px;transition:transform .15s,box-shadow .15s;}"
-        ".card:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,229,160,.12);}"
+        # grid & card
+        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(278px,1fr));gap:8px;margin-bottom:14px;}"
+        ".card{border-radius:10px;padding:11px 13px;border:1px solid var(--border);"
+        "position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s;}"
+        ".card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;"
+        "background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent);}"
+        ".card:hover{transform:translateY(-2px);}"
+        ".card.normal{background:var(--card);}"
+        ".card.normal:hover{box-shadow:0 6px 24px rgba(0,0,0,.5);}"
+        ".card.zerozero{background:linear-gradient(135deg,#0e3580 0%,#1452cc 40%,#1a6aff 60%,#0e3580 100%);"
+        "border-color:rgba(60,130,255,0.75);"
+        "box-shadow:0 0 24px rgba(40,110,255,0.25),inset 0 1px 0 rgba(255,255,255,0.1);}"
+        ".card.zerozero:hover{box-shadow:0 0 36px rgba(40,110,255,0.45);}"
+        ".card.zerozero::before{content:'';position:absolute;top:-100%;left:0;right:0;height:40%;"
+        "background:linear-gradient(180deg,transparent,rgba(255,255,255,0.04),transparent);"
+        "animation:scan 4s linear infinite;pointer-events:none;}"
+        "@keyframes scan{to{top:200%;}}"
+        ".card.scoring{background:linear-gradient(135deg,#061510 0%,#0a2018 50%,#061510 100%);"
+        "border-color:rgba(0,229,160,.35);box-shadow:0 0 18px rgba(0,229,160,.1);}"
+        ".card.scoring:hover{box-shadow:0 0 28px rgba(0,229,160,.22);}"
+        # corner tag
+        ".ctag{position:absolute;top:0;right:0;font-family:'DM Mono',monospace;font-size:.48rem;"
+        "letter-spacing:.08em;color:var(--muted);background:rgba(255,255,255,0.04);"
+        "padding:2px 6px;border-radius:0 10px 0 6px;"
+        "border-left:1px solid var(--border);border-bottom:1px solid var(--border);}"
+        # card internals
         ".ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}"
-        ".league{font-size:.67rem;color:var(--muted);white-space:nowrap;overflow:hidden;"
-        "text-overflow:ellipsis;max-width:72%;}"
-        ".ko{font-size:.72rem;color:var(--accent);font-weight:700;}"
+        ".league{font-size:.65rem;color:var(--muted);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;}"
+        ".card.zerozero .league{color:#8ab8ff;}"
+        ".cright{display:flex;align-items:center;gap:6px;}"
+        ".ko{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--accent);font-weight:500;}"
+        ".live-score{display:none;font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;"
+        "background:rgba(255,58,58,.12);color:var(--red);padding:1px 6px;border-radius:4px;"
+        "border:1px solid rgba(255,58,58,.2);animation:lbpulse 1.4s infinite;}"
+        ".live-score.ht{background:rgba(255,140,0,.1);color:var(--orange);border-color:rgba(255,140,0,.2);animation:none;}"
+        ".live-score.ft{background:rgba(74,85,112,.1);color:var(--muted);border-color:rgba(74,85,112,.15);animation:none;}"
+        "@keyframes lbpulse{0%,100%{opacity:1}50%{opacity:.35}}"
         ".mu{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;}"
-        ".side{display:flex;flex-direction:column;gap:5px;}"
+        ".side{display:flex;flex-direction:column;gap:4px;}"
         ".side.r{align-items:flex-end;text-align:right;}"
-        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;white-space:nowrap;"
-        "overflow:hidden;text-overflow:ellipsis;max-width:118px;}"
+        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;}"
         ".pills{display:flex;gap:3px;align-items:center;}"
         ".side.r .pills{justify-content:flex-end;}"
-        ".pill{font-size:.7rem;font-weight:700;padding:2px 6px;border-radius:4px;}"
-        ".pill.g{background:rgba(0,229,160,.15);color:var(--accent);}"
-        ".pill.rc{background:rgba(255,71,87,.15);color:var(--red);}"
-        ".pill.tot{color:#080d18;border-radius:6px;padding:2px 8px;font-size:.76rem;}"
-        ".vs{font-size:1rem;color:var(--muted);font-weight:700;text-align:center;}"
-        ".live-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;"
-        "background:rgba(255,71,87,.15);color:#ff4757;padding:2px 7px;border-radius:100px;"
-        "animation:pulse 1.4s infinite;}"
-        ".live-badge.ht{background:rgba(255,140,0,.15);color:#ff8c00;animation:none;}"
-        ".live-badge.ft{background:rgba(85,96,128,.15);color:var(--muted);animation:none;}"
-        "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}"
-        ".score{font-size:1.1rem;font-weight:700;color:#fff;text-align:center;line-height:1;}"
-        ".score.goal-home{background:rgba(0,229,160,.12);border-radius:6px;}"
-        ".score.goal-away{background:rgba(0,229,160,.12);border-radius:6px;}"
-        ".card.scoring{border-color:rgba(0,229,160,.5);box-shadow:0 0 16px rgba(0,229,160,.15);"
-        "background:rgba(0,229,160,.06);}"
+        ".pill{font-size:.67rem;font-weight:700;padding:2px 5px;border-radius:3px;}"
+        ".pill.g{background:rgba(0,229,160,.12);color:var(--accent);}"
+        ".pill.rc{background:rgba(255,58,58,.12);color:var(--red);}"
+        ".pill.tot{color:#05080f;border-radius:5px;padding:2px 7px;}"
+        ".center{text-align:center;}"
+        ".vs{font-size:.95rem;color:var(--muted);font-weight:700;}"
+        ".score-val{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#fff;line-height:1;display:none;}"
+        ".card.zerozero .score-val{text-shadow:0 0 14px rgba(120,180,255,0.8);}"
+        ".bet{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--accent);"
+        "text-align:center;margin-top:7px;opacity:.55;letter-spacing:.05em;}"
         ".plane-bg{position:absolute;font-size:4rem;opacity:0.08;bottom:6px;right:10px;"
         "animation:fly 3s ease-in-out infinite;pointer-events:none;}"
-        "@keyframes fly{0%{transform:translateX(0) rotate(-10deg)}"
-        "50%{transform:translateX(8px) rotate(-5deg)}"
-        "100%{transform:translateX(0) rotate(-10deg)}}"
-        ".card{position:relative;overflow:hidden;}"
-        ".bet{font-size:.65rem;color:#00e5a0;text-align:center;margin-top:5px;opacity:.7;}"
+        "@keyframes fly{0%{transform:translateX(0) rotate(-10deg)}50%{transform:translateX(8px) rotate(-5deg)}100%{transform:translateX(0) rotate(-10deg)}}"
+        ".day-block{margin:0;}"
         ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
         ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
     )
 
-    legend = (
-        '<div class="legend">'
-        '<span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>14–16 goal</span>'
-        '<span class="leg-item"><span class="leg-dot" style="background:#ff8c00"></span>17–19 goal</span>'
-        '<span class="leg-item"><span class="leg-dot" style="background:#ff4757"></span>≥20 goal</span>'
-        '<span class="leg-item" style="margin-left:8px">+F=fatti &nbsp;|&nbsp; -S=subiti &nbsp;|&nbsp; TOT=somma 5 gare &nbsp;|&nbsp; ✅ quote Bet365</span>'
-        '</div>'
-    )
-
-    def make_card(m):
+    def make_card(m, corner=""):
         hs = m["home_stats"]; as_ = m["away_stats"]
         fid = m.get("fixture_id","")
+        country = m.get("country","")
+        league_display = f'{m["league"]} · {country}' if country and country != "World" else m["league"]
+        ctag = f'<div class="ctag">{corner}</div>' if corner else ""
         return (
-            f'<div class="card" data-fid="{fid}"><div class="ct">'
-            f'<span class="league">{m["league"]}</span>'
-            f'<div style="display:flex;align-items:center;gap:6px;">'
-            f'<span class="live-score" style="display:none"></span>'
+            f'<div class="card normal" data-fid="{fid}">{ctag}<div class="ct">'
+            f'<span class="league">{league_display}</span>'
+            f'<div class="cright">'
+            f'<span class="live-score"></span>'
             f'<span class="ko">{m["kickoff"]}</span></div></div>'
             f'<div class="mu"><div class="side">'
             f'<span class="tn">{m["home"]}</span>'
@@ -467,19 +526,18 @@ def generate_html(matches, run_date, total_analyzed):
             f'<span class="pill rc">-{hs["conceded"]}</span>'
             f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>'
             f'</div></div>'
-            f'<div style="text-align:center">'
+            f'<div class="center">'
             f'<span class="vs">VS</span>'
-            f'<div class="score" data-score style="display:none"></div></div>'
+            f'<div class="score-val" data-score></div></div>'
             f'<div class="side r"><span class="tn">{m["away"]}</span>'
             f'<div class="pills">'
             f'<span class="pill g">+{as_["scored"]}</span>'
             f'<span class="pill rc">-{as_["conceded"]}</span>'
             f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>'
             f'</div></div></div>'
-            f'<div class="bet">✅ Bet365</div>'
+            f'<div class="bet">✅ BET365 VERIFIED</div>'
             f'</div>'
         )
-
 
     if not matches:
         body = (f'<div class="empty"><h3>Nessun match qualificato</h3>'
@@ -487,27 +545,42 @@ def generate_html(matches, run_date, total_analyzed):
                 f'nelle ultime {LAST_N} gare stessa lega.<br>'
                 f'Match analizzati: <strong>{total_analyzed}</strong></p></div>')
     else:
-        LIVE_STATUS = {"1H", "HT", "2H", "ET", "P"}
+        LIVE_STATUS = {"1H","HT","2H","ET","P"}
 
-        # Separa live dal resto
-        live_matches = [m for m in matches if m.get("status") in LIVE_STATUS]
+        live_matches  = [m for m in matches if m.get("status") in LIVE_STATUS]
         other_matches = [m for m in matches if m.get("status") not in LIVE_STATUS]
 
         sections = []
 
-        # Sezione LIVE in cima
+        # ── Sezione LIVE sempre presente ──
+        live_00      = [m for m in live_matches if True]  # placeholder, JS riordina
+        live_section = (
+            f'<div class="day-block" id="live-section"{"" if live_matches else " style=\'display:none\'"} >'
+            f'<div class="section-head">'
+            f'<span class="section-label slive">🔴 LIVE</span>'
+            f'<span class="section-badge">{len(live_matches)} in corso</span>'
+            f'<div class="section-line red"></div></div>'
+            # subsection 0-0
+            f'<div class="sub-label bl" id="sub-00">⬤ &nbsp;0 — 0 &nbsp;·&nbsp; ancora aperti</div>'
+            f'<div class="grid" id="live-grid-00"></div>'
+            # subsection con goal
+            f'<div class="sub-label gr" id="sub-goal" style="display:none">✈️ &nbsp;in gol</div>'
+            f'<div class="grid" id="live-grid-goal"></div>'
+            f'</div>'
+        )
+
+        # Pre-popola con match live già noti al momento del run
+        # (il JS poi riordina dinamicamente)
         if live_matches:
-            live_cards = "".join(make_card(m) for m in live_matches)
-            sections.append(
-                f'<div class="day-block">'
-                f'<div class="day-header" style="border-left:3px solid #ff4757;padding-left:12px">'
-                f'<span class="day-label" style="color:#ff4757">🔴 LIVE</span>'
-                f'<span class="day-count">{len(live_matches)} in corso</span>'
-                f'<div class="day-line" style="background:linear-gradient(90deg,rgba(255,71,87,.5),transparent)"></div></div>'
-                f'<div class="ts"><div class="grid live-grid">{live_cards}</div></div></div>'
+            pre_00   = "".join(make_card(m, "LIVE") for m in live_matches)
+            live_section = live_section.replace(
+                '<div class="grid" id="live-grid-00"></div>',
+                f'<div class="grid" id="live-grid-00">{pre_00}</div>'
             )
 
-        # Resto ordinato per data/orario
+        sections.append(live_section)
+
+        # ── Resto NS/FT per data/orario ──
         days = {}
         for m in sorted(other_matches, key=lambda x: (x["date"], x["kickoff"])):
             d = m["date"]
@@ -519,15 +592,15 @@ def generate_html(matches, run_date, total_analyzed):
             day_total = sum(len(v) for v in days[day].values())
             day_html  = (
                 f'<div class="day-block">'
-                f'<div class="day-header">'
-                f'<span class="day-label">{label}</span>'
-                f'<span class="day-count">{day_total} alert</span>'
-                f'<div class="day-line"></div></div>'
+                f'<div class="section-head">'
+                f'<span class="section-label sday">{label}</span>'
+                f'<span class="section-badge">{day_total} alert</span>'
+                f'<div class="section-line"></div></div>'
             )
             for ts in sorted(days[day]):
                 cards = "".join(make_card(m) for m in days[day][ts])
                 day_html += (
-                    f'<div class="ts"><div class="th">'
+                    f'<div class="tgroup"><div class="th">'
                     f'<span class="tl">⏱ {ts}</span>'
                     f'<span class="tc">{len(days[day][ts])} match</span>'
                     f'</div><div class="grid">{cards}</div></div>'
@@ -537,26 +610,133 @@ def generate_html(matches, run_date, total_analyzed):
 
         body = "\n".join(sections)
 
-    live_script = '<script>\nconst PROXY=\'https://spring-hall-b29e.nwgir.workers.dev\';\nasync function updateLive(){\n  try{\n    var all=[].slice.call(document.querySelectorAll(\'.card[data-fid]\'));\n    var ids=all.map(function(c){return c.getAttribute(\'data-fid\');}).filter(Boolean);\n    if(!ids.length)return;\n    var fixtures=[];\n    for(var i=0;i<ids.length;i+=20){\n      var chunk=ids.slice(i,i+20).join(\'-\');\n      var r=await fetch(PROXY+\'?endpoint=fixtures&ids=\'+chunk);\n      if(!r.ok)continue;\n      var data=await r.json();\n      fixtures=fixtures.concat(data.response||[]);\n    }\n    fixtures.forEach(function(fix){\n      var fid=String(fix.fixture.id);\n      var card=document.querySelector(\'[data-fid="\'+fid+\'"]\');\n      if(!card)return;\n      var st=fix.fixture.status.short,min=fix.fixture.status.elapsed,hg=fix.goals.home,ag=fix.goals.away;\n      var b=card.querySelector(\'.live-score\');\n      if(!b)return;\n      var live=[\'1H\',\'2H\',\'ET\',\'P\'].indexOf(st)>=0,ht=st===\'HT\',ft=st===\'FT\';\n      if(live||ht||ft){b.style.display=\'inline-flex\';b.className=\'live-badge\'+(ht?\' ht\':ft?\' ft\':\'\');b.textContent=ft?\'FT\':ht?\'HT\':(min?min+"\'":st);}\n      if(hg!=null&&ag!=null){\n        var s=card.querySelector(\'[data-score]\');\n        if(s){s.textContent=hg+\' - \'+ag;s.style.display=\'block\';var v=card.querySelector(\'.vs\');if(v)v.style.display=\'none\';}\n        var hasGoal=(hg+ag)>0;\n        if(hasGoal&&!card.classList.contains(\'scoring\')){card.classList.add(\'scoring\');var p=document.createElement(\'div\');p.className=\'plane-bg\';p.textContent=\'\\u2708\\ufe0f\';card.appendChild(p);}\n        else if(!hasGoal){card.classList.remove(\'scoring\');var pl=card.querySelector(\'.plane-bg\');if(pl)pl.remove();}\n      }\n    });\n    // Riordina sezione LIVE: 0-0 prima, poi chi ha goal, poi per minuto\n    var liveGrid=document.querySelector(\'.live-grid\');\n    if(liveGrid){\n      var cards=[].slice.call(liveGrid.querySelectorAll(\'.card[data-fid]\'));\n      cards.sort(function(a,b){\n        var sa=a.querySelector(\'[data-score]\'),sb=b.querySelector(\'[data-score]\');\n        var va=sa&&sa.style.display!==\'none\'?sa.textContent:\'0 - 0\';\n        var vb=sb&&sb.style.display!==\'none\'?sb.textContent:\'0 - 0\';\n        var ga=va.split(\'-\').reduce(function(s,n){return s+parseInt(n)||0;},0);\n        var gb=vb.split(\'-\').reduce(function(s,n){return s+parseInt(n)||0;},0);\n        // 0-0 prima (ga==0), poi chi ha goal\n        if(ga===0&&gb>0)return -1;\n        if(gb===0&&ga>0)return 1;\n        return 0;\n      });\n      cards.forEach(function(c){liveGrid.appendChild(c);});\n    }\n    var ts=document.getElementById(\'live-ts\');\n    if(ts)ts.textContent=\'\\ud83d\\udd04 \'+new Date().toLocaleTimeString();\n  }catch(e){console.log(\'live\',e);}\n}\nupdateLive();setInterval(updateLive,30000);\n</script>'
+    live_script = '''<script>
+const PROXY='https://spring-hall-b29e.nwgir.workers.dev';
+const LIVE_ST=['1H','2H','ET','P','HT'];
+async function updateLive(){
+  try{
+    var all=[].slice.call(document.querySelectorAll('.card[data-fid]'));
+    var ids=all.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
+    if(!ids.length)return;
+    var fixtures=[];
+    for(var i=0;i<ids.length;i+=20){
+      var chunk=ids.slice(i,i+20).join('-');
+      var r=await fetch(PROXY+'?endpoint=fixtures&ids='+chunk);
+      if(!r.ok)continue;
+      var data=await r.json();
+      fixtures=fixtures.concat(data.response||[]);
+    }
+    var fixtureMap={};
+    fixtures.forEach(function(fix){fixtureMap[String(fix.fixture.id)]=fix;});
 
+    // Aggiorna ogni card
+    all.forEach(function(card){
+      var fid=card.getAttribute('data-fid');
+      var fix=fixtureMap[fid]; if(!fix)return;
+      var st=fix.fixture.status.short,min=fix.fixture.status.elapsed;
+      var hg=fix.goals.home,ag=fix.goals.away;
+      var b=card.querySelector('.live-score');
+      if(!b)return;
+      var isLive=LIVE_ST.indexOf(st)>=0,ht=st==='HT',ft=st==='FT';
+      if(isLive||ht||ft){
+        b.style.display='inline-flex';
+        b.className='live-score'+(ht?' ht':ft?' ft':'');
+        b.textContent=ft?'FT':ht?'HT':(min?min+"'":st);
+      }
+      if(hg!=null&&ag!=null){
+        var s=card.querySelector('[data-score]');
+        var v=card.querySelector('.vs');
+        if(s){s.textContent=hg+' — '+ag;s.style.display='block';if(v)v.style.display='none';}
+        var hasGoal=(hg+ag)>0;
+        if(hasGoal&&!card.querySelector('.plane-bg')){
+          card.classList.add('scoring');
+          var p=document.createElement('div');p.className='plane-bg';p.textContent='\u2708\ufe0f';card.appendChild(p);
+        } else if(!hasGoal){
+          card.classList.remove('scoring');
+          var pl=card.querySelector('.plane-bg');if(pl)pl.remove();
+        }
+      }
+    });
+
+    // Sposta card live nelle due griglie: 00 e goal
+    var liveSection=document.getElementById('live-section');
+    var grid00=document.getElementById('live-grid-00');
+    var gridGoal=document.getElementById('live-grid-goal');
+    var sub00=document.getElementById('sub-00');
+    var subGoal=document.getElementById('sub-goal');
+    if(!liveSection||!grid00||!gridGoal)return;
+
+    fixtures.forEach(function(fix){
+      var fid=String(fix.fixture.id);
+      var st=fix.fixture.status.short;
+      var hg=fix.goals.home||0, ag=fix.goals.away||0;
+      if(LIVE_ST.indexOf(st)<0)return;
+      var card=document.querySelector('.card[data-fid="'+fid+'"]');
+      if(!card)return;
+      var hasGoal=(hg+ag)>0;
+      var targetGrid=hasGoal?gridGoal:grid00;
+      if(card.parentElement!==targetGrid){
+        var oldParent=card.parentElement;
+        targetGrid.appendChild(card);
+        liveSection.style.display='';
+        if(oldParent&&oldParent!==grid00&&oldParent!==gridGoal){
+          if(oldParent.querySelectorAll('.card').length===0){
+            var ts=oldParent.closest('.tgroup');
+            if(ts)ts.style.display='none';
+          }
+        }
+      }
+      // zerozero class
+      if(!hasGoal){card.classList.add('zerozero');card.classList.remove('scoring');}
+      else{card.classList.remove('zerozero');}
+    });
+
+    // Mostra/nascondi sub-label goal
+    if(gridGoal.querySelectorAll('.card').length>0){subGoal.style.display='';}
+    else{subGoal.style.display='none';}
+    if(grid00.querySelectorAll('.card').length>0){sub00.style.display='';}
+    else{sub00.style.display='none';}
+
+    var ts=document.getElementById('live-ts');
+    if(ts)ts.textContent='\ud83d\udd04 '+new Date().toLocaleTimeString();
+  }catch(e){console.log('live',e);}
+}
+updateLive();setInterval(updateLive,15000);
+</script>'''
 
     return (
         f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>Goal Bot — {run_date}</title>'
-        f'<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">'
+        f'<title>GoalScan · {run_date}</title>'
         f'<style>{css}</style></head><body>'
-        f'<header><div><div class="htitle">⚽ Goal Bot — {run_date}</div>'
-        f'<div class="hsub">Entrambe ≥{THRESHOLD} goal + quote Bet365 — ultime {LAST_N} gare stessa lega'
-        f' — {total_analyzed} match analizzati</div></div>'
-        f'<div class="hbadge">{len(matches)} ALERT</div></header>'
-        f'<div class="cbar">'
-        f'<span>Soglia: <strong>≥{THRESHOLD}</strong> per squadra</span>'
-        f'<span>Ultime <strong>{LAST_N}</strong> gare stessa lega</span>'
-        f'<span>Solo campionati <strong>3 giorni</strong></span>'
-        f'<span>Quote <strong>Bet365</strong> verificate</span>'
-        f'</div>{legend}{body}{live_script}</body></html>'
+        f'<header>'
+        f'<div class="logo"><span class="logo-icon">⚽</span><div>'
+        f'<span class="logo-text">GoalScan</span>'
+        f'<span class="logo-sub">LIVE INTELLIGENCE · BET365</span>'
+        f'</div></div>'
+        f'<div class="hdivider"></div>'
+        f'<div class="hstats">'
+        f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
+        f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
+        f'<div class="hstat">soglia <strong>≥{THRESHOLD}</strong></div>'
+        f'<div class="hstat">ultime <strong>{LAST_N}</strong> gare</div>'
+        f'</div>'
+        f'<div class="hright">'
+        f'<div class="pulse-dot"></div>'
+        f'<span class="live-tag">LIVE</span>'
+        f'<span class="update-time" id="live-ts">⏳</span>'
+        f'</div></header>'
+        f'<div class="scanbar">'
+        f'<div class="scanbar-item">soglia <span>≥{THRESHOLD} goal</span> ultime {LAST_N} gare stessa lega</div>'
+        f'<div class="scanbar-item">quote <span>Bet365</span> verificate</div>'
+        f'<div class="scanbar-item"><span>3 giorni</span> · solo campionati</div>'
+        f'<div class="scanbar-item">aggiornamento <span>ogni 15s</span></div>'
+        f'<div class="scanbar-item">copertura <span>{date_range}</span></div>'
+        f'</div>'
+        f'<div class="wrap">{body}</div>'
+        f'{live_script}</body></html>'
     )
+
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
