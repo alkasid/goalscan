@@ -553,20 +553,18 @@ def generate_html(matches, run_date, total_analyzed):
         sections = []
 
         # ── Sezione LIVE sempre presente ──
-        live_00      = [m for m in live_matches if True]  # placeholder, JS riordina
+        live_hidden = ' style="display:none"' if not live_matches else ""
         live_section = (
-            f'<div class="day-block" id="live-section"{"" if live_matches else " style=\'display:none\'"} >'
-            f'<div class="section-head">'
-            f'<span class="section-label slive">🔴 LIVE</span>'
+            '<div class="day-block" id="live-section"' + live_hidden + '>'
+            '<div class="section-head">'
+            '<span class="section-label slive">🔴 LIVE</span>'
             f'<span class="section-badge">{len(live_matches)} in corso</span>'
-            f'<div class="section-line red"></div></div>'
-            # subsection 0-0
-            f'<div class="sub-label bl" id="sub-00">⬤ &nbsp;0 — 0 &nbsp;·&nbsp; ancora aperti</div>'
-            f'<div class="grid" id="live-grid-00"></div>'
-            # subsection con goal
-            f'<div class="sub-label gr" id="sub-goal" style="display:none">✈️ &nbsp;in gol</div>'
-            f'<div class="grid" id="live-grid-goal"></div>'
-            f'</div>'
+            '<div class="section-line red"></div></div>'
+            '<div class="sub-label bl" id="sub-00">⬤ &nbsp;0 — 0 &nbsp;·&nbsp; ancora aperti</div>'
+            '<div class="grid" id="live-grid-00"></div>'
+            '<div class="sub-label gr" id="sub-goal" style="display:none">✈️ &nbsp;in gol</div>'
+            '<div class="grid" id="live-grid-goal"></div>'
+            '</div>'
         )
 
         # Pre-popola con match live già noti al momento del run
