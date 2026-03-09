@@ -1,7 +1,7 @@
 name: Live Updater
 on:
   schedule:
-    - cron: '*/5 * * * *'   # ogni 5 minuti
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,8 +23,8 @@ jobs:
 
       - name: Commit ft_history.json
         run: |
-          git config user.name  "goal-bot"
+          git config user.name "goal-bot"
           git config user.email "bot@goalscan"
           git add docs/ft_history.json
-          git diff --staged --quiet || git commit -m "chore: update ft_history $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git diff --staged --quiet || git commit -m "chore: ft_history $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
