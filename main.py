@@ -773,7 +773,7 @@ updateLive();setInterval(updateLive,15000);
         f'<span class="logo-sub">LIVE INTELLIGENCE · BET365</span>'
         f'</div></div>'
         f'<div class="hdivider"></div>'
-        f'<a href="stats.html" class="nav-stats">📊 Stats</a>'
+        f'<a href="stats.html" class="nav-stats">📊 Stats Avanzate</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
         f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
@@ -812,8 +812,18 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
     """Genera stats.html con statistiche avanzate sulle partite FT degli alert."""
     from datetime import datetime, timezone
 
-    # Tutte le partite FT nei 3 giorni coperti dal bot
-    ft_matches = [m for m in matches if m.get("status") in ("FT", "AET", "PEN")]
+    # Legge ft_history.json se esiste (aggiornato ogni 5 min da updater.py)
+    # altrimenti fallback sui match in memoria
+    history_file = Path("docs/ft_history.json")
+    if history_file.exists():
+        try:
+            hist = json.loads(history_file.read_text())
+            ft_matches = list(hist.values())
+            print(f"stats: letti {len(ft_matches)} FT da ft_history.json")
+        except Exception:
+            ft_matches = [m for m in matches if m.get("status") in ("FT","AET","PEN")]
+    else:
+        ft_matches = [m for m in matches if m.get("status") in ("FT","AET","PEN")]
 
     total_ft  = len(ft_matches)
     total_all = len(matches)
@@ -828,22 +838,36 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
     match_events       = []
 
     for m in ft_matches:
-        fid  = m.get("fixture_id")
-        hg   = m.get("goals_home") or 0
-        ag   = m.get("goals_away") or 0
-        # Chiama API eventi solo se c'è almeno 1 goal (risparmia chiamate)
-        evs  = get_fixture_events(fid) if (fid and (hg + ag) > 0) else []
+        fid       = m.get("fixture_id")
+        hg        = m.get("goals_home") or 0
+        ag        = m.get("goals_away") or 0
+        # Se first_min già cachato in history, salta la chiamata API
+        cached_min = m.get("first_min_cached")
+        evs = [] if cached_min is not None else (
+            get_fixture_events(fid) if (fid and (hg + ag) > 0) else [])
         tot_g = hg + ag
 
-        mins = []
-        for e in evs:
-            if e.get("type") == "Goal" and e.get("detail") != "Missed Penalty":
-                raw   = e.get("time", {}).get("elapsed")
-                extra = e.get("time", {}).get("extra") or 0
-                if raw is not None:
-                    mins.append(int(raw) + int(extra))
-        mins.sort()
-        first_min = mins[0] if mins else None
+        if cached_min is not None:
+            first_min = cached_min
+        else:
+            mins = []
+            for e in evs:
+                if e.get("type") == "Goal" and e.get("detail") != "Missed Penalty":
+                    raw   = e.get("time", {}).get("elapsed")
+                    extra = e.get("time", {}).get("extra") or 0
+                    if raw is not None:
+                        mins.append(int(raw) + int(extra))
+            mins.sort()
+            first_min = mins[0] if mins else None
+            # Salva in history per i prossimi run
+            if history_file.exists() and fid and first_min is not None:
+                try:
+                    h2 = json.loads(history_file.read_text())
+                    if str(fid) in h2:
+                        h2[str(fid)]["first_min_cached"] = first_min
+                        history_file.write_text(json.dumps(h2, ensure_ascii=False))
+                except Exception:
+                    pass
         if first_min is not None:
             first_goal_minutes.append(first_min)
 
