@@ -777,6 +777,7 @@ updateLive();setInterval(updateLive,15000);
         f'<div class="hstat">ultime <strong>{LAST_N}</strong> gare</div>'
         f'</div>'
         f'<div class="hright">'
+        f'<a href="stats.html" style="font-family:\"DM Mono\",monospace;font-size:.62rem;color:rgba(0,229,160,.7);text-decoration:none;margin-right:14px;padding:2px 8px;border:1px solid rgba(0,229,160,.2);border-radius:4px;">📊 Stats</a>'
         f'<div class="pulse-dot"></div>'
         f'<span class="live-tag">LIVE</span>'
         f'<span class="update-time" id="live-ts">⏳</span>'
@@ -794,6 +795,437 @@ updateLive();setInterval(updateLive,15000);
 
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
+
+def get_fixture_events(fixture_id):
+    """Recupera eventi goal di una partita FT — 1 chiamata API."""
+    try:
+        data = api_get("fixtures/events", {"fixture": fixture_id, "type": "Goal"})
+        return data or []
+    except Exception:
+        return []
+
+
+def generate_stats_html(matches, run_date, cover_start, cover_end):
+    """Genera stats.html con statistiche avanzate sulle partite FT degli alert."""
+    from datetime import datetime, timezone
+
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ft_matches = [m for m in matches
+                  if m.get("status") in ("FT", "AET", "PEN") and m.get("date") == today_str]
+
+    total_ft  = len(ft_matches)
+    total_all = len(matches)
+
+    if total_ft == 0:
+        return None
+
+    first_goal_minutes = []
+    total_goals_list   = []
+    results_count      = {}
+    league_stats       = {}
+    match_events       = []
+
+    for m in ft_matches:
+        fid  = m.get("fixture_id")
+        evs  = get_fixture_events(fid) if fid else []
+        hg   = m.get("goals_home") or 0
+        ag   = m.get("goals_away") or 0
+        tot_g = hg + ag
+
+        mins = []
+        for e in evs:
+            if e.get("type") == "Goal" and e.get("detail") != "Missed Penalty":
+                raw   = e.get("time", {}).get("elapsed")
+                extra = e.get("time", {}).get("extra") or 0
+                if raw is not None:
+                    mins.append(int(raw) + int(extra))
+        mins.sort()
+        first_min = mins[0] if mins else None
+        if first_min is not None:
+            first_goal_minutes.append(first_min)
+
+        total_goals_list.append(tot_g)
+
+        sc = f"{hg}-{ag}"
+        results_count[sc] = results_count.get(sc, 0) + 1
+
+        lg  = m.get("league", "?")
+        nat = m.get("nation", "")
+        key = f"{lg}|{nat}"
+        if key not in league_stats:
+            league_stats[key] = {"n": 0, "goals": 0, "league": lg, "nation": nat}
+        league_stats[key]["n"]     += 1
+        league_stats[key]["goals"] += tot_g
+
+        match_events.append({
+            "home": m.get("home", "?"), "away": m.get("away", "?"),
+            "league": lg, "nation": nat,
+            "score": sc, "first_min": first_min, "total_goals": tot_g,
+        })
+
+    with_goal   = sum(1 for x in total_goals_list if x > 0)
+    zero_zero   = total_ft - with_goal
+    avg_goals   = round(sum(total_goals_list) / total_ft, 1) if total_ft else 0
+    avg_first   = round(sum(first_goal_minutes) / len(first_goal_minutes), 1) if first_goal_minutes else 0
+    min_first   = min(first_goal_minutes) if first_goal_minutes else 0
+    max_first   = max(first_goal_minutes) if first_goal_minutes else 0
+    strike_rate = round(with_goal / total_ft * 100) if total_ft else 0
+    total_goals = sum(total_goals_list)
+    over25      = sum(1 for x in total_goals_list if x > 2)
+    gg          = sum(1 for m2 in ft_matches
+                      if (m2.get("goals_home") or 0) > 0 and (m2.get("goals_away") or 0) > 0)
+
+    fasce = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75), (76, 999)]
+    fascia_data = []
+    for lo, hi in fasce:
+        n      = sum(1 for x in first_goal_minutes if lo <= x <= hi)
+        pct    = round(n / len(first_goal_minutes) * 100, 1) if first_goal_minutes else 0
+        mins_in = [x for x in first_goal_minutes if lo <= x <= hi]
+        avg_m  = round(sum(mins_in) / len(mins_in), 1) if mins_in else 0
+        lbl    = f"{lo}–90+'" if hi == 999 else f"{lo}–{hi}'"
+        fascia_data.append({"lbl": lbl, "n": n, "pct": pct, "avg": avg_m})
+
+    max_fascia_n = max((f["n"] for f in fascia_data), default=1) or 1
+
+    hm_slots = []
+    for i in range(18):
+        lo2 = i * 5 + 1
+        hi2 = (i + 1) * 5
+        hm_slots.append(sum(1 for x in first_goal_minutes if lo2 <= x <= hi2))
+
+    top_matches  = sorted(match_events, key=lambda x: x["total_goals"], reverse=True)[:10]
+    top_leagues  = sorted(league_stats.values(), key=lambda x: x["n"], reverse=True)[:8]
+    max_lg_n     = max((l["n"] for l in top_leagues), default=1) or 1
+    quickest     = sorted([m2 for m2 in match_events if m2["first_min"] is not None],
+                          key=lambda x: x["first_min"])[:7]
+
+    ris_buckets = {
+        "1-0|0-1": {"label": "1-0 / 0-1",  "sub": "vittoria scarto minimo",           "color": "var(--accent)", "n": 0},
+        "2-1|1-2": {"label": "2-1 / 1-2",  "sub": "3 goal · GG sì",                  "color": "var(--blue)",   "n": 0},
+        "2-0|0-2": {"label": "2-0 / 0-2",  "sub": "clean sheet",                      "color": "var(--yellow)", "n": 0},
+        "3+":      {"label": "3+ diff",     "sub": "alta produttività",                "color": "var(--orange)", "n": 0},
+        "0-0":     {"label": "0 – 0",       "sub": "nessun goal malgrado ≥12 ultime 5","color": "var(--red)",    "n": 0},
+    }
+    for sc, cnt in results_count.items():
+        try:
+            h2, a2 = int(sc.split("-")[0]), int(sc.split("-")[1])
+        except Exception:
+            continue
+        if sc == "0-0":
+            ris_buckets["0-0"]["n"] += cnt
+        elif sc in ("1-0", "0-1"):
+            ris_buckets["1-0|0-1"]["n"] += cnt
+        elif sc in ("2-1", "1-2"):
+            ris_buckets["2-1|1-2"]["n"] += cnt
+        elif sc in ("2-0", "0-2"):
+            ris_buckets["2-0|0-2"]["n"] += cnt
+        else:
+            ris_buckets["3+"]["n"] += cnt
+
+    def pill_color(n):
+        if n >= 7: return "#ff3a3a"
+        if n >= 6: return "#ff8c00"
+        if n >= 5: return "#f5c542"
+        return "#4a5570"
+
+    bar_colors = [
+        "linear-gradient(90deg,#00e5a0,#00b87a)",
+        "linear-gradient(90deg,#1a6aff,#0d4acc)",
+        "linear-gradient(90deg,#f5c542,#d4a017)",
+        "linear-gradient(90deg,#ff8c00,#cc6e00)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+    ]
+    avg_colors = ["var(--accent)", "#6a9fff", "var(--yellow)", "var(--orange)", "var(--red)", "var(--red)"]
+
+    fascia_rows = ""
+    for i, f in enumerate(fascia_data):
+        w = round(f["n"] / max_fascia_n * 100) if max_fascia_n else 0
+        inner_lbl = str(f["n"]) if w > 30 else ""
+        fascia_rows += (
+            f'<tr><td><span class="flbl">{f["lbl"]}</span></td>'
+            f'<td><div class="bwrap"><div class="bfill" style="width:{w}%;background:{bar_colors[i]}">{inner_lbl}</div></div></td>'
+            f'<td class="nr">{f["n"]}</td><td class="pr">{f["pct"]}%</td>'
+            f'<td class="ar" style="color:{avg_colors[i]}">{f["avg"]}\'</td></tr>'
+        )
+
+    hm_js = str(hm_slots)
+
+    ris_html = ""
+    ris_items = list(ris_buckets.values())
+    for idx, r in enumerate(ris_items):
+        pct  = round(r["n"] / total_ft * 100, 1) if total_ft else 0
+        span = ' style="grid-column:span 2"' if (idx == len(ris_items) - 1 and len(ris_items) % 2 == 1) else ""
+        ml   = ' style="margin-left:auto"' if span else ""
+        ris_html += (
+            f'<div class="ris-item"{span}>'
+            f'<div class="ris-dot" style="background:{r["color"]}"></div>'
+            f'<div><div class="ris-name">{r["label"]}</div><div class="ris-sub">{r["sub"]}</div></div>'
+            f'<div{ml}><div class="ris-val" style="color:{r["color"]}">{r["n"]}</div>'
+            f'<div class="ris-pct">{pct}%</div></div></div>'
+        )
+
+    def tm_row(m2, rk):
+        pc = pill_color(m2["total_goals"])
+        fm = f"{m2['first_min']}'" if m2["first_min"] is not None else "—"
+        return (
+            '<div style="display:grid;grid-template-columns:16px 1fr 46px 24px 22px;'
+            'gap:5px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.025)">'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.55rem;color:var(--muted)">{rk}</div>'
+            f'<div><div style="font-size:.66rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+            f'{m2["home"]} vs {m2["away"]}</div>'
+            f'<div style="font-size:.52rem;color:var(--muted)">{m2["league"]} · {m2["nation"]}</div></div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.68rem;font-weight:700;color:var(--accent);text-align:right">{m2["score"]}</div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--orange);text-align:right">{fm}</div>'
+            f'<div style="text-align:right"><span style="font-size:.55rem;font-weight:700;padding:1px 4px;'
+            f'border-radius:3px;color:#05080f;background:{pc}">{m2["total_goals"]}</span></div></div>'
+        )
+
+    tm_html = "".join(tm_row(m2, i + 1) for i, m2 in enumerate(top_matches))
+
+    lg_flags = {
+        "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Germany": "🇩🇪", "Mexico": "🇲🇽", "Austria": "🇦🇹",
+        "Serbia": "🇷🇸", "Brazil": "🇧🇷", "Nicaragua": "🇳🇮", "Chile": "🇨🇱",
+        "Italy": "🇮🇹", "Spain": "🇪🇸", "France": "🇫🇷", "Portugal": "🇵🇹",
+        "Argentina": "🇦🇷", "Colombia": "🇨🇴", "Peru": "🇵🇪", "Netherlands": "🇳🇱",
+        "Belgium": "🇧🇪", "Poland": "🇵🇱", "Uruguay": "🇺🇾", "Ecuador": "🇪🇨",
+    }
+    lg_html = ""
+    for lg in top_leagues:
+        flag  = lg_flags.get(lg["nation"], "🌍")
+        avg_g = round(lg["goals"] / lg["n"], 1) if lg["n"] else 0
+        w     = round(lg["n"] / max_lg_n * 100)
+        ac    = "var(--orange)" if avg_g >= 4 else "var(--yellow)" if avg_g >= 3 else "var(--muted)"
+        lg_html += (
+            f'<div class="lg-row">'
+            f'<div class="lg-flag">{flag}</div>'
+            f'<div class="lg-name">{lg["league"]}</div>'
+            f'<div class="lg-bw"><div class="lg-bf" style="width:{w}%"></div></div>'
+            f'<div class="lg-n">{lg["n"]}</div>'
+            f'<div class="lg-avg" style="color:{ac}">{avg_g}</div></div>'
+        )
+    best_lg     = max(top_leagues, key=lambda x: x["goals"] / x["n"] if x["n"] else 0) if top_leagues else None
+    best_lg_txt = f'{best_lg["league"]} {round(best_lg["goals"]/best_lg["n"],1)}' if best_lg else "—"
+
+    dot_colors = ["var(--accent)", "var(--blue)", "var(--yellow)", "var(--orange)",
+                  "var(--red)", "var(--purple)", "var(--muted)"]
+    tl_html = ""
+    for i, m2 in enumerate(quickest):
+        c      = dot_colors[i % len(dot_colors)]
+        shadow = f"box-shadow:0 0 5px {c}" if c != "var(--muted)" else ""
+        rec    = ' <span style="color:var(--muted);font-size:.5rem">record</span>' if i == 0 else ""
+        tl_html += (
+            f'<div class="tl-item">'
+            f'<div class="tl-dot" style="background:{c};{shadow}"></div>'
+            f'<div class="tl-min" style="color:{c}">{m2["first_min"]}\'{rec}</div>'
+            f'<div class="tl-match">{m2["home"]} vs {m2["away"]}</div>'
+            f'<div class="tl-detail">{m2["league"]} · {m2["nation"]} · {m2["score"]} · {m2["total_goals"]} goal</div>'
+            f'</div>'
+        )
+
+    over25_pct = round(over25 / total_ft * 100) if total_ft else 0
+    gg_pct     = round(gg / total_ft * 100) if total_ft else 0
+    early_pct  = round(sum(f["n"] for f in fascia_data[:2]) / len(first_goal_minutes) * 100) if first_goal_minutes else 0
+
+    zz_pct  = round(zero_zero / total_ft * 100, 1) if total_ft else 0
+
+    CSS = """
+:root{--bg:#05080f;--card:#0c1220;--accent:#00e5a0;--blue:#1a6aff;--red:#ff3a3a;--orange:#ff8c00;--yellow:#f5c542;--purple:#b06aff;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 55% 35% at 15% 8%,rgba(0,229,160,0.045) 0%,transparent 70%),radial-gradient(ellipse 45% 30% at 85% 85%,rgba(26,106,255,0.05) 0%,transparent 70%),radial-gradient(ellipse 35% 25% at 55% 40%,rgba(255,58,58,0.025) 0%,transparent 70%);}
+header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 26px;display:flex;align-items:center;gap:16px;}
+.logo-text{font-size:1.1rem;font-weight:700;background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);letter-spacing:.15em;display:block;margin-top:-2px;-webkit-text-fill-color:var(--muted);}
+.hdiv{width:1px;height:22px;background:var(--border);}
+.nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);text-decoration:none;padding:3px 9px;border-radius:5px;border:1px solid transparent;transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--border);}
+.nav-link.active{color:var(--accent);border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.06);}
+.hright{margin-left:auto;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--muted);}
+.scanbar{background:rgba(0,229,160,.02);border-bottom:1px solid rgba(0,229,160,.07);padding:4px 26px;display:flex;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--muted);}
+.si{padding:0 13px;border-right:1px solid rgba(255,255,255,.05);display:flex;gap:3px;align-items:center;}
+.si::before{content:'›';color:var(--accent);}
+.si b{color:var(--accent);font-weight:500;}
+.wrap{padding:14px 26px;position:relative;z-index:1;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:11px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:11px;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden;animation:fadein .35s ease both;}
+.panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.scope{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin-bottom:9px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.stag{padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.5);font-size:.49rem;}
+.stag.g{border-color:rgba(0,229,160,.2);color:rgba(0,229,160,.7);background:rgba(0,229,160,.04);}
+.stag.b{border-color:rgba(26,106,255,.2);color:rgba(100,160,255,.7);background:rgba(26,106,255,.04);}
+.stag.y{border-color:rgba(245,197,66,.2);color:rgba(245,197,66,.7);background:rgba(245,197,66,.04);}
+.ptitle{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.ptitle::after{content:'';flex:1;height:1px;background:var(--border);}
+.kpi{border-radius:9px;overflow:hidden;transition:transform .15s;}
+.kpi:hover{transform:translateY(-2px);}
+.kpi-bar{height:2px;}
+.k1 .kpi-bar{background:linear-gradient(90deg,var(--accent),transparent);}
+.k2 .kpi-bar{background:linear-gradient(90deg,var(--blue),transparent);}
+.k3 .kpi-bar{background:linear-gradient(90deg,var(--yellow),transparent);}
+.k4 .kpi-bar{background:linear-gradient(90deg,var(--red),transparent);}
+.k5 .kpi-bar{background:linear-gradient(90deg,var(--orange),transparent);}
+.kpi-inner{padding:10px 12px 8px;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:2px;}
+.k1 .kpi-val{color:var(--accent);}.k2 .kpi-val{color:var(--blue);}.k3 .kpi-val{color:var(--yellow);}.k4 .kpi-val{color:var(--red);}.k5 .kpi-val{color:var(--orange);}
+.kpi-lbl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.kpi-sub{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--muted);margin-top:2px;opacity:.6;}
+.kpi-foot{padding:3px 12px;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);border-top:1px solid var(--border);display:flex;gap:4px;align-items:center;}
+.kpi-foot::before{content:'↳';opacity:.35;}
+.k1 .kpi-foot{background:rgba(0,229,160,.03);}.k2 .kpi-foot{background:rgba(26,106,255,.03);}.k3 .kpi-foot{background:rgba(245,197,66,.03);}.k4 .kpi-foot{background:rgba(255,58,58,.03);}.k5 .kpi-foot{background:rgba(255,140,0,.03);}
+.ft{width:100%;border-collapse:collapse;}
+.ft th{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--muted);text-align:left;padding:0 5px 5px;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.ft th.r{text-align:right;}
+.ft td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle;}
+.ft tr:last-child td{border:none;}
+.flbl{font-family:'DM Mono',monospace;font-size:.63rem;white-space:nowrap;}
+.bwrap{background:rgba(255,255,255,.04);border-radius:2px;height:16px;overflow:hidden;}
+.bfill{height:100%;border-radius:2px;display:flex;align-items:center;padding:0 5px;font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,.9);font-weight:600;white-space:nowrap;}
+.nr{font-family:'DM Mono',monospace;font-size:.63rem;text-align:right;}
+.pr{font-family:'DM Mono',monospace;font-size:.59rem;text-align:right;color:var(--muted);}
+.ar{font-family:'DM Mono',monospace;font-size:.59rem;text-align:right;}
+.insight{margin-top:8px;padding-top:7px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);display:flex;gap:10px;}
+.insight b{color:var(--accent);}
+.hm-wrap{margin-top:9px;padding-top:8px;border-top:1px solid var(--border);}
+.hm-title{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;}
+.hm-row{display:flex;gap:2px;}
+.hm-cell{flex:1;height:20px;border-radius:2px;cursor:default;transition:transform .1s;}
+.hm-cell:hover{transform:scaleY(1.25);}
+.hm-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.46rem;color:var(--muted);margin-top:3px;}
+.hm-legend{display:flex;align-items:center;gap:5px;margin-top:4px;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);}
+.hm-legend-bar{flex:1;height:5px;border-radius:2px;background:linear-gradient(90deg,rgba(0,229,160,.1),var(--accent));}
+.ris-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}
+.ris-item{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:6px;padding:7px 9px;display:flex;align-items:center;gap:7px;}
+.ris-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+.ris-name{font-size:.67rem;flex:1;}
+.ris-sub{font-size:.54rem;color:var(--muted);}
+.ris-val{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:700;text-align:right;}
+.ris-pct{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--muted);text-align:right;}
+.cross-row{display:flex;gap:7px;}
+.cbox{flex:1;border-radius:6px;padding:6px 8px;text-align:center;border:1px solid;}
+.cval{font-family:'DM Mono',monospace;font-size:.95rem;font-weight:700;}
+.clbl{font-size:.53rem;color:var(--muted);margin-top:1px;line-height:1.3;}
+.lg-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.lg-flag{font-size:.82rem;width:16px;text-align:center;}
+.lg-name{font-size:.65rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lg-bw{width:80px;background:rgba(255,255,255,.04);border-radius:2px;height:5px;}
+.lg-bf{height:5px;border-radius:2px;background:var(--accent);opacity:.65;}
+.lg-n{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);width:20px;text-align:right;}
+.lg-avg{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--yellow);width:26px;text-align:right;}
+.tl{position:relative;padding-left:16px;}
+.tl::before{content:'';position:absolute;left:4px;top:0;bottom:0;width:1px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:8px;}
+.tl-dot{position:absolute;left:-14px;top:4px;width:6px;height:6px;border-radius:50%;}
+.tl-min{font-family:'DM Mono',monospace;font-size:.57rem;margin-bottom:1px;}
+.tl-match{font-size:.68rem;font-weight:600;}
+.tl-detail{font-size:.57rem;color:var(--muted);}
+"""
+
+    THRESHOLD_VAL = THRESHOLD
+    LAST_N_VAL    = LAST_N
+
+    return f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoalScan \u00b7 Stats Avanzate</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>
+<header>
+  <div><span class="logo-text">GoalScan</span><span class="logo-sub">LIVE INTELLIGENCE \u00b7 BET365</span></div>
+  <div class="hdiv"></div>
+  <a href="index.html" class="nav-link">Dashboard</a>
+  <a href="stats.html" class="nav-link active">Stats Avanzate</a>
+  <div class="hright">\U0001f4c5 {run_date}</div>
+</header>
+<div class="scanbar">
+  <div class="si">alert analizzati <b>{total_all}</b></div>
+  <div class="si">soglia <b>\u2265{THRESHOLD_VAL} goal ultime {LAST_N_VAL}</b></div>
+  <div class="si">solo campionati <b>\u00b7 Bet365 verificate</b></div>
+  <div class="si">copertura <b>{cover_start} \u2192 {cover_end}</b></div>
+  <div class="si">partite FT oggi <b>{total_ft}</b></div>
+</div>
+<div class="wrap">
+<div class="g5">
+  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} alert &middot; oggi</div></div><div class="kpi-foot">alert \u2265{THRESHOLD_VAL} &middot; Bet365 &middot; campionati</div></div>
+  <div class="panel kpi k2"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_first}'</div><div class="kpi-lbl">Media 1&deg; goal</div><div class="kpi-sub">range {min_first}' &ndash; {max_first}'</div></div><div class="kpi-foot">su {with_goal} partite con \u22651 goal</div></div>
+  <div class="panel kpi k3"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{strike_rate}%</div><div class="kpi-lbl">Strike rate goal</div><div class="kpi-sub">{with_goal} con goal su {total_ft} FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
+  <div class="panel kpi k4"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{zero_zero}</div><div class="kpi-lbl">Chiuse 0-0</div><div class="kpi-sub">{zz_pct}% degli FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
+  <div class="panel kpi k5"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_goals}</div><div class="kpi-lbl">Media goal/partita</div><div class="kpi-sub">{total_goals} goal totali</div></div><div class="kpi-foot">{total_ft} partite FT &middot; alert bot</div></div>
+</div>
+<div class="g3">
+  <div class="panel">
+    <div class="ptitle">\u23f1 Distribuzione 1&deg; goal</div>
+    <div class="scope"><span class="stag g">oggi</span><span class="stag">{with_goal} partite con \u22651 goal</span><span class="stag b">alert bot &middot; tutte le leghe</span></div>
+    <table class="ft"><thead><tr><th style="width:48px">FASCIA</th><th>BARRA <span style="opacity:.4;font-size:.43rem">n&deg; partite col 1&deg;goal in quel range</span></th><th class="r">N</th><th class="r">%</th><th class="r">AVG</th></tr></thead><tbody>{fascia_rows}</tbody></table>
+    <div class="hm-wrap">
+      <div class="hm-title">INTENSIT&Agrave; GOAL PER MINUTO (slot 5') &mdash; gradiente temperatura</div>
+      <div class="hm-row" id="hm"></div>
+      <div class="hm-labels"><span>1'</span><span>15'</span><span>30'</span><span>45'</span><span>60'</span><span>75'</span><span>90'</span></div>
+      <div class="hm-legend"><span>meno</span><div class="hm-legend-bar"></div><span>pi&ugrave;</span></div>
+    </div>
+    <div class="insight">\U0001f4a1 <b>{early_pct}%</b> dei 1&deg; goal entro il 30' &nbsp;&middot;&nbsp; <b>{zero_zero}</b> partite rimaste 0-0</div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">\U0001f4ca Risultati finali &amp; mercati</div>
+    <div class="scope"><span class="stag g">oggi</span><span class="stag">{total_ft} partite FT</span><span class="stag b">alert bot \u2265{THRESHOLD_VAL} &middot; Bet365</span></div>
+    <div class="ris-grid">{ris_html}</div>
+    <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin:6px 0 5px;letter-spacing:.08em">SPLIT MERCATI &middot; {total_ft} FT</div>
+    <div class="cross-row">
+      <div class="cbox" style="border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.05)"><div class="cval" style="color:var(--accent)">{over25_pct}%</div><div class="clbl">OVER 2.5<br><span style="color:var(--accent);font-size:.57rem">{over25}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(255,58,58,.2);background:rgba(255,58,58,.04)"><div class="cval" style="color:var(--red)">{100-over25_pct}%</div><div class="clbl">UNDER 2.5<br><span style="color:var(--red);font-size:.57rem">{total_ft-over25}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(26,106,255,.25);background:rgba(26,106,255,.05)"><div class="cval" style="color:#6a9fff">{gg_pct}%</div><div class="clbl">GG S&Igrave;<br><span style="color:#6a9fff;font-size:.57rem">{gg}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(245,197,66,.2);background:rgba(245,197,66,.04)"><div class="cval" style="color:var(--yellow)">{avg_goals}</div><div class="clbl">AVG GOAL<br><span style="color:var(--yellow);font-size:.57rem">{total_goals} tot</span></div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px;">
+    <div class="panel">
+      <div class="ptitle">\U0001f30d Top leghe &middot; alert FT</div>
+      <div class="scope"><span class="stag g">oggi</span><span class="stag">{total_ft} FT</span><span class="stag y">per n&deg; alert</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)"><span>LEGA</span><span>ALERT &nbsp; AVG GOAL</span></div>
+      {lg_html}
+      <div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted)">\U0001f4a1 avg goal pi&ugrave; alto: <span style="color:var(--yellow)">{best_lg_txt}</span></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">\u26a1 Primi goal pi&ugrave; veloci</div>
+      <div class="scope"><span class="stag g">oggi</span><span class="stag">alert FT con 1&deg;goal pi&ugrave; precoce</span></div>
+      <div class="tl">{tl_html}</div>
+    </div>
+  </div>
+</div>
+<div class="panel">
+  <div class="ptitle">\U0001f3c6 Partite pi&ugrave; prolifiche &middot; top 10</div>
+  <div class="scope"><span class="stag g">oggi</span><span class="stag">{total_ft} partite FT</span><span class="stag y">ordinate per goal totali</span><span class="stag b">alert bot \u2265{THRESHOLD_VAL} &middot; Bet365</span></div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 20px;">{tm_html}</div>
+</div>
+</div>
+<script>
+const hmData={hm_js};
+const maxH=Math.max(...hmData);
+const hmEl=document.getElementById('hm');
+hmData.forEach((v,i)=>{{
+  const d=document.createElement('div');d.className='hm-cell';
+  const p=maxH>0?v/maxH:0;
+  let r,g,b;
+  if(p<0.33){{r=0;g=Math.round(100+p*3*129);b=Math.round(200-p*3*100);}}
+  else if(p<0.66){{r=Math.round((p-0.33)*3*245);g=Math.round(229-((p-0.33)*3*50));b=50;}}
+  else{{r=Math.round(200+p*55);g=Math.round(180-p*3*80);b=0;}}
+  d.style.background=`rgba(${{r}},${{g}},${{b}},${{0.15+p*0.78}})`;
+  const slot=(i+1)*5;d.title=`${{slot-4}}'-${{slot}}': ${{v}} partite`;
+  d.onmouseenter=()=>d.style.transform='scaleY(1.25)';
+  d.onmouseleave=()=>d.style.transform='';
+  hmEl.appendChild(d);
+}});
+</script>
+</body>
+</html>"""
+
 def main():
     print("=" * 60)
     print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare  |  Bet365")
@@ -854,6 +1286,17 @@ def main():
     archive_file = docs / f"report-{run_slug}.html"
     html_content = generate_html(qualified, run_date, total)
     archive_file.write_text(html_content.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
+
+    # Genera stats.html
+    cover_start = (datetime.now(timezone.utc)).strftime("%d/%m/%Y")
+    cover_end   = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%d/%m/%Y")
+    stats_html  = generate_stats_html(qualified, run_date, cover_start, cover_end)
+    if stats_html:
+        stats_file = docs / "stats.html"
+        stats_file.write_text(stats_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
+        print(f"stats.html generato con dati FT oggi")
+    else:
+        print("Nessuna partita FT oggi — stats.html non generato")
 
     # Aggiorna index.html = ultimo report + link archivio
     # Raccoglie tutti i report esistenti
