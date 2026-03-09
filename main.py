@@ -812,9 +812,11 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
     """Genera stats.html con statistiche avanzate sulle partite FT degli alert."""
     from datetime import datetime, timezone
 
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_str     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     ft_matches = [m for m in matches
-                  if m.get("status") in ("FT", "AET", "PEN") and m.get("date") == today_str]
+                  if m.get("status") in ("FT", "AET", "PEN")
+                  and m.get("date") in (today_str, yesterday_str)]
 
     total_ft  = len(ft_matches)
     total_all = len(matches)
