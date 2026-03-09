@@ -773,6 +773,7 @@ updateLive();setInterval(updateLive,15000);
         f'<span class="logo-sub">LIVE INTELLIGENCE · BET365</span>'
         f'</div></div>'
         f'<div class="hdivider"></div>'
+        f'<a href="storico.html" class="nav-stats" style="margin-right:4px">📋 Storico</a>'
         f'<a href="stats.html" class="nav-stats">📊 Stats Avanzate</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
@@ -1253,6 +1254,242 @@ hmData.forEach((v,i)=>{{
 </body>
 </html>"""
 
+
+def generate_storico_html(run_date):
+    """Genera docs/storico.html leggendo ft_history.json.
+    Partite raggruppate per giorno, più recente in cima.
+    Verde = con goal, Rosso = 0-0.
+    """
+    history_file = Path("docs/ft_history.json")
+    if not history_file.exists():
+        return None
+    try:
+        hist = json.loads(history_file.read_text())
+    except Exception:
+        return None
+
+    matches = list(hist.values())
+    if not matches:
+        return None
+
+    # Raggruppa per data
+    from collections import defaultdict
+    by_day = defaultdict(list)
+    for m in matches:
+        by_day[m.get("date", "?")].append(m)
+
+    # Ordina giorni dal più recente
+    sorted_days = sorted(by_day.keys(), reverse=True)
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    total_matches = len(matches)
+    total_goal    = sum(1 for m in matches if (m.get("goals_home") or 0) + (m.get("goals_away") or 0) > 0)
+    total_zz      = total_matches - total_goal
+    strike_rate   = round(total_goal / total_matches * 100) if total_matches else 0
+
+    def fmt_day(d):
+        try:
+            from datetime import datetime as dt2
+            dd = dt2.strptime(d, "%Y-%m-%d")
+            giorni = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"]
+            mesi   = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"]
+            return f"{giorni[dd.weekday()]} {dd.day} {mesi[dd.month-1]}"
+        except:
+            return d
+
+    # Costruisci righe per ogni giorno
+    days_html = ""
+    for day in sorted_days:
+        day_matches = sorted(by_day[day], key=lambda x: x.get("kickoff",""), reverse=True)
+        is_today    = day == today_str
+        day_label   = ("🔴 OGGI · " if is_today else "") + fmt_day(day)
+        day_goal    = sum(1 for m in day_matches if (m.get("goals_home") or 0)+(m.get("goals_away") or 0) > 0)
+        day_zz      = len(day_matches) - day_goal
+        day_strike  = round(day_goal/len(day_matches)*100) if day_matches else 0
+
+        rows = ""
+        for m in day_matches:
+            hg  = m.get("goals_home") or 0
+            ag  = m.get("goals_away") or 0
+            tot = hg + ag
+            sc  = m.get("score", f"{hg}-{ag}")
+            fm  = m.get("first_min_cached")
+            ko  = m.get("kickoff","?")
+            lg  = m.get("league","?")
+            nat = m.get("country","")
+
+            if tot == 0:
+                # 0-0 rosso
+                sc_html  = f'<span class="sc-zz">0 – 0</span>'
+                fm_html  = '<span class="fm-na">—</span>'
+                row_cls  = "row-zz"
+            else:
+                # con goal verde
+                h, a     = sc.split("-") if "-" in sc else (hg, ag)
+                sc_html  = f'<span class="sc-ok">{h} – {a}</span>'
+                fm_html  = f'<span class="fm-ok">{fm}\'</span>' if fm else '<span class="fm-na">—</span>'
+                row_cls  = "row-ok"
+
+            # Bandiera
+            FLAGS = {
+                "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Germany":"🇩🇪","Mexico":"🇲🇽","Italy":"🇮🇹",
+                "Spain":"🇪🇸","France":"🇫🇷","Brazil":"🇧🇷","Argentina":"🇦🇷",
+                "Portugal":"🇵🇹","Netherlands":"🇳🇱","Belgium":"🇧🇪","Poland":"🇵🇱",
+                "Austria":"🇦🇹","Serbia":"🇷🇸","Chile":"🇨🇱","Colombia":"🇨🇴",
+                "Uruguay":"🇺🇾","Ecuador":"🇪🇨","Peru":"🇵🇪","Greece":"🇬🇷",
+                "Turkey":"🇹🇷","Romania":"🇷🇴","Slovenia":"🇸🇮","Bulgaria":"🇧🇬",
+                "Croatia":"🇭🇷","Slovakia":"🇸🇰","Czech Republic":"🇨🇿","Hungary":"🇭🇺",
+                "Ukraine":"🇺🇦","Russia":"🇷🇺","Sweden":"🇸🇪","Norway":"🇳🇴",
+                "Denmark":"🇩🇰","Finland":"🇫🇮","Switzerland":"🇨🇭","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+                "Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","Ireland":"🇮🇪","Nicaragua":"🇳🇮","Honduras":"🇭🇳",
+                "Indonesia":"🇮🇩","Singapore":"🇸🇬","Myanmar":"🇲🇲","North Macedonia":"🇲🇰",
+                "Lithuania":"🇱🇹","Latvia":"🇱🇻","Estonia":"🇪🇪","Moldova":"🇲🇩",
+                "Albania":"🇦🇱","Kosovo":"🇽🇰","Bosnia":"🇧🇦","Montenegro":"🇲🇪",
+                "World":"🌍",
+            }
+            flag = FLAGS.get(nat, "🌐")
+
+            rows += (
+                f'<tr class="{row_cls}">'
+                f'<td class="td-ko">{ko}</td>'
+                f'<td class="td-teams"><span class="team-h">{m.get("home","?")}</span>'
+                f'<span class="vs">vs</span>'
+                f'<span class="team-a">{m.get("away","?")}</span></td>'
+                f'<td class="td-sc">{sc_html}</td>'
+                f'<td class="td-fm">{fm_html}</td>'
+                f'<td class="td-lg">{flag} {lg}</td>'
+                f'</tr>'
+            )
+
+        days_html += f"""
+<div class="day-block">
+  <div class="day-header">
+    <span class="day-label">{'<span class="today-dot"></span>' if is_today else ''}{day_label}</span>
+    <span class="day-meta">
+      <span class="tag-ok">{day_goal} con goal</span>
+      <span class="tag-zz">{day_zz} × 0-0</span>
+      <span class="tag-sr">{day_strike}% strike</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+  <table class="mt">
+    <thead><tr>
+      <th class="th-ko">KO</th>
+      <th class="th-teams">PARTITA</th>
+      <th class="th-sc">SCORE</th>
+      <th class="th-fm">1° GOAL</th>
+      <th class="th-lg">LEGA</th>
+    </tr></thead>
+    <tbody>{rows}</tbody>
+  </table>
+  </div>
+</div>"""
+
+    CSS = """
+:root{--bg:#05080f;--card:#0c1220;--accent:#00e5a0;--red:#ff3a3a;--blue:#1a6aff;
+--orange:#ff8c00;--yellow:#f5c542;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(ellipse 55% 35% at 15% 8%,rgba(0,229,160,0.04) 0%,transparent 70%),
+radial-gradient(ellipse 45% 30% at 85% 85%,rgba(26,106,255,0.05) 0%,transparent 70%);}
+header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.95);
+backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+padding:10px 26px;display:flex;align-items:center;gap:16px;}
+.logo-text{font-size:1.1rem;font-weight:700;
+background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);
+letter-spacing:.15em;display:block;margin-top:-2px;-webkit-text-fill-color:var(--muted);}
+.hdiv{width:1px;height:22px;background:var(--border);}
+.nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);
+text-decoration:none;padding:3px 9px;border-radius:5px;border:1px solid transparent;transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--border);}
+.nav-link.active{color:var(--accent);border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.06);}
+.hright{margin-left:auto;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--muted);}
+.scanbar{background:rgba(0,229,160,.02);border-bottom:1px solid rgba(0,229,160,.07);
+padding:4px 26px;display:flex;flex-wrap:wrap;gap:0;
+font-family:'DM Mono',monospace;font-size:.56rem;color:var(--muted);}
+.si{padding:0 13px;border-right:1px solid rgba(255,255,255,.05);display:flex;gap:3px;align-items:center;}
+.si::before{content:'›';color:var(--accent);}
+.si b{color:var(--accent);}
+.wrap{padding:14px 26px;position:relative;z-index:1;max-width:1100px;margin:0 auto;}
+.day-block{margin-bottom:18px;}
+.day-header{display:flex;align-items:center;justify-content:space-between;
+padding:8px 12px;background:rgba(255,255,255,.03);
+border:1px solid var(--border);border-radius:7px 7px 0 0;border-bottom:none;}
+.day-label{font-family:'DM Mono',monospace;font-size:.7rem;font-weight:600;
+color:var(--text);display:flex;align-items:center;gap:7px;}
+.today-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.day-meta{display:flex;gap:6px;align-items:center;}
+.tag-ok{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(0,229,160,.08);color:var(--accent);border:1px solid rgba(0,229,160,.2);}
+.tag-zz{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(255,58,58,.07);color:var(--red);border:1px solid rgba(255,58,58,.2);}
+.tag-sr{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border);}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:0 0 7px 7px;}
+.mt{width:100%;border-collapse:collapse;}
+.mt thead tr{background:rgba(255,255,255,.02);}
+.mt th{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);
+text-align:left;padding:6px 10px;letter-spacing:.07em;text-transform:uppercase;
+border-bottom:1px solid var(--border);}
+.mt td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle;}
+.mt tr:last-child td{border:none;}
+.row-ok:hover{background:rgba(0,229,160,.04);}
+.row-zz{background:rgba(255,58,58,.02);}
+.row-zz:hover{background:rgba(255,58,58,.05);}
+.td-ko{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);white-space:nowrap;width:40px;}
+.td-teams{font-size:.7rem;}
+.team-h{font-weight:600;}
+.team-a{font-weight:600;}
+.vs{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);margin:0 6px;}
+.td-sc{width:70px;text-align:center;}
+.sc-ok{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;
+color:var(--accent);background:rgba(0,229,160,.08);
+padding:2px 8px;border-radius:4px;border:1px solid rgba(0,229,160,.2);}
+.sc-zz{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;
+color:var(--red);background:rgba(255,58,58,.07);
+padding:2px 8px;border-radius:4px;border:1px solid rgba(255,58,58,.2);}
+.td-fm{width:60px;text-align:center;}
+.fm-ok{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--orange);font-weight:600;}
+.fm-na{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}
+.td-lg{font-size:.62rem;color:var(--muted);white-space:nowrap;}
+.th-ko{width:40px;}.th-sc{width:70px;}.th-fm{width:60px;}
+"""
+
+    return f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoalScan \u00b7 Storico Alert</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>
+<header>
+  <div><span class="logo-text">GoalScan</span><span class="logo-sub">LIVE INTELLIGENCE \u00b7 BET365</span></div>
+  <div class="hdiv"></div>
+  <a href="index.html" class="nav-link">Dashboard</a>
+  <a href="storico.html" class="nav-link active">Storico</a>
+  <a href="stats.html" class="nav-link">Stats Avanzate</a>
+  <div class="hright">\U0001f504 {run_date}</div>
+</header>
+<div class="scanbar">
+  <div class="si">partite totali <b>{total_matches}</b></div>
+  <div class="si">con goal <b>{total_goal}</b></div>
+  <div class="si">0-0 <b>{total_zz}</b></div>
+  <div class="si">strike rate <b>{strike_rate}%</b></div>
+  <div class="si">giorni <b>{len(sorted_days)}</b></div>
+</div>
+<div class="wrap">
+{days_html}
+</div>
+</body>
+</html>"""
+
 def main():
     print("=" * 60)
     print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare  |  Bet365")
@@ -1324,6 +1561,12 @@ def main():
         print(f"stats.html generato con dati FT oggi")
     else:
         print("Nessuna partita FT oggi — stats.html non generato")
+
+    # Genera storico.html
+    storico_html = generate_storico_html(run_date)
+    if storico_html:
+        (docs / "storico.html").write_text(storico_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
+        print(f"storico.html generato")
 
     # Aggiorna index.html = ultimo report + link archivio
     # Raccoglie tutti i report esistenti
