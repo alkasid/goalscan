@@ -12,45 +12,43 @@ def api_get(endpoint, params):
         return []
     return data.get("response", [])
 
-# Cerca Toluca e Juarez nella Liga MX
-print("=== CERCA FIXTURE TOLUCA-JUAREZ ===")
-fixtures = api_get("fixtures", {"team": 2287, "last": 10})  # Toluca
-for f in fixtures:
-    home = f["teams"]["home"]["name"]
-    away = f["teams"]["away"]["name"]
-    status = f["fixture"]["status"]["short"]
-    league = f["league"]["name"]
-    season = f["league"]["season"]
-    date = f["fixture"]["date"][:10]
-    print(f"  {date} {home} vs {away} | {status} | {league} | season={season}")
+THRESHOLD = 12
+LAST_N = 5
 
-print("\n=== CERCA TEAM ID TOLUCA + JUAREZ ===")
-for name, search in [("Toluca","Toluca"), ("Juarez","Juarez")]:
-    teams = api_get("teams", {"search": search, "league": 262, "season": 2025})
-    for t in teams[:3]:
-        print(f"  {name}: id={t['team']['id']} nome={t['team']['name']}")
+# 1. Trova fixture Toluca vs Juarez oggi o nei prossimi giorni
+print("=== CERCA FIXTURE TOLUCA vs JUAREZ ===")
+from datetime import datetime, timezone, timedelta
+for i in range(4):
+    date = (datetime.now(timezone.utc) + timedelta(days=i-1)).strftime("%Y-%m-%d")
+    fixes = api_get("fixtures", {"date": date, "league": 262, "season": 2025})
+    for f in fixes:
+        h = f["teams"]["home"]["name"]
+        a = f["teams"]["away"]["name"]
+        st = f["fixture"]["status"]["short"]
+        fid = f["fixture"]["id"]
+        print(f"  {date} {h} vs {a} | {st} | id={fid}")
 
-print("\n=== ULTIME 5 FT TOLUCA LIGA MX ===")
-# Prima troviamo il team id giusto
-teams = api_get("teams", {"search": "Toluca", "league": 262, "season": 2025})
-if teams:
-    tid = teams[0]["team"]["id"]
-    print(f"  Toluca id={tid}")
+# 2. Cerca team IDs cercando per nome
+print("\n=== TEAM IDs Liga MX ===")
+for name in ["Toluca", "Juarez"]:
+    res = api_get("teams", {"search": name})
+    for t in res[:3]:
+        print(f"  {name}: id={t['team']['id']} nome={t['team']['name']} country={t['team']['country']}")
+
+# 3. Ora prendi i primi risultati e controlla ultime 5 gare
+print("\n=== ULTIME GARE FT PER SQUADRA (Liga MX season=2025) ===")
+for name, tid in [("Toluca", 2283), ("Juarez", 2293)]:
     games = api_get("fixtures", {"team": tid, "league": 262, "season": 2025, "last": 10})
     ft = [g for g in games if g["fixture"]["status"]["short"] == "FT"]
-    print(f"  Gare FT trovate: {len(ft)}")
-    for g in ft:
-        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | status={g['fixture']['status']['short']}")
-
-print("\n=== ULTIME 5 FT JUAREZ LIGA MX ===")
-teams2 = api_get("teams", {"search": "Juarez", "league": 262, "season": 2025})
-if teams2:
-    tid2 = teams2[0]["team"]["id"]
-    print(f"  Juarez id={tid2}")
-    games2 = api_get("fixtures", {"team": tid2, "league": 262, "season": 2025, "last": 10})
-    ft2 = [g for g in games2 if g["fixture"]["status"]["short"] == "FT"]
-    print(f"  Gare FT trovate: {len(ft2)}")
-    for g in ft2:
-        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | status={g['fixture']['status']['short']}")
-
-print("\nChiamate API usate: ~6")
+    scored = conceded = 0
+    for m in ft[:LAST_N]:
+        is_home = m["teams"]["home"]["id"] == tid
+        gh = int(m["goals"]["home"] or 0)
+        ga = int(m["goals"]["away"] or 0)
+        scored   += gh if is_home else ga
+        conceded += ga if is_home else gh
+    total = scored + conceded
+    print(f"\n  {name} (id={tid}): {len(ft)} gare FT | +{scored} -{conceded} = TOT {total} | qualifica: {total >= THRESHOLD}")
+    for g in ft[:LAST_N]:
+        st = g["fixture"]["status"]["short"]
+        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | {st}")
