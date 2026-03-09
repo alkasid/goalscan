@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoalScan · Storico Alert</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05080f;--card:#0c1220;--accent:#00e5a0;--red:#ff3a3a;--blue:#1a6aff;
+--orange:#ff8c00;--yellow:#f5c542;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(ellipse 55% 35% at 15% 8%,rgba(0,229,160,0.04) 0%,transparent 70%),
+radial-gradient(ellipse 45% 30% at 85% 85%,rgba(26,106,255,0.05) 0%,transparent 70%);}
+header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.95);
+backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+padding:10px 26px;display:flex;align-items:center;gap:16px;}
+.logo-text{font-size:1.1rem;font-weight:700;
+background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);
+letter-spacing:.15em;display:block;margin-top:-2px;-webkit-text-fill-color:var(--muted);}
+.hdiv{width:1px;height:22px;background:var(--border);}
+.nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);
+text-decoration:none;padding:3px 9px;border-radius:5px;border:1px solid transparent;transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--border);}
+.nav-link.active{color:var(--accent);border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.06);}
+.hright{margin-left:auto;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--muted);}
+.scanbar{background:rgba(0,229,160,.02);border-bottom:1px solid rgba(0,229,160,.07);
+padding:4px 26px;display:flex;flex-wrap:wrap;gap:0;
+font-family:'DM Mono',monospace;font-size:.56rem;color:var(--muted);}
+.si{padding:0 13px;border-right:1px solid rgba(255,255,255,.05);display:flex;gap:3px;align-items:center;}
+.si::before{content:'›';color:var(--accent);}
+.si b{color:var(--accent);}
+.wrap{padding:14px 26px;position:relative;z-index:1;max-width:1100px;margin:0 auto;}
+.day-block{margin-bottom:18px;}
+.day-header{display:flex;align-items:center;justify-content:space-between;
+padding:8px 12px;background:rgba(255,255,255,.03);
+border:1px solid var(--border);border-radius:7px 7px 0 0;border-bottom:none;}
+.day-label{font-family:'DM Mono',monospace;font-size:.7rem;font-weight:600;
+color:var(--text);display:flex;align-items:center;gap:7px;}
+.today-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.day-meta{display:flex;gap:6px;align-items:center;}
+.tag-ok{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(0,229,160,.08);color:var(--accent);border:1px solid rgba(0,229,160,.2);}
+.tag-zz{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(255,58,58,.07);color:var(--red);border:1px solid rgba(255,58,58,.2);}
+.tag-sr{font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;
+border-radius:3px;background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border);}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:0 0 7px 7px;}
+.mt{width:100%;border-collapse:collapse;}
+.mt thead tr{background:rgba(255,255,255,.02);}
+.mt th{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);
+text-align:left;padding:6px 10px;letter-spacing:.07em;text-transform:uppercase;
+border-bottom:1px solid var(--border);}
+.mt td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle;}
+.mt tr:last-child td{border:none;}
+.row-ok:hover{background:rgba(0,229,160,.04);}
+.row-zz{background:rgba(255,58,58,.02);}
+.row-zz:hover{background:rgba(255,58,58,.05);}
+.td-ko{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);white-space:nowrap;width:40px;}
+.td-teams{font-size:.7rem;}
+.team-h{font-weight:600;}
+.team-a{font-weight:600;}
+.vs{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);margin:0 6px;}
+.td-sc{width:70px;text-align:center;}
+.sc-ok{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;
+color:var(--accent);background:rgba(0,229,160,.08);
+padding:2px 8px;border-radius:4px;border:1px solid rgba(0,229,160,.2);}
+.sc-zz{font-family:'DM Mono',monospace;font-size:.75rem;font-weight:700;
+color:var(--red);background:rgba(255,58,58,.07);
+padding:2px 8px;border-radius:4px;border:1px solid rgba(255,58,58,.2);}
+.td-fm{width:60px;text-align:center;}
+.fm-ok{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--orange);font-weight:600;}
+.fm-na{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}
+.td-lg{font-size:.62rem;color:var(--muted);white-space:nowrap;}
+.th-ko{width:40px;}.th-sc{width:70px;}.th-fm{width:60px;}
+</style>
+</head>
+<body>
+<header>
+  <div><span class="logo-text">GoalScan</span><span class="logo-sub">LIVE INTELLIGENCE · BET365</span></div>
+  <div class="hdiv"></div>
+  <a href="index.html" class="nav-link">Dashboard</a>
+  <a href="storico.html" class="nav-link active">Storico</a>
+  <a href="stats.html" class="nav-link">Stats Avanzate</a>
+  <div class="hright">🔄 09/03/2026 23:42 UTC</div>
+</header>
+<div class="scanbar">
+  <div class="si">partite totali <b>26</b></div>
+  <div class="si">con goal <b>25</b></div>
+  <div class="si">0-0 <b>1</b></div>
+  <div class="si">strike rate <b>96%</b></div>
+  <div class="si">giorni <b>1</b></div>
+</div>
+<div class="wrap">
+
+<div class="day-block">
+  <div class="day-header">
+    <span class="day-label"><span class="today-dot"></span>🔴 OGGI · Lunedì 9 Mar</span>
+    <span class="day-meta">
+      <span class="tag-ok">25 con goal</span>
+      <span class="tag-zz">1 × 0-0</span>
+      <span class="tag-sr">96% strike</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+  <table class="mt">
+    <thead><tr>
+      <th class="th-ko">KO</th>
+      <th class="th-teams">PARTITA</th>
+      <th class="th-sc">SCORE</th>
+      <th class="th-fm">1° GOAL</th>
+      <th class="th-lg">LEGA</th>
+    </tr></thead>
+    <tbody><tr class="row-ok"><td class="td-ko">20:00</td><td class="td-teams"><span class="team-h">Espanyol</span><span class="vs">vs</span><span class="team-a">Oviedo</span></td><td class="td-sc"><span class="sc-ok">1 – 1</span></td><td class="td-fm"><span class="fm-ok">8'</span></td><td class="td-lg">🇪🇸 La Liga</td></tr><tr class="row-ok"><td class="td-ko">19:45</td><td class="td-teams"><span class="team-h">Lazio</span><span class="vs">vs</span><span class="team-a">Sassuolo</span></td><td class="td-sc"><span class="sc-ok">2 – 1</span></td><td class="td-fm"><span class="fm-ok">2'</span></td><td class="td-lg">🇮🇹 Serie A</td></tr><tr class="row-ok"><td class="td-ko">19:45</td><td class="td-teams"><span class="team-h">Trethomas Bluebirds</span><span class="vs">vs</span><span class="team-a">Newport City</span></td><td class="td-sc"><span class="sc-ok">1 – 0</span></td><td class="td-fm"><span class="fm-ok">77'</span></td><td class="td-lg">🏴󠁧󠁢󠁷󠁬󠁳󠁿 FAW Championship</td></tr><tr class="row-ok"><td class="td-ko">19:00</td><td class="td-teams"><span class="team-h">Colchester United U21</span><span class="vs">vs</span><span class="team-a">Swansea City U21</span></td><td class="td-sc"><span class="sc-ok">3 – 1</span></td><td class="td-fm"><span class="fm-ok">8'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Professional Development League</td></tr><tr class="row-ok"><td class="td-ko">19:00</td><td class="td-teams"><span class="team-h">Stoke City U21</span><span class="vs">vs</span><span class="team-a">Burnley U21</span></td><td class="td-sc"><span class="sc-ok">1 – 3</span></td><td class="td-fm"><span class="fm-ok">5'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League 2 Division One</td></tr><tr class="row-ok"><td class="td-ko">19:00</td><td class="td-teams"><span class="team-h">Sunderland U21</span><span class="vs">vs</span><span class="team-a">Leeds United U21</span></td><td class="td-sc"><span class="sc-ok">5 – 2</span></td><td class="td-fm"><span class="fm-ok">3'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League 2 Division One</td></tr><tr class="row-ok"><td class="td-ko">19:00</td><td class="td-teams"><span class="team-h">Leicester City U21</span><span class="vs">vs</span><span class="team-a">Newcastle United U21</span></td><td class="td-sc"><span class="sc-ok">2 – 2</span></td><td class="td-fm"><span class="fm-ok">10'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League 2 Division One</td></tr><tr class="row-ok"><td class="td-ko">19:00</td><td class="td-teams"><span class="team-h">Reading U21</span><span class="vs">vs</span><span class="team-a">Everton U21</span></td><td class="td-sc"><span class="sc-ok">1 – 0</span></td><td class="td-fm"><span class="fm-ok">11'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League 2 Division One</td></tr><tr class="row-ok"><td class="td-ko">18:00</td><td class="td-teams"><span class="team-h">CFR 1907 Cluj</span><span class="vs">vs</span><span class="team-a">Dinamo Bucuresti</span></td><td class="td-sc"><span class="sc-ok">2 – 0</span></td><td class="td-fm"><span class="fm-ok">6'</span></td><td class="td-lg">🇷🇴 Liga I</td></tr><tr class="row-zz"><td class="td-ko">17:00</td><td class="td-teams"><span class="team-h">Alanyaspor</span><span class="vs">vs</span><span class="team-a">Gençlerbirliği S.K.</span></td><td class="td-sc"><span class="sc-zz">0 – 0</span></td><td class="td-fm"><span class="fm-na">—</span></td><td class="td-lg">🇹🇷 Süper Lig</td></tr><tr class="row-ok"><td class="td-ko">17:00</td><td class="td-teams"><span class="team-h">Polonia Warszawa</span><span class="vs">vs</span><span class="team-a">ŁKS Łódź</span></td><td class="td-sc"><span class="sc-ok">0 – 1</span></td><td class="td-fm"><span class="fm-ok">46'</span></td><td class="td-lg">🇵🇱 I Liga</td></tr><tr class="row-ok"><td class="td-ko">17:00</td><td class="td-teams"><span class="team-h">Mladost Lucani</span><span class="vs">vs</span><span class="team-a">Novi Pazar</span></td><td class="td-sc"><span class="sc-ok">0 – 2</span></td><td class="td-fm"><span class="fm-ok">31'</span></td><td class="td-lg">🇷🇸 Super Liga</td></tr><tr class="row-ok"><td class="td-ko">16:30</td><td class="td-teams"><span class="team-h">Radomlje</span><span class="vs">vs</span><span class="team-a">Bravo</span></td><td class="td-sc"><span class="sc-ok">1 – 3</span></td><td class="td-fm"><span class="fm-ok">28'</span></td><td class="td-lg">🇸🇮 1. SNL</td></tr><tr class="row-ok"><td class="td-ko">16:00</td><td class="td-teams"><span class="team-h">Veres Rivne</span><span class="vs">vs</span><span class="team-a">LNZ Cherkasy</span></td><td class="td-sc"><span class="sc-ok">0 – 3</span></td><td class="td-fm"><span class="fm-ok">33'</span></td><td class="td-lg">🇺🇦 Premier League</td></tr><tr class="row-ok"><td class="td-ko">16:00</td><td class="td-teams"><span class="team-h">Panetolikos</span><span class="vs">vs</span><span class="team-a">Kifisia</span></td><td class="td-sc"><span class="sc-ok">2 – 1</span></td><td class="td-fm"><span class="fm-ok">20'</span></td><td class="td-lg">🇬🇷 Super League 1</td></tr><tr class="row-ok"><td class="td-ko">16:00</td><td class="td-teams"><span class="team-h">Levski Sofia</span><span class="vs">vs</span><span class="team-a">Lokomotiv Plovdiv</span></td><td class="td-sc"><span class="sc-ok">1 – 0</span></td><td class="td-fm"><span class="fm-ok">89'</span></td><td class="td-lg">🇧🇬 First League</td></tr><tr class="row-ok"><td class="td-ko">14:00</td><td class="td-teams"><span class="team-h">Birmingham City U21</span><span class="vs">vs</span><span class="team-a">Chelsea U21</span></td><td class="td-sc"><span class="sc-ok">1 – 4</span></td><td class="td-fm"><span class="fm-ok">32'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League 2 Division One</td></tr><tr class="row-ok"><td class="td-ko">13:30</td><td class="td-teams"><span class="team-h">Persib Bandung</span><span class="vs">vs</span><span class="team-a">Persik Kediri</span></td><td class="td-sc"><span class="sc-ok">3 – 0</span></td><td class="td-fm"><span class="fm-ok">24'</span></td><td class="td-lg">🇮🇩 Liga 1</td></tr><tr class="row-ok"><td class="td-ko">13:30</td><td class="td-teams"><span class="team-h">PSBS Biak Numfor</span><span class="vs">vs</span><span class="team-a">Semen Padang</span></td><td class="td-sc"><span class="sc-ok">0 – 2</span></td><td class="td-fm"><span class="fm-ok">70'</span></td><td class="td-lg">🇮🇩 Liga 1</td></tr><tr class="row-ok"><td class="td-ko">13:00</td><td class="td-teams"><span class="team-h">Shkendija</span><span class="vs">vs</span><span class="team-a">Akademija Pandev</span></td><td class="td-sc"><span class="sc-ok">1 – 1</span></td><td class="td-fm"><span class="fm-ok">33'</span></td><td class="td-lg">🌐 First League</td></tr><tr class="row-ok"><td class="td-ko">13:00</td><td class="td-teams"><span class="team-h">AFC Bournemouth U21</span><span class="vs">vs</span><span class="team-a">Brentford U21</span></td><td class="td-sc"><span class="sc-ok">2 – 3</span></td><td class="td-fm"><span class="fm-ok">5'</span></td><td class="td-lg">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Professional Development League</td></tr><tr class="row-ok"><td class="td-ko">12:30</td><td class="td-teams"><span class="team-h">Hougang United</span><span class="vs">vs</span><span class="team-a">Balestier Khalsa</span></td><td class="td-sc"><span class="sc-ok">1 – 2</span></td><td class="td-fm"><span class="fm-ok">21'</span></td><td class="td-lg">🇸🇬 Premier League</td></tr><tr class="row-ok"><td class="td-ko">10:00</td><td class="td-teams"><span class="team-h">Lecce U20</span><span class="vs">vs</span><span class="team-a">Torino U20</span></td><td class="td-sc"><span class="sc-ok">1 – 1</span></td><td class="td-fm"><span class="fm-ok">3'</span></td><td class="td-lg">🇮🇹 Campionato Primavera - 1</td></tr><tr class="row-ok"><td class="td-ko">09:30</td><td class="td-teams"><span class="team-h">Thitsar Arman</span><span class="vs">vs</span><span class="team-a">Dagon</span></td><td class="td-sc"><span class="sc-ok">2 – 2</span></td><td class="td-fm"><span class="fm-ok">11'</span></td><td class="td-lg">🇲🇲 National League</td></tr><tr class="row-ok"><td class="td-ko">01:30</td><td class="td-teams"><span class="team-h">Lobos Upnfm</span><span class="vs">vs</span><span class="team-a">Juticalpa</span></td><td class="td-sc"><span class="sc-ok">3 – 2</span></td><td class="td-fm"><span class="fm-ok">10'</span></td><td class="td-lg">🇭🇳 Liga Nacional</td></tr><tr class="row-ok"><td class="td-ko">01:00</td><td class="td-teams"><span class="team-h">Rancho Santana</span><span class="vs">vs</span><span class="team-a">Real Estelí</span></td><td class="td-sc"><span class="sc-ok">0 – 4</span></td><td class="td-fm"><span class="fm-ok">5'</span></td><td class="td-lg">🇳🇮 Primera Division</td></tr></tbody>
+  </table>
+  </div>
+</div>
+</div>
+</body>
+</html>
