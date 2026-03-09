@@ -812,11 +812,8 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
     """Genera stats.html con statistiche avanzate sulle partite FT degli alert."""
     from datetime import datetime, timezone
 
-    today_str     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
-    ft_matches = [m for m in matches
-                  if m.get("status") in ("FT", "AET", "PEN")
-                  and m.get("date") in (today_str, yesterday_str)]
+    # Tutte le partite FT nei 3 giorni coperti dal bot
+    ft_matches = [m for m in matches if m.get("status") in ("FT", "AET", "PEN")]
 
     total_ft  = len(ft_matches)
     total_all = len(matches)
@@ -832,9 +829,10 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
 
     for m in ft_matches:
         fid  = m.get("fixture_id")
-        evs  = get_fixture_events(fid) if fid else []
         hg   = m.get("goals_home") or 0
         ag   = m.get("goals_away") or 0
+        # Chiama API eventi solo se c'è almeno 1 goal (risparmia chiamate)
+        evs  = get_fixture_events(fid) if (fid and (hg + ag) > 0) else []
         tot_g = hg + ag
 
         mins = []
@@ -1154,7 +1152,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
   <div class="si">soglia <b>\u2265{THRESHOLD_VAL} goal ultime {LAST_N_VAL}</b></div>
   <div class="si">solo campionati <b>\u00b7 Bet365 verificate</b></div>
   <div class="si">copertura <b>{cover_start} \u2192 {cover_end}</b></div>
-  <div class="si">partite FT oggi <b>{total_ft}</b></div>
+  <div class="si">partite FT analizzate <b>{total_ft}</b></div>
 </div>
 <div class="wrap">
 <div class="g5">
@@ -1293,7 +1291,7 @@ def main():
     archive_file.write_text(html_content.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
 
     # Genera stats.html
-    cover_start = (datetime.now(timezone.utc)).strftime("%d/%m/%Y")
+    cover_start = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%d/%m/%Y")
     cover_end   = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%d/%m/%Y")
     stats_html  = generate_stats_html(qualified, run_date, cover_start, cover_end)
     if stats_html:
