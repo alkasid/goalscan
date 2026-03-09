@@ -1,6 +1,4 @@
 import os, requests
-from datetime import datetime, timezone
-from collections import Counter
 
 API_KEY = (os.environ.get("API_FOOTBALL_KEY") or "").strip()
 BASE    = "https://v3.football.api-sports.io"
@@ -14,65 +12,45 @@ def api_get(endpoint, params):
         return []
     return data.get("response", [])
 
-today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-print(f"Recupero partite FT del {today}...")
-fixtures = api_get("fixtures", {"date": today, "status": "FT"})
-print(f"Partite FT trovate: {len(fixtures)}\n")
+# Cerca Toluca e Juarez nella Liga MX
+print("=== CERCA FIXTURE TOLUCA-JUAREZ ===")
+fixtures = api_get("fixtures", {"team": 2287, "last": 10})  # Toluca
+for f in fixtures:
+    home = f["teams"]["home"]["name"]
+    away = f["teams"]["away"]["name"]
+    status = f["fixture"]["status"]["short"]
+    league = f["league"]["name"]
+    season = f["league"]["season"]
+    date = f["fixture"]["date"][:10]
+    print(f"  {date} {home} vs {away} | {status} | {league} | season={season}")
 
-first_goals = []
-no_goal = 0
+print("\n=== CERCA TEAM ID TOLUCA + JUAREZ ===")
+for name, search in [("Toluca","Toluca"), ("Juarez","Juarez")]:
+    teams = api_get("teams", {"search": search, "league": 262, "season": 2025})
+    for t in teams[:3]:
+        print(f"  {name}: id={t['team']['id']} nome={t['team']['name']}")
 
-for fix in fixtures:
-    fid  = fix["fixture"]["id"]
-    hg   = fix["goals"]["home"] or 0
-    ag   = fix["goals"]["away"] or 0
-    if hg == 0 and ag == 0:
-        no_goal += 1
-        continue
+print("\n=== ULTIME 5 FT TOLUCA LIGA MX ===")
+# Prima troviamo il team id giusto
+teams = api_get("teams", {"search": "Toluca", "league": 262, "season": 2025})
+if teams:
+    tid = teams[0]["team"]["id"]
+    print(f"  Toluca id={tid}")
+    games = api_get("fixtures", {"team": tid, "league": 262, "season": 2025, "last": 10})
+    ft = [g for g in games if g["fixture"]["status"]["short"] == "FT"]
+    print(f"  Gare FT trovate: {len(ft)}")
+    for g in ft:
+        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | status={g['fixture']['status']['short']}")
 
-    # Recupera tutti gli eventi della partita
-    events = api_get("fixtures/events", {"fixture": fid})
-    
-    # Trova primo goal (escludi autogol e rigori falliti)
-    for ev in events:
-        t = ev.get("type","")
-        detail = ev.get("detail","")
-        if t == "Goal" and detail not in ("Missed Penalty", "Own Goal"):
-            minute = ev["time"]["elapsed"]
-            extra  = ev["time"].get("extra") or 0
-            total_min = minute + extra
-            first_goals.append(total_min)
-            break
+print("\n=== ULTIME 5 FT JUAREZ LIGA MX ===")
+teams2 = api_get("teams", {"search": "Juarez", "league": 262, "season": 2025})
+if teams2:
+    tid2 = teams2[0]["team"]["id"]
+    print(f"  Juarez id={tid2}")
+    games2 = api_get("fixtures", {"team": tid2, "league": 262, "season": 2025, "last": 10})
+    ft2 = [g for g in games2 if g["fixture"]["status"]["short"] == "FT"]
+    print(f"  Gare FT trovate: {len(ft2)}")
+    for g in ft2:
+        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | status={g['fixture']['status']['short']}")
 
-print(f"Partite con almeno 1 goal: {len(first_goals)}")
-print(f"Partite 0-0: {no_goal}")
-print(f"Partite senza eventi goal trovati: {len(fixtures) - no_goal - len(first_goals)}\n")
-
-if not first_goals:
-    print("Nessun dato disponibile")
-    exit()
-
-# Fasce minuti
-fasce = [
-    ("1-15",   1,  15),
-    ("16-30",  16, 30),
-    ("31-45",  31, 45),
-    ("46-60",  46, 60),
-    ("61-75",  61, 75),
-    ("76-90+", 76, 200),
-]
-
-total = len(first_goals)
-print("=" * 50)
-print(f"{'FASCIA':<10} {'N':<6} {'%':<8} BARRA")
-print("=" * 50)
-for label, lo, hi in fasce:
-    count = sum(1 for m in first_goals if lo <= m <= hi)
-    pct   = count / total * 100
-    bar   = "█" * int(pct / 3)
-    print(f"{label:<10} {count:<6} {pct:>5.1f}%   {bar}")
-
-print("=" * 50)
-avg = sum(first_goals) / total
-print(f"Media minuto 1° goal: {avg:.1f}'")
-print(f"Min: {min(first_goals)}'  |  Max: {max(first_goals)}'")
+print("\nChiamate API usate: ~6")
