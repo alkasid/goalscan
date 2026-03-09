@@ -213,11 +213,13 @@ def analyze_fixture(fix):
         return None, f"✅ goal OK ma ❌ no quote Bet365 — {home_name}:{hs['total']} {away_name}:{as_['total']}"
 
     match_status = fixture.get("status", {}).get("short", "NS")
+    goals        = fix.get("goals", {})
     return {"home": home_name, "away": away_name,
             "home_stats": hs, "away_stats": as_,
             "league": league_name, "country": country, "kickoff": ko,
             "date": match_date, "fixture_id": fixture_id,
-            "status": match_status}, \
+            "status": match_status,
+            "goals_home": goals.get("home"), "goals_away": goals.get("away")}, \
            f"✅✅ ALERT+QUOTE | {home_name}:{hs['total']} {away_name}:{as_['total']}"
 
 
@@ -404,6 +406,7 @@ def generate_html(matches, run_date, total_analyzed):
         ".logo-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);"
         "letter-spacing:.15em;display:block;margin-top:-3px;-webkit-text-fill-color:var(--muted);}"
         ".hdivider{width:1px;height:28px;background:var(--border);}"
+        ".nav-stats{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(0,229,160,.3);background:rgba(0,229,160,.06);transition:all .2s;}"        ".nav-stats:hover{background:rgba(0,229,160,.12);}"
         ".hstats{display:flex;gap:20px;}"
         ".hstat{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);"
         "display:flex;align-items:center;gap:5px;}"
@@ -770,6 +773,7 @@ updateLive();setInterval(updateLive,15000);
         f'<span class="logo-sub">LIVE INTELLIGENCE · BET365</span>'
         f'</div></div>'
         f'<div class="hdivider"></div>'
+        f'<a href="stats.html" class="nav-stats">📊 Stats</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
         f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
@@ -777,7 +781,6 @@ updateLive();setInterval(updateLive,15000);
         f'<div class="hstat">ultime <strong>{LAST_N}</strong> gare</div>'
         f'</div>'
         f'<div class="hright">'
-        f'<a href="stats.html" style="font-family:\"DM Mono\",monospace;font-size:.62rem;color:rgba(0,229,160,.7);text-decoration:none;margin-right:14px;padding:2px 8px;border:1px solid rgba(0,229,160,.2);border-radius:4px;">📊 Stats</a>'
         f'<div class="pulse-dot"></div>'
         f'<span class="live-tag">LIVE</span>'
         f'<span class="update-time" id="live-ts">⏳</span>'
@@ -850,7 +853,7 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
         results_count[sc] = results_count.get(sc, 0) + 1
 
         lg  = m.get("league", "?")
-        nat = m.get("nation", "")
+        nat = m.get("country", "")
         key = f"{lg}|{nat}"
         if key not in league_stats:
             league_stats[key] = {"n": 0, "goals": 0, "league": lg, "nation": nat}
