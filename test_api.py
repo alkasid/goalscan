@@ -15,30 +15,10 @@ def api_get(endpoint, params):
 THRESHOLD = 12
 LAST_N = 5
 
-# 1. Trova fixture Toluca vs Juarez oggi o nei prossimi giorni
-print("=== CERCA FIXTURE TOLUCA vs JUAREZ ===")
-from datetime import datetime, timezone, timedelta
-for i in range(4):
-    date = (datetime.now(timezone.utc) + timedelta(days=i-1)).strftime("%Y-%m-%d")
-    fixes = api_get("fixtures", {"date": date, "league": 262, "season": 2025})
-    for f in fixes:
-        h = f["teams"]["home"]["name"]
-        a = f["teams"]["away"]["name"]
-        st = f["fixture"]["status"]["short"]
-        fid = f["fixture"]["id"]
-        print(f"  {date} {h} vs {a} | {st} | id={fid}")
-
-# 2. Cerca team IDs cercando per nome
-print("\n=== TEAM IDs Liga MX ===")
-for name in ["Toluca", "Juarez"]:
-    res = api_get("teams", {"search": name})
-    for t in res[:3]:
-        print(f"  {name}: id={t['team']['id']} nome={t['team']['name']} country={t['team']['country']}")
-
-# 3. Ora prendi i primi risultati e controlla ultime 5 gare
-print("\n=== ULTIME GARE FT PER SQUADRA (Liga MX season=2025) ===")
-for name, tid in [("Toluca", 2283), ("Juarez", 2293)]:
-    games = api_get("fixtures", {"team": tid, "league": 262, "season": 2025, "last": 10})
+print("=== ULTIME GARE FT PER SQUADRA (Liga MX league=262 season=2025) ===")
+for name, tid in [("Toluca", 2281), ("FC Juarez", 2298)]:
+    games = api_get("fixtures", {"team": tid, "league": 262, "season": 2025, "last": 15})
+    all_st = set(g["fixture"]["status"]["short"] for g in games)
     ft = [g for g in games if g["fixture"]["status"]["short"] == "FT"]
     scored = conceded = 0
     for m in ft[:LAST_N]:
@@ -48,7 +28,14 @@ for name, tid in [("Toluca", 2283), ("Juarez", 2293)]:
         scored   += gh if is_home else ga
         conceded += ga if is_home else gh
     total = scored + conceded
-    print(f"\n  {name} (id={tid}): {len(ft)} gare FT | +{scored} -{conceded} = TOT {total} | qualifica: {total >= THRESHOLD}")
-    for g in ft[:LAST_N]:
+    print(f"\n  {name} (id={tid})")
+    print(f"  Tutti gli status trovati: {all_st}")
+    print(f"  Gare FT: {len(ft)} | +{scored} -{conceded} = TOT {total} | qualifica: {total >= THRESHOLD}")
+    for g in games[:8]:
         st = g["fixture"]["status"]["short"]
-        print(f"    {g['fixture']['date'][:10]} {g['teams']['home']['name']} {g['goals']['home']}-{g['goals']['away']} {g['teams']['away']['name']} | {st}")
+        date = g["fixture"]["date"][:10]
+        h = g["teams"]["home"]["name"]
+        a = g["teams"]["away"]["name"]
+        gh = g["goals"]["home"]
+        ga = g["goals"]["away"]
+        print(f"    {date} {h} {gh}-{ga} {a} | {st}")
