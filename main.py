@@ -1349,8 +1349,15 @@ def main():
 
     # Salva lista fixture_id per live_updater.py
     ids = [m["fixture_id"] for m in qualified if m.get("fixture_id")]
-    (docs / "alert_ids.json").write_text(json.dumps(ids))
-    print(f"alert_ids.json: {len(ids)} fixture da monitorare")
+    # Accumula IDs — non sovrascrivere, unisci con quelli esistenti
+    ids_file = docs / "alert_ids.json"
+    existing_ids = []
+    if ids_file.exists():
+        try: existing_ids = json.loads(ids_file.read_text())
+        except: pass
+    merged_ids = list(set(existing_ids + ids))
+    ids_file.write_text(json.dumps(merged_ids))
+    print(f"alert_ids.json: {len(merged_ids)} fixture totali ({len(ids)} nuovi)")
 
     print("\n[4] Invio Telegram...")
     send_telegram(qualified, total, run_date)
