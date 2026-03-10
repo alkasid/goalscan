@@ -1363,12 +1363,13 @@ def generate_storico_html(run_date):
 
         days_html += f"""
 <div class="day-block">
-  <div class="day-header">
+  <div class="day-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
     <span class="day-label">{'<span class="today-dot"></span>' if is_today else ''}{day_label}</span>
     <span class="day-meta">
       <span class="tag-ok">{day_goal} con goal</span>
-      <span class="tag-zz">{day_zz} × 0-0</span>
+      <span class="tag-zz">{day_zz} &times; 0-0</span>
       <span class="tag-sr">{day_strike}% strike</span>
+      <span class="arrow">&#9660;</span>
     </span>
   </div>
   <div class="table-wrap">
@@ -1455,6 +1456,12 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 .fm-na{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);}
 .td-lg{font-size:.6rem;color:var(--muted);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
 .th-ko{width:38px;}.th-sc{width:72px;}.th-fm{width:52px;}
+.day-header{cursor:pointer;user-select:none;}
+.day-header:hover{background:rgba(255,255,255,.04);}
+.table-wrap{overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:9999px;opacity:1;}
+.table-wrap.collapsed{max-height:0 !important;opacity:0;border-color:transparent;}
+.arrow{font-size:.55rem;color:var(--muted);margin-left:10px;display:inline-block;transition:transform .25s;}
+.arrow.closed{transform:rotate(-90deg);}
 """
 
     return f"""<!DOCTYPE html>
