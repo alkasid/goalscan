@@ -75,6 +75,12 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 .fm-na{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);}
 .td-lg{font-size:.6rem;color:var(--muted);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
 .th-ko{width:38px;}.th-sc{width:72px;}.th-fm{width:52px;}
+.day-header{cursor:pointer;user-select:none;}
+.day-header:hover{background:rgba(255,255,255,.04);}
+.table-wrap{overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:9999px;opacity:1;}
+.table-wrap.collapsed{max-height:0 !important;opacity:0;border-color:transparent;}
+.arrow{font-size:.55rem;color:var(--muted);margin-left:10px;display:inline-block;transition:transform .25s;}
+.arrow.closed{transform:rotate(-90deg);}
 </style>
 </head>
 <body>
@@ -84,7 +90,7 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
   <a href="index.html" class="nav-link">Dashboard</a>
   <a href="storico.html" class="nav-link active">Storico</a>
   <a href="stats.html" class="nav-link">Stats Avanzate</a>
-  <div class="hright">🔄 09/03/2026 23:48 UTC</div>
+  <div class="hright">🔄 10/03/2026 01:59 UTC</div>
 </header>
 <div class="scanbar">
   <div class="si">partite totali <b>26</b></div>
@@ -96,12 +102,13 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 <div class="wrap">
 
 <div class="day-block">
-  <div class="day-header">
-    <span class="day-label"><span class="today-dot"></span>🔴 OGGI · Lunedì 9 Mar</span>
+  <div class="day-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
+    <span class="day-label">Lunedì 9 Mar</span>
     <span class="day-meta">
       <span class="tag-ok">25 con goal</span>
-      <span class="tag-zz">1 × 0-0</span>
+      <span class="tag-zz">1 &times; 0-0</span>
       <span class="tag-sr">96% strike</span>
+      <span class="arrow">&#9660;</span>
     </span>
   </div>
   <div class="table-wrap">
