@@ -33,7 +33,6 @@ HEADERS   = {"x-apisports-key": API_KEY}
 BET365_ID = 8
 TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
 TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
-TELEGRAM_ENABLED = False  # disattivato temporaneamente
 
 SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
 
@@ -1616,20 +1615,17 @@ def main():
     print(f"\nReport salvato: {archive_file.name} → aggiornato index.html")
 
     # Salva lista fixture_id per live_updater.py
-    ids = [m["fixture_id"] for m in qualified if m.get("fixture_id")]
-    # Accumula IDs — non sovrascrivere, unisci con quelli esistenti
+    # Solo IDs di oggi e domani — non accumulare storici (causano chiamate eccessive dal Worker)
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    d1_str    = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+    ids = [m["fixture_id"] for m in qualified
+           if m.get("fixture_id") and m.get("date","") in (today_str, d1_str)]
     ids_file = docs / "alert_ids.json"
-    existing_ids = []
-    if ids_file.exists():
-        try: existing_ids = json.loads(ids_file.read_text())
-        except: pass
-    merged_ids = list(set(existing_ids + ids))
-    ids_file.write_text(json.dumps(merged_ids))
-    print(f"alert_ids.json: {len(merged_ids)} fixture totali ({len(ids)} nuovi)")
+    ids_file.write_text(json.dumps(ids))
+    print(f"alert_ids.json: {len(ids)} fixture (solo oggi+domani)")
 
     print("\n[4] Invio Telegram...")
-    if TELEGRAM_ENABLED:
-        send_telegram(qualified, total, run_date)
+    send_telegram(qualified, total, run_date)
 
 if __name__ == "__main__":
     main()
