@@ -92,14 +92,7 @@ def get_all_fixtures():
     fixtures_by_league = defaultdict(list)
 
     for date in dates:
-        seen_ids = set()
-        data = []
-        for _st in ["NS", "1H", "HT", "2H", "ET", "P", "FT"]:
-            for _fix in api_get("fixtures", {"date": date, "status": _st}):
-                _fid = _fix.get("fixture", {}).get("id")
-                if _fid not in seen_ids:
-                    seen_ids.add(_fid)
-                    data.append(_fix)
+        data = api_get("fixtures", {"date": date, "status": "NS-1H-HT-2H-ET-P-FT"})
         print(f"  {date}: {len(data)} match raw")
         for fix in data:
             name_lower = fix.get("league", {}).get("name", "").lower()
@@ -635,7 +628,26 @@ const REFRESH='\uD83D\uDD04';
 async function updateLive(){
   try{
     var all=[].slice.call(document.querySelectorAll('.card[data-fid]'));
-    var ids=all.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
+    // OTTIMIZZATO: solo match con badge live visibile (1H,HT,2H,ET,P)
+    // I match NS/FT non vengono interrogati ogni 15s — risparmio ~67% chiamate API
+    var liveCards=all.filter(function(c){
+      var b=c.querySelector('.live-score');
+      // Includi anche card senza badge se sono nella sezione live (potrebbero essere appena iniziate)
+      var inLive=(c.closest('#live-section')!==null);
+      var hasLiveBadge=(b&&b.style.display!=='none'&&b.textContent!=='FT');
+      return inLive||hasLiveBadge;
+    });
+    // Se non ci sono live, fai un check leggero ogni 60s su tutti per rilevare inizi
+    var now=Date.now();
+    var ids;
+    if(liveCards.length>0){
+      ids=liveCards.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
+    } else {
+      // Nessun live — controlla tutti ogni 60s (non ogni 15s)
+      if(window._lastFullCheck&&(now-window._lastFullCheck)<60000)return;
+      window._lastFullCheck=now;
+      ids=all.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
+    }
     if(!ids.length)return;
     var fixtures=[];
     for(var i=0;i<ids.length;i+=20){
@@ -1523,7 +1535,7 @@ def main():
         run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
         out = Path("docs/index.html")
         out.parent.mkdir(exist_ok=True)
-        out.write_text(generate_html([], run_date, 0).encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
+        out.write_text(generate_html([], run_date, 0), encoding="utf-8")
         return
 
     print("\n[2] Analisi storico squadre (parallelo, max 3 workers)...\n")
