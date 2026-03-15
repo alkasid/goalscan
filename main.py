@@ -33,6 +33,7 @@ HEADERS   = {"x-apisports-key": API_KEY}
 BET365_ID = 8
 TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
 TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+TELEGRAM_ENABLED = False  # disattivato temporaneamente
 
 SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
 
@@ -1625,7 +1626,8 @@ def main():
     print(f"alert_ids.json: {len(ids)} fixture (solo oggi+domani)")
 
     print("\n[4] Invio Telegram...")
-    send_telegram(qualified, total, run_date)
+    if TELEGRAM_ENABLED:
+        send_telegram(qualified, total, run_date)
 
 if __name__ == "__main__":
     main()
