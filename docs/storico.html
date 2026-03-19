@@ -90,17 +90,40 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
   <a href="index.html" class="nav-link">Dashboard</a>
   <a href="storico.html" class="nav-link active">Storico</a>
   <a href="stats.html" class="nav-link">Stats Avanzate</a>
-  <div class="hright">🔄 19/03/2026 01:16 UTC</div>
+  <div class="hright">🔄 19/03/2026 04:11 UTC</div>
 </header>
 <div class="scanbar">
-  <div class="si">partite totali <b>890</b></div>
-  <div class="si">con goal <b>833</b></div>
-  <div class="si">0-0 <b>57</b></div>
+  <div class="si">partite totali <b>894</b></div>
+  <div class="si">con goal <b>836</b></div>
+  <div class="si">0-0 <b>58</b></div>
   <div class="si">strike rate <b>94%</b></div>
-  <div class="si">giorni <b>10</b></div>
+  <div class="si">giorni <b>11</b></div>
 </div>
 <div class="wrap">
 
+<div class="day-block">
+  <div class="day-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
+    <span class="day-label"><span class="today-dot"></span>🔴 OGGI · Giovedì 19 Mar</span>
+    <span class="day-meta">
+      <span class="tag-ok">3 con goal</span>
+      <span class="tag-zz">1 &times; 0-0</span>
+      <span class="tag-sr">75% strike</span>
+      <span class="arrow">&#9660;</span>
+    </span>
+  </div>
+  <div class="table-wrap">
+  <table class="mt">
+    <thead><tr>
+      <th class="th-ko">KO</th>
+      <th class="th-teams">PARTITA</th>
+      <th class="th-sc">SCORE</th>
+      <th class="th-fm">1° GOAL</th>
+      <th class="th-lg">LEGA</th>
+    </tr></thead>
+    <tbody><tr class="row-ok"><td class="td-ko">01:00</td><td class="td-teams"><span class="team-h">Municipal Limeño</span><span class="vs">vs</span><span class="team-a">Platense</span></td><td class="td-sc"><span class="sc-ok">2 – 0</span></td><td class="td-fm"><span class="fm-ok">41'</span></td><td class="td-lg">🌐 Primera Division</td></tr><tr class="row-ok"><td class="td-ko">00:30</td><td class="td-teams"><span class="team-h">Vasco DA Gama</span><span class="vs">vs</span><span class="team-a">Fluminense</span></td><td class="td-sc"><span class="sc-ok">3 – 2</span></td><td class="td-fm"><span class="fm-ok">1'</span></td><td class="td-lg">🇧🇷 Serie A</td></tr><tr class="row-zz"><td class="td-ko">00:00</td><td class="td-teams"><span class="team-h">Club Sando</span><span class="vs">vs</span><span class="team-a">Defence Force</span></td><td class="td-sc"><span class="sc-zz">0 – 0</span></td><td class="td-fm"><span class="fm-na">—</span></td><td class="td-lg">🌐 Pro League</td></tr><tr class="row-ok"><td class="td-ko">00:00</td><td class="td-teams"><span class="team-h">Mictlán</span><span class="vs">vs</span><span class="team-a">Malacateco</span></td><td class="td-sc"><span class="sc-ok">1 – 0</span></td><td class="td-fm"><span class="fm-ok">12'</span></td><td class="td-lg">🌐 Liga Nacional</td></tr></tbody>
+  </table>
+  </div>
+</div>
 <div class="day-block">
   <div class="day-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
     <span class="day-label">Mercoledì 18 Mar</span>
