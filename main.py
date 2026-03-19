@@ -1518,15 +1518,20 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 
 
 def generate_global_stats_html(matches, run_date):
-    """Genera docs/global_stats.html con tutte le partite FT quotate Bet365."""
+    """Genera docs/global_stats.html con tutte le partite quotate Bet365."""
     from datetime import datetime, timezone
 
-    ft_matches = [m for m in matches if m and m.get("status") in ("FT","AET","PEN")]
-    total_ft   = len(ft_matches)
-    total_all  = len([m for m in matches if m])
+    all_matches = [m for m in matches if m]
+    total_all   = len(all_matches)
 
-    if total_ft == 0:
+    if total_all == 0:
         return None
+
+    ft_matches = [m for m in all_matches if m.get("status") in ("FT","AET","PEN")]
+    total_ft   = len(ft_matches)
+
+    # Usa ft_matches per statistiche goal se disponibili, altrimenti all_matches
+    stat_matches = ft_matches if ft_matches else all_matches
 
     first_goal_minutes = []
     total_goals_list   = []
@@ -1534,7 +1539,7 @@ def generate_global_stats_html(matches, run_date):
     league_stats       = {}
     match_events       = []
 
-    for m in ft_matches:
+    for m in stat_matches:
         fid = m.get("fixture_id")
         hg  = m.get("goals_home") or 0
         ag  = m.get("goals_away") or 0
@@ -1557,9 +1562,10 @@ def generate_global_stats_html(matches, run_date):
         })
 
     with_goal   = sum(1 for x in total_goals_list if x > 0)
-    zero_zero   = total_ft - with_goal
-    avg_goals   = round(sum(total_goals_list) / total_ft, 1) if total_ft else 0
-    strike_rate = round(with_goal / total_ft * 100) if total_ft else 0
+    n_stat      = len(stat_matches)
+    zero_zero   = n_stat - with_goal
+    avg_goals   = round(sum(total_goals_list) / n_stat, 1) if n_stat else 0
+    strike_rate = round(with_goal / n_stat * 100) if n_stat else 0
     total_goals = sum(total_goals_list)
     over25      = sum(1 for x in total_goals_list if x > 2)
     gg          = sum(1 for m2 in ft_matches
