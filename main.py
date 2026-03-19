@@ -794,7 +794,8 @@ updateLive();setInterval(updateLive,15000);
         f'</div></div>'
         f'<div class="hdivider"></div>'
         f'<a href="storico.html" class="nav-stats" style="margin-right:4px">📋 Storico</a>'
-        f'<a href="stats.html" class="nav-stats">📊 Stats Avanzate</a>'
+        f'<a href="stats.html" class="nav-stats" style="margin-right:4px">📊 Stats Avanzate</a>'
+        f'<a href="global_stats.html" class="nav-stats">🌍 Stats Globali</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
         f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
@@ -1515,119 +1516,161 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 </body>
 </html>"""
 
-def main():
-    print("=" * 60)
-    print(f"GOAL BOT  |  soglia ≥{THRESHOLD}  |  ultime {LAST_N} gare  |  Bet365")
-    print("=" * 60)
 
-    print("\n[1] Recupero match oggi + domani + dopodomani...")
-    league_seasons, fixtures_by_league = get_all_fixtures()
+def generate_global_stats_html(matches, run_date):
+    """Genera docs/global_stats.html con tutte le partite FT quotate Bet365."""
+    from datetime import datetime, timezone
 
-    all_fixtures = []
-    for lid, fixes in fixtures_by_league.items():
-        for f in fixes:
-            f["_league_id"] = lid
-        all_fixtures.extend(fixes)
+    ft_matches = [m for m in matches if m and m.get("status") in ("FT","AET","PEN")]
+    total_ft   = len(ft_matches)
+    total_all  = len([m for m in matches if m])
 
-    print(f"\nTotale match da analizzare: {len(all_fixtures)}")
+    if total_ft == 0:
+        return None
 
-    if not all_fixtures:
-        print("Nessun match trovato.")
-        run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-        out = Path("docs/index.html")
-        out.parent.mkdir(exist_ok=True)
-        out.write_text(generate_html([], run_date, 0), encoding="utf-8")
-        return
+    first_goal_minutes = []
+    total_goals_list   = []
+    results_count      = {}
+    league_stats       = {}
+    match_events       = []
 
-    print("\n[2] Analisi storico squadre (parallelo, max 3 workers)...\n")
-    qualified = []
-    total = len(all_fixtures)
+    for m in ft_matches:
+        fid = m.get("fixture_id")
+        hg  = m.get("goals_home") or 0
+        ag  = m.get("goals_away") or 0
+        tot_g = hg + ag
+        total_goals_list.append(tot_g)
+        sc = f"{hg}-{ag}"
+        results_count[sc] = results_count.get(sc, 0) + 1
+        lg  = m.get("league", "?")
+        nat = m.get("country", "")
+        key = f"{lg}|{nat}"
+        if key not in league_stats:
+            league_stats[key] = {"n": 0, "goals": 0, "league": lg, "nation": nat}
+        league_stats[key]["n"]     += 1
+        league_stats[key]["goals"] += tot_g
+        match_events.append({
+            "home": m.get("home","?"), "away": m.get("away","?"),
+            "league": lg, "nation": nat,
+            "score": sc, "total_goals": tot_g,
+            "kickoff": m.get("kickoff","?"), "date": m.get("date","?"),
+        })
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        future_to_fix = {executor.submit(analyze_fixture, fix): fix for fix in all_fixtures}
-        done = 0
-        for future in as_completed(future_to_fix):
-            done += 1
-            fix = future_to_fix[future]
-            home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
-            away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
-            try:
-                result, log = future.result()
-                print(f"[{done:>4}/{total}] {home_name} vs {away_name} — {log}")
-                if result:
-                    qualified.append(result)
-            except Exception as e:
-                print(f"[{done:>4}/{total}] {home_name} vs {away_name} — ERR: {e}")
+    with_goal   = sum(1 for x in total_goals_list if x > 0)
+    zero_zero   = total_ft - with_goal
+    avg_goals   = round(sum(total_goals_list) / total_ft, 1) if total_ft else 0
+    strike_rate = round(with_goal / total_ft * 100) if total_ft else 0
+    total_goals = sum(total_goals_list)
+    over25      = sum(1 for x in total_goals_list if x > 2)
+    gg          = sum(1 for m2 in ft_matches
+                      if (m2.get("goals_home") or 0) > 0 and (m2.get("goals_away") or 0) > 0)
+    over25_pct  = round(over25 / total_ft * 100) if total_ft else 0
+    gg_pct      = round(gg / total_ft * 100) if total_ft else 0
+    zz_pct      = round(zero_zero / total_ft * 100, 1) if total_ft else 0
 
-    print(f"\n{'='*60}")
-    print(f"ALERT FINALI (goal + Bet365): {len(qualified)} / {total}")
-    print(f"{'='*60}")
-    for m in sorted(qualified, key=lambda x: (x["date"], x["kickoff"])):
-        print(f"  {m['date']} {m['kickoff']}  {m['home']} ({m['home_stats']['total']}) vs "
-              f"{m['away']} ({m['away_stats']['total']})  [{m['league']}]")
+    # Fasce goal
+    buckets = [(0,0),(1,1),(2,2),(3,3),(4,5),(6,99)]
+    bucket_labels = ["0 goal","1 goal","2 goal","3 goal","4-5 goal","6+ goal"]
+    bucket_data = []
+    for (lo,hi), lbl in zip(buckets, bucket_labels):
+        n = sum(1 for x in total_goals_list if lo <= x <= hi)
+        pct = round(n/total_ft*100,1) if total_ft else 0
+        bucket_data.append({"lbl": lbl, "n": n, "pct": pct})
+    max_b = max((b["n"] for b in bucket_data), default=1) or 1
 
-    run_date = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-    run_slug = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-    docs = Path("docs")
-    docs.mkdir(exist_ok=True)
+    # Top leghe
+    top_leagues = sorted(league_stats.values(), key=lambda x: x["n"], reverse=True)[:10]
+    max_lg_n    = max((l["n"] for l in top_leagues), default=1) or 1
 
-    # Salva report con timestamp (archivio permanente)
-    archive_file = docs / f"report-{run_slug}.html"
-    html_content = generate_html(qualified, run_date, total)
-    archive_file.write_text(html_content.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
+    # Top match per goal
+    top_matches = sorted(match_events, key=lambda x: x["total_goals"], reverse=True)[:10]
 
-    # Genera stats.html
-    cover_start = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%d/%m/%Y")
-    cover_end   = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%d/%m/%Y")
-    stats_html  = generate_stats_html(qualified, run_date, cover_start, cover_end)
-    if stats_html:
-        stats_file = docs / "stats.html"
-        stats_file.write_text(stats_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
-        print(f"stats.html generato con dati FT oggi")
-    else:
-        print("Nessuna partita FT oggi — stats.html non generato")
+    # Risultati buckets
+    ris_buckets = {
+        "0-0":     {"label":"0 – 0",     "color":"#ff3a3a","n":0},
+        "1-0|0-1": {"label":"1-0 / 0-1", "color":"#00e5a0","n":0},
+        "2-1|1-2": {"label":"2-1 / 1-2", "color":"#1a6aff","n":0},
+        "2-0|0-2": {"label":"2-0 / 0-2", "color":"#f5c542","n":0},
+        "3+":      {"label":"3+ diff",   "color":"#ff8c00","n":0},
+    }
+    for sc, cnt in results_count.items():
+        try: h2,a2 = int(sc.split("-")[0]),int(sc.split("-")[1])
+        except: continue
+        if sc=="0-0": ris_buckets["0-0"]["n"]+=cnt
+        elif sc in ("1-0","0-1"): ris_buckets["1-0|0-1"]["n"]+=cnt
+        elif sc in ("2-1","1-2"): ris_buckets["2-1|1-2"]["n"]+=cnt
+        elif sc in ("2-0","0-2"): ris_buckets["2-0|0-2"]["n"]+=cnt
+        else: ris_buckets["3+"]["n"]+=cnt
 
-    # Genera storico.html
-    storico_html = generate_storico_html(run_date)
-    if storico_html:
-        (docs / "storico.html").write_text(storico_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
-        print(f"storico.html generato")
+    bar_colors = [
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+        "linear-gradient(90deg,#00e5a0,#00b87a)",
+        "linear-gradient(90deg,#1a6aff,#0d4acc)",
+        "linear-gradient(90deg,#f5c542,#d4a017)",
+        "linear-gradient(90deg,#ff8c00,#cc6e00)",
+        "linear-gradient(90deg,#b06aff,#7c3aed)",
+    ]
 
-    # Aggiorna index.html = ultimo report + link archivio
-    # Raccoglie tutti i report esistenti
-    reports = sorted(docs.glob("report-*.html"), reverse=True)
-    archive_links = ""
-    for r in reports:
-        label = r.stem.replace("report-", "")
-        dt = label[:8] + " " + label[9:11] + ":" + label[11:13] + " UTC"
-        active = " style='font-weight:bold;color:#f59e0b'" if r == archive_file else ""
-        archive_links += f"<li><a href='{r.name}'{active}>📄 {dt}</a></li>\n"
+    bucket_rows = ""
+    for i, b in enumerate(bucket_data):
+        w = round(b["n"]/max_b*100) if max_b else 0
+        inner = str(b["n"]) if w > 25 else ""
+        bucket_rows += (
+            f'<tr><td><span class="flbl">{b["lbl"]}</span></td>'
+            f'<td><div class="bwrap"><div class="bfill" style="width:{w}%;background:{bar_colors[i%len(bar_colors)]}">{inner}</div></div></td>'
+            f'<td class="nr">{b["n"]}</td><td class="pr">{b["pct"]}%</td></tr>'
+        )
 
-    index_html = html_content.replace(
-        "</body>",
-        f"""<div style='max-width:900px;margin:2rem auto;padding:1rem;background:#1e293b;border-radius:8px;'>
-<h3 style='color:#94a3b8;margin-bottom:0.5rem'>📁 Report precedenti</h3>
-<ul style='color:#cbd5e1;line-height:2'>{archive_links}</ul>
-</div></body>"""
-    )
+    ris_html = ""
+    for r in ris_buckets.values():
+        pct = round(r["n"]/total_ft*100,1) if total_ft else 0
+        ris_html += (
+            f'<div class="ris-item">'
+            f'<div class="ris-dot" style="background:{r["color"]}"></div>'
+            f'<div class="ris-name">{r["label"]}</div>'
+            f'<div style="margin-left:auto"><div class="ris-val" style="color:{r["color"]}">{r["n"]}</div>'
+            f'<div class="ris-pct">{pct}%</div></div></div>'
+        )
 
-    out = docs / "index.html"
-    out.write_text(index_html.encode('utf-8', errors='replace').decode('utf-8'), encoding="utf-8")
-    print(f"\nReport salvato: {archive_file.name} → aggiornato index.html")
+    FLAGS = {
+        "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Germany":"🇩🇪","Italy":"🇮🇹","Spain":"🇪🇸","France":"🇫🇷",
+        "Brazil":"🇧🇷","Argentina":"🇦🇷","Portugal":"🇵🇹","Netherlands":"🇳🇱",
+        "Mexico":"🇲🇽","Colombia":"🇨🇴","Chile":"🇨🇱","Austria":"🇦🇹","Serbia":"🇷🇸",
+        "Belgium":"🇧🇪","Poland":"🇵🇱","Turkey":"🇹🇷","Greece":"🇬🇷","Sweden":"🇸🇪",
+        "Norway":"🇳🇴","Denmark":"🇩🇰","Switzerland":"🇨🇭","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+        "Uruguay":"🇺🇾","Ecuador":"🇪🇨","Peru":"🇵🇪","World":"🌍",
+    }
 
-    # Salva lista fixture_id per live_updater.py
-    # Solo IDs di oggi e domani — non accumulare storici (causano chiamate eccessive dal Worker)
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    d1_str    = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
-    ids = [m["fixture_id"] for m in qualified
-           if m.get("fixture_id") and m.get("date","") in (today_str, d1_str)]
-    ids_file = docs / "alert_ids.json"
-    ids_file.write_text(json.dumps(ids))
-    print(f"alert_ids.json: {len(ids)} fixture (solo oggi+domani)")
+    lg_html = ""
+    for lg in top_leagues:
+        flag  = FLAGS.get(lg["nation"],"🌐")
+        avg_g = round(lg["goals"]/lg["n"],1) if lg["n"] else 0
+        w     = round(lg["n"]/max_lg_n*100)
+        ac    = "var(--orange)" if avg_g >= 3 else "var(--muted)"
+        lg_html += (
+            f'<div class="lg-row">'
+            f'<div class="lg-flag">{flag}</div>'
+            f'<div class="lg-name">{lg["league"]}</div>'
+            f'<div class="lg-bw"><div class="lg-bf" style="width:{w}%"></div></div>'
+            f'<div class="lg-n">{lg["n"]}</div>'
+            f'<div class="lg-avg" style="color:{ac}">{avg_g}</div></div>'
+        )
 
-    print("\n[4] Invio Telegram...")
-    if TELEGRAM_ENABLED:
-        send_telegram(qualified, total, run_date)
+    def pill_color(n):
+        if n >= 5: return "#ff3a3a"
+        if n >= 4: return "#ff8c00"
+        if n >= 3: return "#f5c542"
+        return "#4a5570"
 
-if __name__ == "__main__":
-    main()
+    tm_html = ""
+    mono = "font-family:'DM Mono',monospace;"
+    for i, m2 in enumerate(top_matches):
+        pc = pill_color(m2["total_goals"])
+        row  = '<div style="display:grid;grid-template-columns:16px 1fr 46px 22px;'
+        row += 'gap:5px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.025)">'
+        row += '<div style="' + mono + 'font-size:.55rem;color:var(--muted)">' + str(i+1) + '</div>'
+        row += '<div><div style="font-size:.66rem;font-weight:600">' + m2["home"] + ' vs ' + m2["away"] + '</div>'
+        row += '<div style="font-size:.52rem;color:var(--muted)">' + m2["league"] + ' · ' + m2["nation"] + '</div></div>'
+        row += '<div style="' + mono + 'font-weight:700;color:var(--accent);text-align:right">' + m2["score"] + '</div>'
+        row += '<div style="text-align:right"><span style="font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:3px;color:#05080f;background:' + pc + '">' + str(m2["total_goals"]) + '</span></div></div>'
+        tm_html += row
