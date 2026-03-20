@@ -1986,7 +1986,10 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         + "<div class=\"panel kpi k4\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(zero_zero) + "</div><div class=\"kpi-lbl\">Chiuse 0-0</div><div class=\"kpi-sub\">" + str(zz_pct) + "%</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
         + "<div class=\"panel kpi k5\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(over25_pct) + "%</div><div class=\"kpi-lbl\">Over 2.5</div><div class=\"kpi-sub\">" + str(over25) + " su " + str(n_stat) + "</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
         + "</div>"
-                + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
+                + "<div class=\"panel\"><div class=\"ptitle\">\U0001f4cb Partite Bet365 \u00b7 per giorno e fascia oraria</div>"
+        + days_html
+        + "</div>"
+        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
         + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
         + lhtml + "</div>"
         + "</div>"
