@@ -1832,8 +1832,8 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
             + '</div><div class="table-wrap" style="display:block">')
         for sl in sorted(by_day[day].keys()):
             ms2 = by_day[day][sl]
-            dhtml += ('<div class="slot-head">\u23f1 ' + sl + ' \u00b7 ' + str(len(ms2)) + ' match</div>'
-                + '<table class="mt"><thead><tr>'
+            dhtml += ('<div class="slot-head" onclick="toggleSlot(this)">\u23f1 ' + sl + ' \u00b7 ' + str(len(ms2)) + ' match \u25be</div>'
+                + '<div class="slot-body"><table class="mt"><thead><tr>'
                 + '<th>KO</th><th>PARTITA</th><th style="text-align:center;width:48px">G5</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
                 + '</tr></thead><tbody>')
             for m in ms2:
@@ -1852,7 +1852,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
                 + '<td class="td-sc"><span class="' + sc_cls + '">' + sc2 + '</span></td>'
                     + '<td class="td-st"><span class="badge-ns">' + m.get("status","NS") + '</span></td>'
                     + '<td class="td-lg">' + FLAGS.get(m.get("country",""),"\U0001f310") + " " + m.get("league","?") + '</td></tr>')
-            dhtml += '</tbody></table>'
+            dhtml += '</tbody></table></div>'
         dhtml += '</div></div>'
         days_html += dhtml
     css_dm   = "font-family:\'DM Sans\',sans-serif"
@@ -1926,7 +1926,9 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         ".day-header-g:hover{background:rgba(255,255,255,.05);}"
         ".day-label-g{" + css_mono + ";font-size:.68rem;font-weight:600;color:var(--text);}"
         ".day-meta-g{" + css_mono + ";font-size:.52rem;color:var(--muted);}"
-        ".slot-head{" + css_mono + ";font-size:.57rem;color:var(--accent);padding:4px 8px;"
+        ".slot-head{" + css_mono + ";font-size:.57rem;color:var(--accent);padding:4px 8px;cursor:pointer;user-select:none;"
+        ".slot-body{}"
+        ".slot-body.hidden{display:none;}"
         "background:rgba(0,229,160,.04);border-bottom:1px solid rgba(0,229,160,.08);}"
         ".table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:0 0 7px 7px;}"
         ".mt{width:100%;border-collapse:collapse;}"
@@ -1984,19 +1986,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         + "<div class=\"panel kpi k4\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(zero_zero) + "</div><div class=\"kpi-lbl\">Chiuse 0-0</div><div class=\"kpi-sub\">" + str(zz_pct) + "%</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
         + "<div class=\"panel kpi k5\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(over25_pct) + "%</div><div class=\"kpi-lbl\">Over 2.5</div><div class=\"kpi-sub\">" + str(over25) + " su " + str(n_stat) + "</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
         + "</div>"
-        + "<div class=\"g2\">"
-        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f4c8 Risultati \u00b7 mercati</div>"
-        + "<div class=\"ris-grid\">" + rhtml + "</div>"
-        + "<div class=\"cross-row\">"
-        + "<div class=\"cbox\" style=\"border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.05)\"><div class=\"cval\" style=\"color:var(--accent)\">" + str(over25_pct) + "%</div><div class=\"clbl\">OVER 2.5<br><span style=\"font-size:.57rem;color:var(--accent)\">" + str(over25) + "/" + str(n_stat) + "</span></div></div>"
-        + "<div class=\"cbox\" style=\"border-color:rgba(255,58,58,.2);background:rgba(255,58,58,.04)\"><div class=\"cval\" style=\"color:var(--red)\">" + str(100-over25_pct) + "%</div><div class=\"clbl\">UNDER 2.5<br><span style=\"font-size:.57rem;color:var(--red)\">" + str(n_stat-over25) + "/" + str(n_stat) + "</span></div></div>"
-        + "<div class=\"cbox\" style=\"border-color:rgba(26,106,255,.25);background:rgba(26,106,255,.05)\"><div class=\"cval\" style=\"color:#6a9fff\">" + str(gg_pct) + "%</div><div class=\"clbl\">GG S\u00cc<br><span style=\"font-size:.57rem;color:#6a9fff\">" + str(gg) + "/" + str(n_stat) + "</span></div></div>"
-        + "<div class=\"cbox\" style=\"border-color:rgba(245,197,66,.2);background:rgba(245,197,66,.04)\"><div class=\"cval\" style=\"color:var(--yellow)\">" + str(avg_goals) + "</div><div class=\"clbl\">AVG GOAL<br><span style=\"font-size:.57rem;color:var(--yellow)\">" + str(total_goals) + " tot</span></div></div>"
-        + "</div></div>"
-        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f4cb Partite Bet365 \u00b7 per giorno e fascia oraria</div>"
-        + days_html
-        + "</div>"
-        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
+                + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
         + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
         + lhtml + "</div>"
         + "</div>"
