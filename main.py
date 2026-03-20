@@ -1651,17 +1651,26 @@ def analyze_fixture_global(fix):
 
 
 
-def generate_global_stats_html(matches, run_date):
+def generate_global_stats_html(matches, run_date, global_hist=None):
     from datetime import datetime, timezone, timedelta
     all_matches  = [m for m in matches if m]
     if not all_matches:
         return None
-    ft_matches   = [m for m in all_matches if m.get("status") in ("FT","AET","PEN")]
-    has_ft       = len(ft_matches) > 0
-    stat_matches = ft_matches if has_ft else []
-    n_stat       = len(stat_matches)
-    total_all    = len(all_matches)
-    stat_label   = "FT" if has_ft else "NS"
+
+    # Usa global_history.json come storico se disponibile
+    ft_matches = [m for m in all_matches if m.get("status") in ("FT","AET","PEN")]
+    if global_hist and len(global_hist) > 0:
+        stat_matches = list(global_hist.values())
+        stat_label   = f"storico ({len(stat_matches)} FT Bet365)"
+    elif ft_matches:
+        stat_matches = ft_matches
+        stat_label   = "FT oggi"
+    else:
+        stat_matches = []
+        stat_label   = "NS"
+    has_ft   = len(stat_matches) > 0
+    n_stat   = len(stat_matches)
+    total_all = len(all_matches)
     total_goals_list = []; results_count = {}; league_stats = {}
     for m in stat_matches:
         hg = m.get("goals_home") or 0; ag = m.get("goals_away") or 0; tot = hg + ag
@@ -2080,7 +2089,28 @@ def main():
             except Exception:
                 pass
     print(f"  Partite Bet365: {len(global_bet365)}")
-    global_html = generate_global_stats_html(global_bet365, run_date)
+
+    # Accumula storico partite FT Bet365 in global_history.json
+    global_hist_file = docs / "global_history.json"
+    global_hist = {}
+    if global_hist_file.exists():
+        try:
+            global_hist = json.loads(global_hist_file.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            global_hist = {}
+    # Aggiungi solo partite FT nuove
+    for m in global_bet365:
+        if m and m.get("status") in ("FT","AET","PEN") and m.get("fixture_id"):
+            key = str(m["fixture_id"])
+            if key not in global_hist:
+                global_hist[key] = m
+    global_hist_file.write_text(
+        json.dumps(global_hist, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
+        encoding="utf-8"
+    )
+    print(f"  global_history.json: {len(global_hist)} partite FT accumulate")
+
+    global_html = generate_global_stats_html(global_bet365, run_date, global_hist)
     if global_html:
         (docs / "global_stats.html").write_text(
             global_html.encode("utf-8", errors="replace").decode("utf-8"),
