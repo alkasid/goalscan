@@ -1633,11 +1633,20 @@ def analyze_fixture_global(fix):
     if not has_bet365_odds(fixture_id):
         return None
     goals = fix.get("goals", {})
+    home_id   = teams.get("home", {}).get("id")
+    away_id   = teams.get("away", {}).get("id")
+    league_id = fix.get("_league_id") or league.get("id")
+    season    = fix.get("_season") or league.get("season")
+    hs  = get_last_n(home_id, league_id, season) if home_id else None
+    as_ = get_last_n(away_id, league_id, season) if away_id else None
+
     return {"home": home_name, "away": away_name,
         "league": league.get("name","?"), "country": league.get("country","?"),
         "kickoff": ko, "date": match_date, "fixture_id": fixture_id,
         "status": fixture.get("status",{}).get("short","NS"),
-        "goals_home": goals.get("home"), "goals_away": goals.get("away")}
+        "goals_home": goals.get("home"), "goals_away": goals.get("away"),
+        "home_total": hs["total"] if hs else None,
+        "away_total": as_["total"] if as_ else None}
 
 
 
@@ -1777,7 +1786,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
             + '<div class="day-header-g">'
             + '<span class="day-label-g">\U0001f534 LIVE \u2014 ' + str(len(live_ms)) + ' in corso</span>'
             + '</div><div class="table-wrap"><table class="mt"><thead><tr>'
-            + '<th>KO</th><th>PARTITA</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
+            + '<th>KO</th><th>PARTITA</th><th style="text-align:center;width:48px">G5</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
             + '</tr></thead><tbody>' + lrows + '</tbody></table></div></div>')
     by_day = {}
     for m in sorted(other_ms, key=lambda x: (x.get("date",""), x.get("kickoff",""))):
@@ -1799,7 +1808,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
             ms2 = by_day[day][sl]
             dhtml += ('<div class="slot-head">\u23f1 ' + sl + ' \u00b7 ' + str(len(ms2)) + ' match</div>'
                 + '<table class="mt"><thead><tr>'
-                + '<th>KO</th><th>PARTITA</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
+                + '<th>KO</th><th>PARTITA</th><th style="text-align:center;width:48px">G5</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
                 + '</tr></thead><tbody>')
             for m in ms2:
                 hg2 = m.get("goals_home"); ag2 = m.get("goals_away")
@@ -1813,7 +1822,8 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
                     + '<td class="td-ko">' + m.get("kickoff","?") + '</td>'
                     + '<td class="td-teams"><span class="team-h">' + m.get("home","?") + '</span>'
                     + '<span class="vs">vs</span><span class="team-a">' + m.get("away","?") + '</span></td>'
-                    + '<td class="td-sc"><span class="' + sc_cls + '">' + sc2 + '</span></td>'
+                    + '<td class="td-g5">' + (str(m.get('home_total','-')) + '+' + str(m.get('away_total','-')) if m.get('home_total') is not None else '-') + '</td>'
+                + '<td class="td-sc"><span class="' + sc_cls + '">' + sc2 + '</span></td>'
                     + '<td class="td-st"><span class="badge-ns">' + m.get("status","NS") + '</span></td>'
                     + '<td class="td-lg">' + FLAGS.get(m.get("country",""),"\U0001f310") + " " + m.get("league","?") + '</td></tr>')
             dhtml += '</tbody></table>'
@@ -1903,7 +1913,8 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         ".td-ko{" + css_mono + ";font-size:.58rem;color:var(--muted);width:38px;}"
         ".td-teams{font-size:.65rem;width:100%;}.team-h{font-weight:600;}.team-a{font-weight:600;}"
         ".vs{" + css_mono + ";font-size:.52rem;color:var(--muted);margin:0 5px;}"
-        ".td-sc{width:60px;text-align:center;}.td-st{width:42px;text-align:center;}"
+        ".td-g5{width:50px;text-align:center;font-size:.58rem;color:var(--accent);white-space:nowrap;}"
+".td-sc{width:60px;text-align:center;}.td-st{width:42px;text-align:center;}"
         ".td-lg{font-size:.6rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;}"
         ".sc-ok{" + css_mono + ";font-size:.65rem;font-weight:700;color:var(--accent);"
         "background:rgba(0,229,160,.08);padding:1px 6px;border-radius:4px;border:1px solid rgba(0,229,160,.2);}"
