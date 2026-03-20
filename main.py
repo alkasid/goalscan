@@ -1902,12 +1902,13 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         ".k1 .kpi-foot{background:rgba(0,229,160,.03);}.k2 .kpi-foot{background:rgba(26,106,255,.03);}"
         ".k3 .kpi-foot{background:rgba(245,197,66,.03);}.k4 .kpi-foot{background:rgba(255,58,58,.03);}"
         ".k5 .kpi-foot{background:rgba(255,140,0,.03);}"
-        
-        
-        
+        ".ris-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}"
+        ".ris-item{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:6px;"
+        "padding:7px 9px;display:flex;align-items:center;gap:7px;}"
+        ".ris-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}.ris-name{font-size:.67rem;flex:1;}"
         ".ris-val{" + css_mono + ";font-size:.72rem;font-weight:700;text-align:right;}"
         ".ris-pct{" + css_mono + ";font-size:.54rem;color:var(--muted);text-align:right;}"
-        
+        ".cross-row{display:flex;gap:7px;margin-top:8px;}"
         ".cbox{flex:1;border-radius:6px;padding:6px 8px;text-align:center;border:1px solid;}"
         ".cval{" + css_mono + ";font-size:.95rem;font-weight:700;}"
         ".clbl{font-size:.53rem;color:var(--muted);margin-top:1px;line-height:1.3;}"
