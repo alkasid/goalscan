@@ -92,9 +92,11 @@ def get_all_fixtures():
     league_seasons     = {}
     fixtures_by_league = defaultdict(list)
 
+    raw_fixtures = []
     for date in dates:
         data = api_get("fixtures", {"date": date, "status": "NS-1H-HT-2H-ET-P-FT"})
         print(f"  {date}: {len(data)} match raw")
+        raw_fixtures.extend(data)
         for fix in data:
             name_lower = fix.get("league", {}).get("name", "").lower()
             if any(k in name_lower for k in SKIP_KEYWORDS):
@@ -110,7 +112,7 @@ def get_all_fixtures():
 
     total = sum(len(v) for v in fixtures_by_league.values())
     print(f"  -> {len(league_seasons)} leghe | {total} match filtrati (3 giorni, no youth/women)")
-    return league_seasons, fixtures_by_league
+    return league_seasons, fixtures_by_league, raw_fixtures
 
 # ── Ultime N gare FT nella stessa lega (con cache) ───────────────────────────
 def get_last_n(team_id, league_id, season):
@@ -400,6 +402,8 @@ def generate_html(matches, run_date, total_analyzed):
         "border-bottom:1px solid var(--border);padding:12px 24px;"
         "display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:50;}"
         ".logo{display:flex;align-items:center;gap:10px;}"
+        ".radar-wrap{width:36px;height:36px;flex-shrink:0;}"
+        ".radar-wrap canvas{width:36px;height:36px;image-rendering:crisp-edges;}"
         ".logo-icon{font-size:1.4rem;}"
         ".logo-text{font-size:1.25rem;font-weight:700;"
         "background:linear-gradient(90deg,#fff 0%,var(--accent) 100%);"
@@ -780,12 +784,108 @@ async function updateLive(){
   }catch(e){console.log('live',e);}
 }
 updateLive();setInterval(updateLive,15000);
+
+// ── RADAR LOGO con timer: gira 10s, pausa 10min ──────────────────
+(function(){
+  var canvas = document.getElementById('rc');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, cx = W/2, cy = W/2, R = W*0.42;
+  var TGT = [
+    {r:.28,a:.9},{r:.55,a:1.7},{r:.72,a:.35},{r:.42,a:2.6},
+    {r:.61,a:4.0},{r:.83,a:3.4},{r:.35,a:5.1},{r:.78,a:5.7},
+    {r:.48,a:2.1},{r:.66,a:.12},{r:.38,a:3.8},{r:.57,a:4.7},
+    {r:.88,a:1.3},{r:.22,a:3.1},{r:.74,a:2.9},{r:.50,a:5.4}
+  ];
+  var hitTime = TGT.map(function(){return -9999;});
+  var SPIN_MS = 10000;
+  var PAUSE_MS = 600000;
+  var cycleStart = performance.now();
+  var spinning = true;
+  var spinOffset = 0;
+  var stopAngle = 0;
+  var rafId = null;
+
+  function drawStatic(angle) {
+    var sw = angle;
+    ctx.clearRect(0,0,W,W);
+    ctx.beginPath();ctx.arc(cx,cy,R+2,0,Math.PI*2);ctx.fillStyle='#010d06';ctx.fill();
+    for(var i=1;i<=4;i++){ctx.beginPath();ctx.arc(cx,cy,R*i/4,0,Math.PI*2);ctx.strokeStyle='rgba(0,200,100,'+(i===4?.45:.12)+')';ctx.lineWidth=i===4?1.5:.8;ctx.stroke();}
+    for(var i=0;i<8;i++){var a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle='rgba(0,200,100,0.07)';ctx.lineWidth=.8;ctx.stroke();}
+    for(var i=0;i<72;i++){var a=i*Math.PI/36,isMaj=i%9===0,r1=R*(isMaj?.86:.92);ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle='rgba(0,229,160,'+(isMaj?.5:.18)+')';ctx.lineWidth=isMaj?1.2:.6;ctx.stroke();}
+    // sweep line statica
+    var sg=ctx.createLinearGradient(cx,cy,cx+Math.cos(sw)*R,cy+Math.sin(sw)*R);
+    sg.addColorStop(0,'rgba(0,229,160,0.05)');sg.addColorStop(.6,'rgba(0,229,160,0.3)');sg.addColorStop(1,'rgba(180,255,220,0.5)');
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(sw)*R,cy+Math.sin(sw)*R);ctx.strokeStyle=sg;ctx.lineWidth=2;ctx.stroke();
+    // target fissi visibili
+    TGT.forEach(function(t){
+      var tx=cx+Math.cos(t.a)*R*t.r,ty=cy+Math.sin(t.a)*R*t.r;
+      var gr=ctx.createRadialGradient(tx,ty,0,tx,ty,W*.05);
+      gr.addColorStop(0,'rgba(0,255,160,0.5)');gr.addColorStop(1,'rgba(0,229,160,0)');
+      ctx.beginPath();ctx.arc(tx,ty,W*.05,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+      ctx.beginPath();ctx.arc(tx,ty,W*.015,0,Math.PI*2);ctx.fillStyle='rgba(200,255,230,0.4)';ctx.fill();
+    });
+    ctx.beginPath();ctx.arc(cx,cy,W*.025,0,Math.PI*2);ctx.fillStyle='#00e5a0';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,W*.012,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,R+1,0,Math.PI*2);ctx.strokeStyle='rgba(0,229,160,.6)';ctx.lineWidth=1.8;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,R+5,0,Math.PI*2);ctx.strokeStyle='rgba(0,229,160,.1)';ctx.lineWidth=1.2;ctx.stroke();
+  }
+
+  function draw() {
+    var now = performance.now();
+    var elapsed = now - cycleStart;
+    if(spinning && elapsed > SPIN_MS) {
+      spinning = false; cycleStart = now;
+      stopAngle = ((now%2200)/2200)*Math.PI*2 - Math.PI/2;
+      drawStatic(stopAngle);
+      return;
+    }
+    if(!spinning && elapsed > PAUSE_MS) {
+      spinning = true; cycleStart = now;
+    }
+    if(!spinning){drawStatic(stopAngle);rafId=requestAnimationFrame(draw);return;}
+    var sw = ((now%2200)/2200)*Math.PI*2 - Math.PI/2;
+    ctx.clearRect(0,0,W,W);
+    ctx.beginPath();ctx.arc(cx,cy,R+2,0,Math.PI*2);ctx.fillStyle='#010d06';ctx.fill();
+    for(var i=1;i<=4;i++){ctx.beginPath();ctx.arc(cx,cy,R*i/4,0,Math.PI*2);ctx.strokeStyle='rgba(0,200,100,'+(i===4?.45:.12)+')';ctx.lineWidth=i===4?1.5:.8;ctx.stroke();}
+    for(var i=0;i<8;i++){var a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle='rgba(0,200,100,0.07)';ctx.lineWidth=.8;ctx.stroke();}
+    for(var i=0;i<72;i++){var a=i*Math.PI/36,isMaj=i%9===0,r1=R*(isMaj?.86:.92);ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle='rgba(0,229,160,'+(isMaj?.5:.18)+')';ctx.lineWidth=isMaj?1.2:.6;ctx.stroke();}
+    for(var i=0;i<120;i++){var a=sw-(i/120)*Math.PI*.55,al=Math.pow(1-i/120,1.5)*.28;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a,a+.02);ctx.closePath();ctx.fillStyle='rgba(0,229,160,'+al+')';ctx.fill();}
+    var sg=ctx.createLinearGradient(cx,cy,cx+Math.cos(sw)*R,cy+Math.sin(sw)*R);
+    sg.addColorStop(0,'rgba(0,229,160,0.05)');sg.addColorStop(.6,'rgba(0,229,160,0.6)');sg.addColorStop(1,'rgba(180,255,220,1)');
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(sw)*R,cy+Math.sin(sw)*R);ctx.strokeStyle=sg;ctx.lineWidth=2;ctx.stroke();
+    TGT.forEach(function(t,i){var d=sw-t.a;while(d<0)d+=Math.PI*2;if(d%(Math.PI*2)<.08)hitTime[i]=now;});
+    TGT.forEach(function(t,i){
+      var tx=cx+Math.cos(t.a)*R*t.r,ty=cy+Math.sin(t.a)*R*t.r,age=now-hitTime[i];
+      if(age>2200)return;
+      var k=Math.pow(1-age/2200,.5);
+      if(age<450){var p=age/450;ctx.beginPath();ctx.arc(tx,ty,W*.065*p,0,Math.PI*2);ctx.strokeStyle='rgba(0,255,160,'+(1-p)*.9+')';ctx.lineWidth=1.2;ctx.stroke();}
+      if(age>150&&age<650){var p=(age-150)/500;ctx.beginPath();ctx.arc(tx,ty,W*.12*p,0,Math.PI*2);ctx.strokeStyle='rgba(0,200,120,'+(1-p)*.4+')';ctx.lineWidth=.8;ctx.stroke();}
+      var gr=ctx.createRadialGradient(tx,ty,0,tx,ty,W*.07);
+      gr.addColorStop(0,'rgba(0,255,160,'+.95*k+')');gr.addColorStop(.4,'rgba(0,229,160,'+.4*k+')');gr.addColorStop(1,'rgba(0,229,160,0)');
+      ctx.beginPath();ctx.arc(tx,ty,W*.07,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+      ctx.beginPath();ctx.arc(tx,ty,W*.022,0,Math.PI*2);ctx.fillStyle='rgba(220,255,240,'+k+')';ctx.fill();
+      var ch=W*.042,gap=W*.014;ctx.strokeStyle='rgba(0,229,160,'+k*.8+')';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(tx-ch,ty);ctx.lineTo(tx-gap,ty);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(tx+gap,ty);ctx.lineTo(tx+ch,ty);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(tx,ty-ch);ctx.lineTo(tx,ty-gap);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(tx,ty+gap);ctx.lineTo(tx,ty+ch);ctx.stroke();
+    });
+    ctx.beginPath();ctx.arc(cx,cy,W*.025,0,Math.PI*2);ctx.fillStyle='#00e5a0';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,W*.012,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,R+1,0,Math.PI*2);ctx.strokeStyle='rgba(0,229,160,.6)';ctx.lineWidth=1.8;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,R+5,0,Math.PI*2);ctx.strokeStyle='rgba(0,229,160,.1)';ctx.lineWidth=1.2;ctx.stroke();
+    rafId = requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 </script>'''
 
     return (
         f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>GoalScan · {run_date}</title>'
+        f'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&display=swap"><title>Initia Commvtatio · {run_date}</title>'
         f'<style>{css}</style></head><body>'
         f'<header>'
         f'<div class="logo"><span class="logo-icon">⚽</span><div>'
@@ -1527,6 +1627,12 @@ def analyze_fixture_global(fix):
     home_name  = teams.get("home", {}).get("name", "?")
     away_name  = teams.get("away", {}).get("name", "?")
     fixture_id = fixture.get("id")
+    # Salta youth/women/reserve solo se esplicitamente richiesto — qui NO filtro
+    # I raw fixtures non hanno _league_id, lo ricaviamo da league
+    if "_league_id" not in fix:
+        fix["_league_id"] = league.get("id")
+    if "_season" not in fix:
+        fix["_season"] = league.get("season")
     try:
         ko = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=1)).strftime("%H:%M")
         match_date = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%d")
@@ -1549,10 +1655,11 @@ def generate_global_stats_html(matches, run_date):
     if not all_matches:
         return None
     ft_matches   = [m for m in all_matches if m.get("status") in ("FT","AET","PEN")]
-    stat_matches = ft_matches if ft_matches else all_matches
+    has_ft       = len(ft_matches) > 0
+    stat_matches = ft_matches if has_ft else []
     n_stat       = len(stat_matches)
     total_all    = len(all_matches)
-    stat_label   = "FT" if ft_matches else "programmati"
+    stat_label   = "FT" if has_ft else "NS"
     total_goals_list = []; results_count = {}; league_stats = {}
     for m in stat_matches:
         hg = m.get("goals_home") or 0; ag = m.get("goals_away") or 0; tot = hg + ag
@@ -1572,8 +1679,8 @@ def generate_global_stats_html(matches, run_date):
     over25_pct  = round(over25/n_stat*100) if n_stat else 0
     gg_pct      = round(gg/n_stat*100) if n_stat else 0
     zz_pct      = round(zero_zero/n_stat*100,1) if n_stat else 0
-    all_leagues = sorted(league_stats.values(), key=lambda x: x["n"], reverse=True)
-    max_lg_n    = max((l["n"] for l in all_leagues), default=1) or 1
+    all_leagues = sorted(league_stats.values(), key=lambda x: x["goals"], reverse=True)[:10]
+    max_lg_n    = max((l["goals"] for l in all_leagues), default=1) or 1
     ris_data = [
         {"label":"0-0",     "color":"#ff3a3a","n":0},
         {"label":"1-0/0-1", "color":"#00e5a0","n":0},
@@ -1848,12 +1955,12 @@ def generate_global_stats_html(matches, run_date):
         + "<div class=\"cbox\" style=\"border-color:rgba(26,106,255,.25);background:rgba(26,106,255,.05)\"><div class=\"cval\" style=\"color:#6a9fff\">" + str(gg_pct) + "%</div><div class=\"clbl\">GG S\u00cc<br><span style=\"font-size:.57rem;color:#6a9fff\">" + str(gg) + "/" + str(n_stat) + "</span></div></div>"
         + "<div class=\"cbox\" style=\"border-color:rgba(245,197,66,.2);background:rgba(245,197,66,.04)\"><div class=\"cval\" style=\"color:var(--yellow)\">" + str(avg_goals) + "</div><div class=\"clbl\">AVG GOAL<br><span style=\"font-size:.57rem;color:var(--yellow)\">" + str(total_goals) + " tot</span></div></div>"
         + "</div></div>"
-        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Tutte le leghe Bet365 \u00b7 ordine discendente</div>"
-        + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
-        + lhtml + "</div>"
-        + "</div>"
         + "<div class=\"panel\"><div class=\"ptitle\">\U0001f4cb Partite Bet365 \u00b7 per giorno e fascia oraria</div>"
         + days_html
+        + "</div>"
+        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
+        + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
+        + lhtml + "</div>"
         + "</div>"
         + "</div></body></html>")
 
@@ -1864,7 +1971,7 @@ def main():
     print("=" * 60)
 
     print("\n[1] Recupero match oggi + domani + dopodomani...")
-    league_seasons, fixtures_by_league = get_all_fixtures()
+    league_seasons, fixtures_by_league, raw_fixtures = get_all_fixtures()
 
     all_fixtures = []
     for lid, fixes in fixtures_by_league.items():
@@ -1962,7 +2069,7 @@ def main():
     print("\n[5] Generazione Stats Globali Bet365...")
     global_bet365 = []
     with ThreadPoolExecutor(max_workers=3) as executor:
-        fut2 = {executor.submit(analyze_fixture_global, fix): fix for fix in all_fixtures}
+        fut2 = {executor.submit(analyze_fixture_global, fix): fix for fix in raw_fixtures}
         for future in as_completed(fut2):
             try:
                 result = future.result()
