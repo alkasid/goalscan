@@ -838,11 +838,11 @@ updateLive();setInterval(updateLive,15000);
   off.width=LW;off.height=LH;
   var ox=off.getContext('2d');
   ox.font='900 38px Cinzel,serif';
-  ox.fillStyle='#00e5a0';
+  ox.fillStyle='#1a6aff';
   ox.fillText('VARIATIO',2,34);
-  ox.fillStyle='rgba(0,200,140,0.85)';
+  ox.fillStyle='rgba(14,53,128,0.95)';
   ox.fillText('INITIALIS',2,74);
-  var CYCLE=9000,WAVE=2000,PAUSE=7000;
+  var CYCLE=20000,WAVE=2000,PAUSE=18000;
   function logo(now){
     lx.clearRect(0,0,LW,LH);
     lx.drawImage(off,0,0);
