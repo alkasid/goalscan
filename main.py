@@ -1646,7 +1646,9 @@ def analyze_fixture_global(fix):
         "status": fixture.get("status",{}).get("short","NS"),
         "goals_home": goals.get("home"), "goals_away": goals.get("away"),
         "home_total": hs["total"] if hs else None,
-        "away_total": as_["total"] if as_ else None}
+        "away_total": as_["total"] if as_ else None,
+        "home_stats": hs,
+        "away_stats": as_}
 
 
 
@@ -1770,6 +1772,30 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
     LIVE_ST   = {"1H","HT","2H","ET","P"}
     live_ms   = [m for m in all_matches if m.get("status") in LIVE_ST]
     other_ms  = [m for m in all_matches if m.get("status") not in LIVE_ST]
+    def _g5pills(m):
+        ht = m.get("home_total")
+        at = m.get("away_total")
+        if ht is None and at is None:
+            return '<span style="color:var(--muted);font-size:.55rem">—</span>'
+        def tot_color(t):
+            if t is None: return "#4a5570"
+            if t >= 20: return "#ff3a3a"
+            if t >= 17: return "#ff8c00"
+            if t >= 14: return "#f5c542"
+            return "#00e5a0"
+        hs2 = m.get("home_stats") or {}
+        as2 = m.get("away_stats") or {}
+        h_scored   = hs2.get("scored","") if hs2 else ""
+        h_conceded = hs2.get("conceded","") if hs2 else ""
+        a_scored   = as2.get("scored","") if as2 else ""
+        a_conceded = as2.get("conceded","") if as2 else ""
+        def pills(scored, conceded, total):
+            if total is None: return '<span style="color:var(--muted);font-size:.55rem">—</span>'
+            tc = tot_color(total)
+            s = ('<span class="pg">+' + str(scored) + '</span>' if scored != "" else "") +                 ('<span class="pr">-' + str(conceded) + '</span>' if conceded != "" else "") +                 '<span class="pt" style="background:' + tc + '">' + str(total) + '</span>'
+            return s
+        return pills(h_scored, h_conceded, ht) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + pills(a_scored, a_conceded, at)
+
     days_html = ""
     if live_ms:
         lrows = "".join(
@@ -1822,7 +1848,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
                     + '<td class="td-ko">' + m.get("kickoff","?") + '</td>'
                     + '<td class="td-teams"><span class="team-h">' + m.get("home","?") + '</span>'
                     + '<span class="vs">vs</span><span class="team-a">' + m.get("away","?") + '</span></td>'
-                    + '<td class="td-g5">' + (str(m.get('home_total','-')) + '+' + str(m.get('away_total','-')) if m.get('home_total') is not None else '-') + '</td>'
+                    + '<td class="td-g5">' + _g5pills(m) + '</td>'
                 + '<td class="td-sc"><span class="' + sc_cls + '">' + sc2 + '</span></td>'
                     + '<td class="td-st"><span class="badge-ns">' + m.get("status","NS") + '</span></td>'
                     + '<td class="td-lg">' + FLAGS.get(m.get("country",""),"\U0001f310") + " " + m.get("league","?") + '</td></tr>')
@@ -1913,7 +1939,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         ".td-ko{" + css_mono + ";font-size:.58rem;color:var(--muted);width:38px;}"
         ".td-teams{font-size:.65rem;width:100%;}.team-h{font-weight:600;}.team-a{font-weight:600;}"
         ".vs{" + css_mono + ";font-size:.52rem;color:var(--muted);margin:0 5px;}"
-        ".td-g5{width:50px;text-align:center;font-size:.58rem;color:var(--accent);white-space:nowrap;}"
+        ".td-g5{width:120px;white-space:nowrap;}"".pg{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,229,160,.12);color:var(--accent);}"".pr{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,58,58,.12);color:var(--red);}"".pt{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;color:#05080f;}"
 ".td-sc{width:60px;text-align:center;}.td-st{width:42px;text-align:center;}"
         ".td-lg{font-size:.6rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;}"
         ".sc-ok{" + css_mono + ";font-size:.65rem;font-weight:700;color:var(--accent);"
