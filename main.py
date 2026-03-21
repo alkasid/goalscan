@@ -165,6 +165,54 @@ def get_last_n(team_id, league_id, season):
     _save_disk_cache(_disk_cache)
     return result
 
+def get_last_n_any(team_id, league_id, season, min_games=1):
+    """Come get_last_n ma senza soglia minima — restituisce i dati con qualsiasi numero di FT."""
+    key = (team_id, league_id, season, "any")
+    if key in _cache:
+        return _cache[key]
+
+    # Prima controlla se abbiamo già i dati completi in cache
+    base_key = (team_id, league_id, season)
+    if base_key in _cache and _cache[base_key] is not None:
+        _cache[key] = _cache[base_key]
+        return _cache[base_key]
+
+    data = api_get("fixtures", {
+        "team":   team_id,
+        "league": league_id,
+        "season": season,
+        "last":   LAST_N + 5,
+    })
+
+    finished = [
+        m for m in data
+        if m.get("fixture", {}).get("status", {}).get("short") in ("FT", "AET", "PEN")
+    ]
+
+    if len(finished) < min_games:
+        _cache[key] = None
+        return None
+
+    take = finished[:LAST_N]
+    scored = conceded = 0
+    for m in take:
+        goals  = m.get("goals", {})
+        teams  = m.get("teams", {})
+        is_home = teams.get("home", {}).get("id") == team_id
+        gh = int(goals.get("home") or 0)
+        ga = int(goals.get("away") or 0)
+        if is_home:
+            scored += gh; conceded += ga
+        else:
+            scored += ga; conceded += gh
+
+    result = {"scored": scored, "conceded": conceded,
+              "total": scored + conceded,
+              "games": len(take),
+              "qualifies": (scored + conceded) >= THRESHOLD}
+    _cache[key] = result
+    return result
+
 # ── Verifica quote Bet365 per un fixture ─────────────────────────────────────
 def has_bet365_odds(fixture_id):
     data = api_get("odds", {"fixture": fixture_id, "bookmaker": BET365_ID})
@@ -1637,8 +1685,8 @@ def analyze_fixture_global(fix):
     away_id   = teams.get("away", {}).get("id")
     league_id = fix.get("_league_id") or league.get("id")
     season    = fix.get("_season") or league.get("season")
-    hs  = get_last_n(home_id, league_id, season) if home_id else None
-    as_ = get_last_n(away_id, league_id, season) if away_id else None
+    hs  = get_last_n_any(home_id, league_id, season) if home_id else None
+    as_ = get_last_n_any(away_id, league_id, season) if away_id else None
 
     return {"home": home_name, "away": away_name,
         "league": league.get("name","?"), "country": league.get("country","?"),
