@@ -17648,9 +17648,9 @@
     "date": "2026-03-22",
     "kickoff": "00:30",
     "status": "FT",
-    "goals_home": 2,
-    "goals_away": 1,
-    "score": "2-1",
+    "goals_home": 0,
+    "goals_away": 0,
+    "score": "0-0",
     "first_min_cached": null,
     "saved_at": "2026-03-22T03:45:35.343359+00:00"
   },
@@ -17904,8 +17904,8 @@
     "kickoff": "08:00",
     "status": "FT",
     "goals_home": 0,
-    "goals_away": 2,
-    "score": "0-2",
+    "goals_away": 0,
+    "score": "0-0",
     "first_min_cached": null,
     "saved_at": "2026-03-22T10:33:53.065429+00:00"
   },
@@ -18818,9 +18818,9 @@
     "date": "2026-03-22",
     "kickoff": "13:00",
     "status": "FT",
-    "goals_home": 1,
+    "goals_home": 0,
     "goals_away": 0,
-    "score": "1-0",
+    "score": "0-0",
     "first_min_cached": null,
     "saved_at": "2026-03-22T15:17:25.187472+00:00"
   },
@@ -18833,9 +18833,9 @@
     "date": "2026-03-22",
     "kickoff": "13:00",
     "status": "FT",
-    "goals_home": 2,
-    "goals_away": 3,
-    "score": "2-3",
+    "goals_home": 0,
+    "goals_away": 0,
+    "score": "0-0",
     "first_min_cached": null,
     "saved_at": "2026-03-22T15:17:25.337576+00:00"
   },
@@ -20563,5 +20563,20 @@
     "score": "1-1",
     "first_min_cached": 6,
     "saved_at": "2026-03-22T21:28:22.290012+00:00"
+  },
+  "1378158": {
+    "fixture_id": 1378158,
+    "home": "Fiorentina",
+    "away": "Inter",
+    "league": "Serie A",
+    "country": "Italy",
+    "date": "2026-03-22",
+    "kickoff": "19:45",
+    "status": "FT",
+    "goals_home": 1,
+    "goals_away": 1,
+    "score": "1-1",
+    "first_min_cached": 1,
+    "saved_at": "2026-03-22T21:51:29.558805+00:00"
   }
 }
