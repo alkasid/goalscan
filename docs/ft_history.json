@@ -17678,9 +17678,9 @@
     "date": "2026-03-22",
     "kickoff": "02:00",
     "status": "FT",
-    "goals_home": 1,
-    "goals_away": 2,
-    "score": "1-2",
+    "goals_home": 0,
+    "goals_away": 0,
+    "score": "0-0",
     "first_min_cached": null,
     "saved_at": "2026-03-22T05:12:39.360219+00:00"
   },
@@ -17788,5 +17788,20 @@
     "score": "1-0",
     "first_min_cached": 34,
     "saved_at": "2026-03-22T07:07:37.880780+00:00"
+  },
+  "1517871": {
+    "fixture_id": 1517871,
+    "home": "Hakoah Sydney City",
+    "away": "Prospect United",
+    "league": "New South Wales NPL 2",
+    "country": "Australia",
+    "date": "2026-03-22",
+    "kickoff": "05:30",
+    "status": "FT",
+    "goals_home": 1,
+    "goals_away": 2,
+    "score": "1-2",
+    "first_min_cached": 10,
+    "saved_at": "2026-03-22T07:49:26.336766+00:00"
   }
 }
