@@ -26,8 +26,10 @@ with open("config.json", encoding="utf-8-sig") as f:
     CFG = json.load(f)
 
 API_KEY   = (os.environ.get("API_FOOTBALL_KEY") or CFG.get("api_football_key", "")).strip()
-THRESHOLD = int(CFG.get("goal_threshold", 14))
-LAST_N    = int(CFG.get("last_matches_count", 5))
+THRESHOLD  = int(CFG.get("goal_threshold", 14))
+LAST_N     = int(CFG.get("last_matches_count", 5))
+MIN_SCORED = int(CFG.get("min_scored_each", 5))
+MIN_CO_MAX = int(CFG.get("min_conceded_max", 8))
 BASE_URL  = "https://v3.football.api-sports.io"
 HEADERS   = {"x-apisports-key": API_KEY}
 BET365_ID = 8
@@ -159,7 +161,7 @@ def get_last_n(team_id, league_id, season):
 
     result = {"scored": scored, "conceded": conceded,
               "total": scored + conceded,
-              "qualifies": (scored + conceded) >= THRESHOLD}
+              "qualifies": (scored + conceded) >= THRESHOLD and scored >= MIN_SCORED}
     _cache[key] = result
     _disk_cache[disk_key] = result
     _save_disk_cache(_disk_cache)
@@ -209,7 +211,7 @@ def get_last_n_any(team_id, league_id, season, min_games=1):
     result = {"scored": scored, "conceded": conceded,
               "total": scored + conceded,
               "games": len(take),
-              "qualifies": (scored + conceded) >= THRESHOLD}
+              "qualifies": (scored + conceded) >= THRESHOLD and scored >= MIN_SCORED}
     _cache[key] = result
     return result
 
@@ -257,6 +259,13 @@ def analyze_fixture(fix):
         if not hs["qualifies"]: reasons.append(f"{home_name}:{hs['total']}<{THRESHOLD}")
         if not as_["qualifies"]: reasons.append(f"{away_name}:{as_['total']}<{THRESHOLD}")
         return None, f"✗ {' | '.join(reasons)}"
+
+    # ── Filtro ANTI 0-0: almeno una squadra deve subire >= MIN_CO_MAX ──
+    if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
+        return None, (f"⚠ ANTI-0-0: difese troppo solide — "
+                      f"{home_name}:{hs['conceded']}s "
+                      f"{away_name}:{as_['conceded']}s "
+                      f"(serve almeno {MIN_CO_MAX})")
 
     # Passa il filtro goal — verifica quote Bet365
     odds_ok = has_bet365_odds(fixture_id)
