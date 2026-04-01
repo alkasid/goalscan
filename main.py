@@ -246,10 +246,10 @@ def analyze_fixture(fix):
     try:
         ko = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ) + timedelta(hours=1)).strftime("%H:%M")
+        ) + timedelta(hours=2)).strftime("%H:%M")
         match_date = (datetime.fromtimestamp(
             fixture.get("timestamp", 0), tz=timezone.utc
-        ) + timedelta(hours=1)).strftime("%Y-%m-%d")
+        ) + timedelta(hours=2)).strftime("%Y-%m-%d")
     except Exception:
         ko = "--:--"; match_date = "?"
 
@@ -1771,8 +1771,8 @@ def analyze_fixture_global(fix):
     if "_season" not in fix:
         fix["_season"] = league.get("season")
     try:
-        ko = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=1)).strftime("%H:%M")
-        match_date = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%d")
+        ko = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=2)).strftime("%H:%M")
+        match_date = (datetime.fromtimestamp(fixture.get("timestamp", 0), tz=timezone.utc) + timedelta(hours=2)).strftime("%Y-%m-%d")
     except Exception:
         ko = "--:--"; match_date = "?"
     if not has_bet365_odds(fixture_id):
