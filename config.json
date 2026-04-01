@@ -1,4 +1,11 @@
 {
-  "goal_threshold": 12,
-  "last_matches_count": 5
+    "goal_threshold": 12,
+    "last_matches_count": 5,
+    "anti_zero_filters": {
+          "enabled": true,
+          "min_scored_each": 2,
+          "min_combined_total": 16,
+          "max_conceded_both_low": 4,
+          "min_conceded_each": 3
+    }
 }
