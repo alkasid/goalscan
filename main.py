@@ -148,6 +148,7 @@ def get_last_n(team_id, league_id, season):
         return None
 
     scored = conceded = 0
+    match_details = []
     for m in finished[:LAST_N]:
         goals   = m.get("goals", {})
         teams   = m.get("teams", {})
@@ -156,11 +157,14 @@ def get_last_n(team_id, league_id, season):
         ga = int(goals.get("away") or 0)
         if is_home:
             scored += gh; conceded += ga
+            match_details.append({"s": gh, "c": ga})
         else:
             scored += ga; conceded += gh
+            match_details.append({"s": ga, "c": gh})
 
     result = {"scored": scored, "conceded": conceded,
               "total": scored + conceded,
+              "matches": match_details,
               "qualifies": (scored + conceded) >= THRESHOLD and scored >= MIN_SCORED}
     _cache[key] = result
     _disk_cache[disk_key] = result
@@ -197,6 +201,7 @@ def get_last_n_any(team_id, league_id, season, min_games=1):
 
     take = finished[:LAST_N]
     scored = conceded = 0
+    match_details = []
     for m in take:
         goals  = m.get("goals", {})
         teams  = m.get("teams", {})
@@ -205,12 +210,15 @@ def get_last_n_any(team_id, league_id, season, min_games=1):
         ga = int(goals.get("away") or 0)
         if is_home:
             scored += gh; conceded += ga
+            match_details.append({"s": gh, "c": ga})
         else:
             scored += ga; conceded += gh
+            match_details.append({"s": ga, "c": gh})
 
     result = {"scored": scored, "conceded": conceded,
               "total": scored + conceded,
               "games": len(take),
+              "matches": match_details,
               "qualifies": (scored + conceded) >= THRESHOLD and scored >= MIN_SCORED}
     _cache[key] = result
     return result
@@ -957,7 +965,7 @@ updateLive();setInterval(updateLive,15000);
         f'<span class="update-time" id="live-ts"></span>'
         f'</div></header>'
         f'<div class="scanbar">'
-        f'<div class="scanbar-item">soglia <span>≥{THRESHOLD} goal</span> ultime {LAST_N} gare stessa lega</div>'
+        f'<div class="scanbar-item">ratio <span>≥{THRESHOLD} goal</span> ultime {LAST_N} gare stessa lega + 3FiltriAnti0-0</div>'
         f'<div class="scanbar-item">quote <span>Bet365</span> verificate</div>'
         f'<div class="scanbar-item"><span>3 giorni</span> · solo campionati</div>'
         f'<div class="scanbar-item">aggiornamento <span>ogni 15s</span></div>'
@@ -1070,6 +1078,7 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
     strike_rate = round(with_goal / total_ft * 100) if total_ft else 0
     total_goals = sum(total_goals_list)
     over25      = sum(1 for x in total_goals_list if x > 2)
+    over15      = sum(1 for x in total_goals_list if x > 1)
     gg          = sum(1 for m2 in ft_matches
                       if (m2.get("goals_home") or 0) > 0 and (m2.get("goals_away") or 0) > 0)
 
@@ -1222,6 +1231,7 @@ def generate_stats_html(matches, run_date, cover_start, cover_end):
         )
 
     over25_pct = round(over25 / total_ft * 100) if total_ft else 0
+    over15_pct = round(over15 / total_ft * 100) if total_ft else 0
     gg_pct     = round(gg / total_ft * 100) if total_ft else 0
     early_pct  = round(sum(f["n"] for f in fascia_data[:2]) / len(first_goal_minutes) * 100) if first_goal_minutes else 0
 
@@ -1346,7 +1356,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
 </header>
 <div class="scanbar">
   <div class="si">alert analizzati <b>{total_all}</b></div>
-  <div class="si">soglia <b>\u2265{THRESHOLD_VAL} goal ultime {LAST_N_VAL}</b></div>
+  <div class="si">ratio <b>\u2265{THRESHOLD_VAL} goal ultime {LAST_N_VAL}</b> + 3FiltriAnti0-0</div>
   <div class="si">solo campionati <b>\u00b7 Bet365 verificate</b></div>
   <div class="si">copertura <b>{cover_start} \u2192 {cover_end}</b></div>
   <div class="si">partite FT analizzate <b>{total_ft}</b></div>
@@ -1378,6 +1388,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
     <div class="ris-grid">{ris_html}</div>
     <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin:6px 0 5px;letter-spacing:.08em">SPLIT MERCATI &middot; {total_ft} FT</div>
     <div class="cross-row">
+      <div class="cbox" style="border-color:rgba(187,134,252,.25);background:rgba(187,134,252,.05)"><div class="cval" style="color:#bb86fc">{over15_pct}%</div><div class="clbl">OVER 1.5<br><span style="color:#bb86fc;font-size:.57rem">{over15}/{total_ft}</span></div></div>
       <div class="cbox" style="border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.05)"><div class="cval" style="color:var(--accent)">{over25_pct}%</div><div class="clbl">OVER 2.5<br><span style="color:var(--accent);font-size:.57rem">{over25}/{total_ft}</span></div></div>
       <div class="cbox" style="border-color:rgba(255,58,58,.2);background:rgba(255,58,58,.04)"><div class="cval" style="color:var(--red)">{100-over25_pct}%</div><div class="clbl">UNDER 2.5<br><span style="color:var(--red);font-size:.57rem">{total_ft-over25}/{total_ft}</span></div></div>
       <div class="cbox" style="border-color:rgba(26,106,255,.25);background:rgba(26,106,255,.05)"><div class="cval" style="color:#6a9fff">{gg_pct}%</div><div class="clbl">GG S&Igrave;<br><span style="color:#6a9fff;font-size:.57rem">{gg}/{total_ft}</span></div></div>
@@ -1469,12 +1480,51 @@ def generate_storico_html(run_date):
         except:
             return d
 
-    # Costruisci righe per ogni giorno
-    days_html = ""
+    # Raggruppa per mese, poi per giorno
+    from collections import OrderedDict
+    MESI_FULL = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno",
+                 "Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
+    by_month = OrderedDict()
     for day in sorted_days:
-        day_matches = sorted(by_day[day], key=lambda x: x.get("kickoff",""), reverse=True)
-        is_today    = day == today_str
-        day_label   = ("🔴 OGGI · " if is_today else "") + fmt_day(day)
+        try:
+            ym = day[:7]  # "2026-03"
+            dd = datetime.strptime(day, "%Y-%m-%d")
+            month_label = f"{MESI_FULL[dd.month-1]} {dd.year}"
+        except:
+            ym = "unknown"
+            month_label = "Altro"
+        by_month.setdefault((ym, month_label), []).append(day)
+
+    days_html = ""
+    for (ym, month_label), month_days in by_month.items():
+        # Calcola stats del mese
+        m_total = sum(len(by_day[d]) for d in month_days)
+        m_goal  = sum(1 for d in month_days for m in by_day[d] if (m.get("goals_home") or 0)+(m.get("goals_away") or 0) > 0)
+        m_zz    = m_total - m_goal
+        m_strike = round(m_goal / m_total * 100) if m_total else 0
+
+        # Il mese corrente parte aperto, gli altri chiusi
+        current_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        m_collapsed = "" if ym == current_month else " collapsed"
+        m_arrow_cls = "" if ym == current_month else " closed"
+
+        days_html += f"""
+<div class="month-block">
+  <div class="month-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
+    <span class="month-label">📁 {month_label}</span>
+    <span class="day-meta">
+      <span class="tag-ok">{m_total} partite</span>
+      <span class="tag-zz">{m_zz} × 0-0</span>
+      <span class="tag-sr">{m_strike}% strike</span>
+      <span class="arrow{m_arrow_cls}">&#9660;</span>
+    </span>
+  </div>
+  <div class="month-content{m_collapsed}">"""
+
+        for day in month_days:
+            day_matches = sorted(by_day[day], key=lambda x: x.get("kickoff",""), reverse=True)
+            is_today    = day == today_str
+            day_label   = ("🔴 OGGI · " if is_today else "") + fmt_day(day)
         day_goal    = sum(1 for m in day_matches if (m.get("goals_home") or 0)+(m.get("goals_away") or 0) > 0)
         day_zz      = len(day_matches) - day_goal
         day_strike  = round(day_goal/len(day_matches)*100) if day_matches else 0
@@ -1521,12 +1571,28 @@ def generate_storico_html(run_date):
             }
             flag = FLAGS.get(nat, "🌐")
 
+            # Stats G5 (goal fatti/subiti ultime 5)
+            hs_st = m.get("home_stats") or {}
+            as_st = m.get("away_stats") or {}
+            def _g5_storico(stats):
+                if not stats or stats.get("total") is None:
+                    return '<span style="color:var(--muted);font-size:.55rem">—</span>'
+                sc2 = stats.get("scored","")
+                co2 = stats.get("conceded","")
+                t2  = stats.get("total","")
+                tc  = "#ff3a3a" if isinstance(t2,int) and t2>=20 else "#ff8c00" if isinstance(t2,int) and t2>=17 else "#f5c542" if isinstance(t2,int) and t2>=14 else "#00e5a0"
+                return (f'<span class="pg">+{sc2}</span>'
+                        f'<span class="pr">-{co2}</span>'
+                        f'<span class="pt" style="background:{tc}">{t2}</span>')
+            g5_html = _g5_storico(hs_st) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + _g5_storico(as_st)
+
             rows += (
                 f'<tr class="{row_cls}">'
                 f'<td class="td-ko">{ko}</td>'
                 f'<td class="td-teams"><span class="team-h">{m.get("home","?")}</span>'
                 f'<span class="vs">vs</span>'
                 f'<span class="team-a">{m.get("away","?")}</span></td>'
+                f'<td class="td-g5">{g5_html}</td>'
                 f'<td class="td-sc">{sc_html}</td>'
                 f'<td class="td-fm">{fm_html}</td>'
                 f'<td class="td-lg">{flag} {lg}</td>'
@@ -1541,20 +1607,26 @@ def generate_storico_html(run_date):
       <span class="tag-ok">{day_goal} con goal</span>
       <span class="tag-zz">{day_zz} &times; 0-0</span>
       <span class="tag-sr">{day_strike}% strike</span>
-      <span class="arrow">&#9660;</span>
+      <span class="arrow closed">&#9660;</span>
     </span>
   </div>
-  <div class="table-wrap">
+  <div class="table-wrap collapsed">
   <table class="mt">
     <thead><tr>
       <th class="th-ko">KO</th>
       <th class="th-teams">PARTITA</th>
+      <th class="th-g5">G5</th>
       <th class="th-sc">SCORE</th>
       <th class="th-fm">1° GOAL</th>
       <th class="th-lg">LEGA</th>
     </tr></thead>
     <tbody>{rows}</tbody>
   </table>
+  </div>
+</div>"""
+
+        # Chiudi il div del mese
+        days_html += """
   </div>
 </div>"""
 
@@ -1628,12 +1700,24 @@ padding:1px 7px;border-radius:4px;border:1px solid rgba(255,58,58,.2);white-spac
 .fm-na{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);}
 .td-lg{font-size:.6rem;color:var(--muted);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
 .th-ko{width:38px;}.th-sc{width:72px;}.th-fm{width:52px;}
+.month-block{margin:0 0 8px 0;}
+.month-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.12);border-radius:8px;
+cursor:pointer;user-select:none;margin:6px 0;}
+.month-header:hover{background:rgba(0,229,160,0.08);}
+.month-label{font-size:.85rem;font-weight:700;color:var(--accent);letter-spacing:.02em;}
+.month-content{overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:9999px;opacity:1;}
+.month-content.collapsed{max-height:0 !important;opacity:0;}
 .day-header{cursor:pointer;user-select:none;}
 .day-header:hover{background:rgba(255,255,255,.04);}
 .table-wrap{overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:9999px;opacity:1;}
 .table-wrap.collapsed{max-height:0 !important;opacity:0;border-color:transparent;}
 .arrow{font-size:.55rem;color:var(--muted);margin-left:10px;display:inline-block;transition:transform .25s;}
 .arrow.closed{transform:rotate(-90deg);}
+.td-g5{width:120px;white-space:nowrap;}
+.pg{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,229,160,.12);color:var(--accent);}
+.pr{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,58,58,.12);color:var(--red);}
+.pt{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;color:#05080f;}
 """
 
     return f"""<!DOCTYPE html>
@@ -1833,25 +1917,37 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         ht = m.get("home_total")
         at = m.get("away_total")
         if ht is None and at is None:
-            return '<span style="color:var(--muted);font-size:.55rem">—</span>'
+            return '<span style="color:var(--muted);font-size:.55rem">\u2014</span>'
         def tot_color(t):
             if t is None: return "#4a5570"
             if t >= 20: return "#ff3a3a"
             if t >= 17: return "#ff8c00"
             if t >= 14: return "#f5c542"
             return "#00e5a0"
+        def match_color(s, c):
+            tot = s + c
+            if tot == 0: return "#ff3a3a"
+            if tot >= 4: return "#00e5a0"
+            if tot >= 3: return "#f5c542"
+            return "#4a5570"
         hs2 = m.get("home_stats") or {}
         as2 = m.get("away_stats") or {}
-        h_scored   = hs2.get("scored","") if hs2 else ""
-        h_conceded = hs2.get("conceded","") if hs2 else ""
-        a_scored   = as2.get("scored","") if as2 else ""
-        a_conceded = as2.get("conceded","") if as2 else ""
-        def pills(scored, conceded, total):
-            if total is None: return '<span style="color:var(--muted);font-size:.55rem">—</span>'
+        def team_pills(stats, total):
+            if total is None: return '<span style="color:var(--muted);font-size:.55rem">\u2014</span>'
             tc = tot_color(total)
-            s = ('<span class="pg">+' + str(scored) + '</span>' if scored != "" else "") +                 ('<span class="pr">-' + str(conceded) + '</span>' if conceded != "" else "") +                 '<span class="pt" style="background:' + tc + '">' + str(total) + '</span>'
+            mlist = stats.get("matches", []) if stats else []
+            dots = ""
+            for md in mlist:
+                mc = match_color(md["s"], md["c"])
+                dots += '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + mc + ';margin:0 1px;vertical-align:middle" title="' + str(md["s"]) + '-' + str(md["c"]) + '"></span>'
+            scored = stats.get("scored","") if stats else ""
+            conceded = stats.get("conceded","") if stats else ""
+            s = dots + ' '
+            s += ('<span class="pg">+' + str(scored) + '</span>' if scored != "" else "")
+            s += ('<span class="pr">-' + str(conceded) + '</span>' if conceded != "" else "")
+            s += '<span class="pt" style="background:' + tc + '">' + str(total) + '</span>'
             return s
-        return pills(h_scored, h_conceded, ht) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + pills(a_scored, a_conceded, at)
+        return team_pills(hs2, ht) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + team_pills(as2, at)
 
     days_html = ""
     if live_ms:
@@ -1881,16 +1977,19 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
     for day in sorted(by_day.keys()):
         dlabel    = dlabels.get(day, "\U0001f4c5 " + day)
         day_total = sum(len(v) for v in by_day[day].values())
+        is_today  = (day == today_str)
+        disp      = "block" if is_today else "none"
+        arrow     = "\u25b4" if is_today else "\u25be"
         dhtml     = ('<div class="day-block">'
-            + '<div class="day-header-g" onclick="var t=this.nextElementSibling;'
-            + 'if(t.style.display===\'none\'){t.style.display=\'block\'}else{t.style.display=\'none\'}">'
+            + '<div class="day-header-g" onclick="var t=this.nextElementSibling;var a=this.querySelector(\'.day-arrow\');'
+            + 'if(t.style.display===\'none\'){t.style.display=\'block\';a.textContent=\'\u25b4\'}else{t.style.display=\'none\';a.textContent=\'\u25be\'}">'
             + '<span class="day-label-g">' + dlabel + '</span>'
-            + '<span class="day-meta-g">' + str(day_total) + ' partite \u25be</span>'
-            + '</div><div class="table-wrap" style="display:block">')
+            + '<span class="day-meta-g">' + str(day_total) + ' partite <span class="day-arrow">' + arrow + '</span></span>'
+            + '</div><div class="table-wrap" style="display:' + disp + '">')
         for sl in sorted(by_day[day].keys()):
             ms2 = by_day[day][sl]
-            dhtml += ('<div class="slot-head" onclick="toggleSlot(this)">\u23f1 ' + sl + ' \u00b7 ' + str(len(ms2)) + ' match \u25be</div>'
-                + '<div class="slot-body"><table class="mt"><thead><tr>'
+            dhtml += ('<div class="slot-head" onclick="toggleSlot(this)">\u23f1 ' + sl + ' \u00b7 ' + str(len(ms2)) + ' match <span class="sl-arrow">\u25be</span></div>'
+                + '<div class="slot-body" style="display:none"><table class="mt"><thead><tr>'
                 + '<th>KO</th><th>PARTITA</th><th style="text-align:center;width:48px">G5</th><th>SCORE</th><th>ST</th><th>LEGA</th>'
                 + '</tr></thead><tbody>')
             for m in ms2:
@@ -2050,6 +2149,9 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
         + lhtml + "</div>"
         + "</div>"
+        + "<script>function toggleSlot(el){var b=el.nextElementSibling;var a=el.querySelector('.sl-arrow');"
+        + "if(b.style.display==='none'){b.style.display='block';if(a)a.textContent='\u25b4'}"
+        + "else{b.style.display='none';if(a)a.textContent='\u25be'}}</script>"
         + "</div></body></html>")
 
 
