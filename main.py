@@ -1521,85 +1521,89 @@ def generate_storico_html(run_date):
   </div>
   <div class="month-content{m_collapsed}">"""
 
+        FLAGS_ST = {
+            "England":"\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f","Germany":"\U0001f1e9\U0001f1ea","Mexico":"\U0001f1f2\U0001f1fd","Italy":"\U0001f1ee\U0001f1f9",
+            "Spain":"\U0001f1ea\U0001f1f8","France":"\U0001f1eb\U0001f1f7","Brazil":"\U0001f1e7\U0001f1f7","Argentina":"\U0001f1e6\U0001f1f7",
+            "Portugal":"\U0001f1f5\U0001f1f9","Netherlands":"\U0001f1f3\U0001f1f1","Belgium":"\U0001f1e7\U0001f1ea","Poland":"\U0001f1f5\U0001f1f1",
+            "Austria":"\U0001f1e6\U0001f1f9","Serbia":"\U0001f1f7\U0001f1f8","Chile":"\U0001f1e8\U0001f1f1","Colombia":"\U0001f1e8\U0001f1f4",
+            "Uruguay":"\U0001f1fa\U0001f1fe","Ecuador":"\U0001f1ea\U0001f1e8","Peru":"\U0001f1f5\U0001f1ea","Greece":"\U0001f1ec\U0001f1f7",
+            "Turkey":"\U0001f1f9\U0001f1f7","Romania":"\U0001f1f7\U0001f1f4","Slovenia":"\U0001f1f8\U0001f1ee","Bulgaria":"\U0001f1e7\U0001f1ec",
+            "Croatia":"\U0001f1ed\U0001f1f7","Slovakia":"\U0001f1f8\U0001f1f0","Czech Republic":"\U0001f1e8\U0001f1ff","Hungary":"\U0001f1ed\U0001f1fa",
+            "Ukraine":"\U0001f1fa\U0001f1e6","Russia":"\U0001f1f7\U0001f1fa","Sweden":"\U0001f1f8\U0001f1ea","Norway":"\U0001f1f3\U0001f1f4",
+            "Denmark":"\U0001f1e9\U0001f1f0","Finland":"\U0001f1eb\U0001f1ee","Switzerland":"\U0001f1e8\U0001f1ed","Scotland":"\U0001f3f4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f",
+            "Wales":"\U0001f3f4\U000e0067\U000e0062\U000e0077\U000e006c\U000e0073\U000e007f","Ireland":"\U0001f1ee\U0001f1ea","Nicaragua":"\U0001f1f3\U0001f1ee","Honduras":"\U0001f1ed\U0001f1f3",
+            "Indonesia":"\U0001f1ee\U0001f1e9","Singapore":"\U0001f1f8\U0001f1ec","Myanmar":"\U0001f1f2\U0001f1f2","North Macedonia":"\U0001f1f2\U0001f1f0",
+            "Lithuania":"\U0001f1f1\U0001f1f9","Latvia":"\U0001f1f1\U0001f1fb","Estonia":"\U0001f1ea\U0001f1ea","Moldova":"\U0001f1f2\U0001f1e9",
+            "Albania":"\U0001f1e6\U0001f1f1","Kosovo":"\U0001f1fd\U0001f1f0","Bosnia":"\U0001f1e7\U0001f1e6","Montenegro":"\U0001f1f2\U0001f1ea",
+            "USA":"\U0001f1fa\U0001f1f8","Japan":"\U0001f1ef\U0001f1f5","South Korea":"\U0001f1f0\U0001f1f7",
+            "Saudi Arabia":"\U0001f1f8\U0001f1e6","Thailand":"\U0001f1f9\U0001f1ed","Vietnam":"\U0001f1fb\U0001f1f3",
+            "Malaysia":"\U0001f1f2\U0001f1fe","Kazakhstan":"\U0001f1f0\U0001f1ff","Georgia":"\U0001f1ec\U0001f1ea",
+            "Armenia":"\U0001f1e6\U0001f1f2","Azerbaijan":"\U0001f1e6\U0001f1ff",
+            "Venezuela":"\U0001f1fb\U0001f1ea","Bolivia":"\U0001f1e7\U0001f1f4","Paraguay":"\U0001f1f5\U0001f1fe",
+            "Panama":"\U0001f1f5\U0001f1e6","Costa Rica":"\U0001f1e8\U0001f1f7",
+            "Egypt":"\U0001f1ea\U0001f1ec","Morocco":"\U0001f1f2\U0001f1e6","Nigeria":"\U0001f1f3\U0001f1ec",
+            "World":"\U0001f30d",
+        }
+        def _g5_storico(stats):
+            if not stats or stats.get("total") is None:
+                return '<span style="color:var(--muted);font-size:.55rem">\u2014</span>'
+            sc2 = stats.get("scored","")
+            co2 = stats.get("conceded","")
+            t2  = stats.get("total","")
+            tc  = "#ff3a3a" if isinstance(t2,int) and t2>=20 else "#ff8c00" if isinstance(t2,int) and t2>=17 else "#f5c542" if isinstance(t2,int) and t2>=14 else "#00e5a0"
+            return (f'<span class="pg">+{sc2}</span>'
+                    f'<span class="pr">-{co2}</span>'
+                    f'<span class="pt" style="background:{tc}">{t2}</span>')
+
         for day in month_days:
             day_matches = sorted(by_day[day], key=lambda x: x.get("kickoff",""), reverse=True)
             is_today    = day == today_str
-            day_label   = ("🔴 OGGI · " if is_today else "") + fmt_day(day)
-        day_goal    = sum(1 for m in day_matches if (m.get("goals_home") or 0)+(m.get("goals_away") or 0) > 0)
-        day_zz      = len(day_matches) - day_goal
-        day_strike  = round(day_goal/len(day_matches)*100) if day_matches else 0
+            day_label   = ("\U0001f534 OGGI \u00b7 " if is_today else "") + fmt_day(day)
+            day_goal    = sum(1 for m in day_matches if (m.get("goals_home") or 0)+(m.get("goals_away") or 0) > 0)
+            day_zz      = len(day_matches) - day_goal
+            day_strike  = round(day_goal/len(day_matches)*100) if day_matches else 0
 
-        rows = ""
-        for m in day_matches:
-            hg  = m.get("goals_home") or 0
-            ag  = m.get("goals_away") or 0
-            tot = hg + ag
-            sc  = m.get("score", f"{hg}-{ag}")
-            fm  = m.get("first_min_cached")
-            ko  = m.get("kickoff","?")
-            lg  = m.get("league","?")
-            nat = m.get("country","")
+            rows = ""
+            for m in day_matches:
+                hg  = m.get("goals_home") or 0
+                ag  = m.get("goals_away") or 0
+                tot = hg + ag
+                sc  = m.get("score", f"{hg}-{ag}")
+                fm  = m.get("first_min_cached")
+                ko  = m.get("kickoff","?")
+                lg  = m.get("league","?")
+                nat = m.get("country","")
 
-            if tot == 0:
-                # 0-0 rosso
-                sc_html  = f'<span class="sc-zz">0 – 0</span>'
-                fm_html  = '<span class="fm-na">—</span>'
-                row_cls  = "row-zz"
-            else:
-                # con goal verde
-                h, a     = sc.split("-") if "-" in sc else (hg, ag)
-                sc_html  = f'<span class="sc-ok">{h} – {a}</span>'
-                fm_html  = f'<span class="fm-ok">{fm}\'</span>' if fm else '<span class="fm-na">—</span>'
-                row_cls  = "row-ok"
+                if tot == 0:
+                    sc_html  = f'<span class="sc-zz">0 \u2013 0</span>'
+                    fm_html  = '<span class="fm-na">\u2014</span>'
+                    row_cls  = "row-zz"
+                else:
+                    h, a     = sc.split("-") if "-" in sc else (hg, ag)
+                    sc_html  = f'<span class="sc-ok">{h} \u2013 {a}</span>'
+                    fm_html  = f'<span class="fm-ok">{fm}\'</span>' if fm else '<span class="fm-na">\u2014</span>'
+                    row_cls  = "row-ok"
 
-            # Bandiera
-            FLAGS = {
-                "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Germany":"🇩🇪","Mexico":"🇲🇽","Italy":"🇮🇹",
-                "Spain":"🇪🇸","France":"🇫🇷","Brazil":"🇧🇷","Argentina":"🇦🇷",
-                "Portugal":"🇵🇹","Netherlands":"🇳🇱","Belgium":"🇧🇪","Poland":"🇵🇱",
-                "Austria":"🇦🇹","Serbia":"🇷🇸","Chile":"🇨🇱","Colombia":"🇨🇴",
-                "Uruguay":"🇺🇾","Ecuador":"🇪🇨","Peru":"🇵🇪","Greece":"🇬🇷",
-                "Turkey":"🇹🇷","Romania":"🇷🇴","Slovenia":"🇸🇮","Bulgaria":"🇧🇬",
-                "Croatia":"🇭🇷","Slovakia":"🇸🇰","Czech Republic":"🇨🇿","Hungary":"🇭🇺",
-                "Ukraine":"🇺🇦","Russia":"🇷🇺","Sweden":"🇸🇪","Norway":"🇳🇴",
-                "Denmark":"🇩🇰","Finland":"🇫🇮","Switzerland":"🇨🇭","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-                "Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","Ireland":"🇮🇪","Nicaragua":"🇳🇮","Honduras":"🇭🇳",
-                "Indonesia":"🇮🇩","Singapore":"🇸🇬","Myanmar":"🇲🇲","North Macedonia":"🇲🇰",
-                "Lithuania":"🇱🇹","Latvia":"🇱🇻","Estonia":"🇪🇪","Moldova":"🇲🇩",
-                "Albania":"🇦🇱","Kosovo":"🇽🇰","Bosnia":"🇧🇦","Montenegro":"🇲🇪",
-                "World":"🌍",
-            }
-            flag = FLAGS.get(nat, "🌐")
+                flag = FLAGS_ST.get(nat, "\U0001f310")
 
-            # Stats G5 (goal fatti/subiti ultime 5)
-            hs_st = m.get("home_stats") or {}
-            as_st = m.get("away_stats") or {}
-            def _g5_storico(stats):
-                if not stats or stats.get("total") is None:
-                    return '<span style="color:var(--muted);font-size:.55rem">—</span>'
-                sc2 = stats.get("scored","")
-                co2 = stats.get("conceded","")
-                t2  = stats.get("total","")
-                tc  = "#ff3a3a" if isinstance(t2,int) and t2>=20 else "#ff8c00" if isinstance(t2,int) and t2>=17 else "#f5c542" if isinstance(t2,int) and t2>=14 else "#00e5a0"
-                return (f'<span class="pg">+{sc2}</span>'
-                        f'<span class="pr">-{co2}</span>'
-                        f'<span class="pt" style="background:{tc}">{t2}</span>')
-            g5_html = _g5_storico(hs_st) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + _g5_storico(as_st)
+                hs_st = m.get("home_stats") or {}
+                as_st = m.get("away_stats") or {}
+                g5_html = _g5_storico(hs_st) + '<span style="color:var(--muted);font-size:.5rem;margin:0 2px">|</span>' + _g5_storico(as_st)
 
-            rows += (
-                f'<tr class="{row_cls}">'
-                f'<td class="td-ko">{ko}</td>'
-                f'<td class="td-teams"><span class="team-h">{m.get("home","?")}</span>'
-                f'<span class="vs">vs</span>'
-                f'<span class="team-a">{m.get("away","?")}</span></td>'
-                f'<td class="td-g5">{g5_html}</td>'
-                f'<td class="td-sc">{sc_html}</td>'
-                f'<td class="td-fm">{fm_html}</td>'
-                f'<td class="td-lg">{flag} {lg}</td>'
-                f'</tr>'
-            )
+                rows += (
+                    f'<tr class="{row_cls}">'
+                    f'<td class="td-ko">{ko}</td>'
+                    f'<td class="td-teams"><span class="team-h">{m.get("home","?")}</span>'
+                    f'<span class="vs">vs</span>'
+                    f'<span class="team-a">{m.get("away","?")}</span></td>'
+                    f'<td class="td-g5">{g5_html}</td>'
+                    f'<td class="td-sc">{sc_html}</td>'
+                    f'<td class="td-fm">{fm_html}</td>'
+                    f'<td class="td-lg">{flag} {lg}</td>'
+                    f'</tr>'
+                )
 
-        days_html += f"""
+            days_html += f"""
 <div class="day-block">
   <div class="day-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.arrow').classList.toggle('closed')">
     <span class="day-label">{'<span class="today-dot"></span>' if is_today else ''}{day_label}</span>
@@ -1617,7 +1621,7 @@ def generate_storico_html(run_date):
       <th class="th-teams">PARTITA</th>
       <th class="th-g5">G5</th>
       <th class="th-sc">SCORE</th>
-      <th class="th-fm">1° GOAL</th>
+      <th class="th-fm">1\u00b0 GOAL</th>
       <th class="th-lg">LEGA</th>
     </tr></thead>
     <tbody>{rows}</tbody>
