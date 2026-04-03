@@ -619,9 +619,12 @@ def generate_html(matches, run_date, total_analyzed):
                 f'Match analizzati: <strong>{total_analyzed}</strong></p></div>')
     else:
         LIVE_STATUS = {"1H","HT","2H","ET","P"}
+        FT_STATUS   = {"FT","AET","PEN"}
 
         live_matches  = [m for m in matches if m.get("status") in LIVE_STATUS]
-        other_matches = [m for m in matches if m.get("status") not in LIVE_STATUS]
+        # Solo partite NON concluse e NON live (= NS, prossime)
+        other_matches = [m for m in matches if m.get("status") not in LIVE_STATUS
+                         and m.get("status") not in FT_STATUS]
 
         sections = []
 
@@ -776,26 +779,9 @@ async function updateLive(){
         if(s){s.textContent=hg+' - '+ag;s.style.display='block';if(v)v.style.display='none';}
       }
 
-      // --- FT: rimuovi dalla sezione live, mettila nella sua fascia oraria ---
-      if(isFT&&inLiveSection){
-        // Togli stili live
-        card.classList.remove('zerozero','scoring');
-        var pl=card.querySelector('.plane-bg');if(pl)pl.remove();
-        // Trova il gruppo orario giusto cercando per ko
-        var koEl=card.querySelector('.ko');
-        var ko=koEl?koEl.textContent:'';
-        var targetTs=null;
-        document.querySelectorAll('.tgroup').forEach(function(tg){
-          var tl=tg.querySelector('.tl');
-          if(tl&&ko&&tl.textContent.trim()===ko.trim())targetTs=tg;
-        });
-        if(targetTs){
-          var tgGrid=targetTs.querySelector('.grid');
-          if(tgGrid){tgGrid.appendChild(card);targetTs.style.display='';}
-          // Mostra il day-block padre
-          var db=targetTs.closest('.day-block');
-          if(db)db.style.display='';
-        }
+      // --- FT: rimuovi completamente dalla dashboard (non mostrare partite concluse) ---
+      if(isFT){
+        card.remove();
         return;
       }
 
@@ -843,6 +829,16 @@ async function updateLive(){
     subGoal.style.display=nGoal>0?'':'none';
     // Nascondi intera sezione live se vuota
     if(n00===0&&nGoal===0) liveSection.style.display='none';
+
+    // Nascondi fasce orarie e day-block vuoti dopo rimozione FT
+    document.querySelectorAll('.tgroup').forEach(function(tg){
+      if(tg.querySelectorAll('.card[data-fid]').length===0)tg.style.display='none';
+    });
+    document.querySelectorAll('.day-block:not(#live-section)').forEach(function(db){
+      var vis=db.querySelectorAll('.tgroup:not([style*="display: none"]),.tgroup:not([style*="display:none"])');
+      var hasVis=false;vis.forEach(function(t){if(t.style.display!=='none')hasVis=true;});
+      if(!hasVis)db.style.display='none';
+    });
 
     var ts=document.getElementById('live-ts');
     if(ts)ts.textContent=REFRESH+' '+new Date().toLocaleTimeString();
