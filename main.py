@@ -122,9 +122,9 @@ def get_last_n(team_id, league_id, season):
     if key in _cache:
         return _cache[key]
 
-    # Controlla cache su disco (stessa giornata)
+    # Controlla cache su disco (stessa giornata) — solo risultati validi, mai None
     disk_key = f"{team_id}_{league_id}_{season}"
-    if disk_key in _disk_cache:
+    if disk_key in _disk_cache and _disk_cache[disk_key] is not None:
         result = _disk_cache[disk_key]
         _cache[key] = result
         return result
@@ -143,8 +143,9 @@ def get_last_n(team_id, league_id, season):
 
     if len(finished) < LAST_N:
         _cache[key] = None
-        _disk_cache[disk_key] = None
-        _save_disk_cache(_disk_cache)
+        # NON salvare None su disco: al prossimo run riprova l'API
+        if len(data) == 0:
+            print(f"    [WARN] API returned 0 fixtures for team={team_id} league={league_id} season={season}")
         return None
 
     scored = conceded = 0
