@@ -695,8 +695,9 @@ def generate_html(matches, run_date, total_analyzed):
 const PROXY='https://spring-hall-b29e.nwgir.workers.dev';
 const LIVE_ST=['1H','2H','ET','P','HT'];
 const FT_ST=['FT','AET','PEN'];
-const PLANE='\u2708\uFE0F';
-const REFRESH='\uD83D\uDD04';
+const PLANE='\\u2708\\uFE0F';
+const REFRESH='\\uD83D\\uDD04';
+
 
 async function updateLive(){
   try{
@@ -2306,53 +2307,6 @@ def main():
     ids_file = docs / "alert_ids.json"
     ids_file.write_text(json.dumps(ids))
     print(f"alert_ids.json: {len(ids)} fixture (solo oggi+domani)")
-
-    # ── Esporta matches.json per GoalscanBot ─────────────────────────────────
-    # Contiene SOLO le partite qualificate a TUTTI i filtri già esistenti:
-    #   goal threshold, min_scored, anti-0-0, quote Bet365.
-    matches_export = []
-    for m in qualified:
-        if not m.get("fixture_id"):
-            continue
-        try:
-            ko_iso = f"{m['date']}T{m['kickoff']}:00"
-        except Exception:
-            ko_iso = None
-        hs  = m.get("home_stats", {}) or {}
-        as_ = m.get("away_stats", {}) or {}
-        status = m.get("status", "NS")
-        is_live = status not in ("NS", "FT", "AET", "PEN", "PST", "CANC", "SUSP", "")
-        matches_export.append({
-            "fixture_id":    str(m["fixture_id"]),
-            "home_team":     m.get("home", ""),
-            "away_team":     m.get("away", ""),
-            "league":        f"{m.get('league', '')} \u00b7 {m.get('country', '')}",
-            "ko_time_iso":   ko_iso,
-            "date":          m.get("date", ""),
-            "kickoff":       m.get("kickoff", ""),
-            "grand_total":   hs.get("total", 0) + as_.get("total", 0),
-            "home_total":    hs.get("total", 0),
-            "away_total":    as_.get("total", 0),
-            "home_scored":   hs.get("scored", 0),
-            "home_conceded": hs.get("conceded", 0),
-            "away_scored":   as_.get("scored", 0),
-            "away_conceded": as_.get("conceded", 0),
-            "is_verified":   True,
-            "is_live":       is_live,
-            "status":        status,
-            "goals_home":    m.get("goals_home"),
-            "goals_away":    m.get("goals_away"),
-        })
-    matches_json_payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "total":        len(matches_export),
-        "matches":      matches_export,
-    }
-    (docs / "matches.json").write_text(
-        json.dumps(matches_json_payload, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
-    print(f"matches.json: {len(matches_export)} alert qualificati esportati per GoalscanBot")
 
     print("\n[4] Invio Telegram...")
     if TELEGRAM_ENABLED:
