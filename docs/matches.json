@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-06T08:19:50.450385+00:00",
+  "generated_at": "2026-04-06T10:02:39.253079+00:00",
   "matches": [
     {
       "fixture_id": "1535096",
@@ -32,8 +32,8 @@
       "away_scored": 6,
       "away_conceded": 8,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "HT"
     },
     {
       "fixture_id": "1381758",
@@ -155,23 +155,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1419913",
-      "home_team": "Cesena",
-      "away_team": "Sudtirol",
-      "league": "Serie B · Italy",
-      "ko_time_iso": "2026-04-06T10:30:00",
-      "grand_total": 29,
-      "home_total": 15,
-      "away_total": 14,
-      "home_scored": 6,
-      "home_conceded": 9,
-      "away_scored": 7,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1382262",
       "home_team": "Vitesse",
       "away_team": "Jong Ajax",
@@ -184,6 +167,23 @@
       "home_conceded": 7,
       "away_scored": 7,
       "away_conceded": 10,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1419913",
+      "home_team": "Cesena",
+      "away_team": "Sudtirol",
+      "league": "Serie B · Italy",
+      "ko_time_iso": "2026-04-06T10:30:00",
+      "grand_total": 29,
+      "home_total": 15,
+      "away_total": 14,
+      "home_scored": 6,
+      "home_conceded": 9,
+      "away_scored": 7,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -308,23 +308,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1393066",
-      "home_team": "Nykobing FC",
-      "away_team": "Vejgaard B",
-      "league": "3. Division · Denmark",
-      "ko_time_iso": "2026-04-06T12:00:00",
-      "grand_total": 33,
-      "home_total": 16,
-      "away_total": 17,
-      "home_scored": 12,
-      "home_conceded": 4,
-      "away_scored": 8,
-      "away_conceded": 9,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1393062",
       "home_team": "Brønshøj",
       "away_team": "Holbæk B&I",
@@ -337,6 +320,23 @@
       "home_conceded": 10,
       "away_scored": 5,
       "away_conceded": 11,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1393066",
+      "home_team": "Nykobing FC",
+      "away_team": "Vejgaard B",
+      "league": "3. Division · Denmark",
+      "ko_time_iso": "2026-04-06T12:00:00",
+      "grand_total": 33,
+      "home_total": 16,
+      "away_total": 17,
+      "home_scored": 12,
+      "home_conceded": 4,
+      "away_scored": 8,
+      "away_conceded": 9,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -393,23 +393,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1530536",
-      "home_team": "Vejle",
-      "away_team": "Randers FC",
-      "league": "Superliga · Denmark",
-      "ko_time_iso": "2026-04-06T12:00:00",
-      "grand_total": 29,
-      "home_total": 15,
-      "away_total": 14,
-      "home_scored": 6,
-      "home_conceded": 9,
-      "away_scored": 8,
-      "away_conceded": 6,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1530537",
       "home_team": "Odense",
       "away_team": "FC Fredericia",
@@ -439,6 +422,23 @@
       "home_conceded": 7,
       "away_scored": 11,
       "away_conceded": 8,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1530536",
+      "home_team": "Vejle",
+      "away_team": "Randers FC",
+      "league": "Superliga · Denmark",
+      "ko_time_iso": "2026-04-06T12:00:00",
+      "grand_total": 29,
+      "home_total": 15,
+      "away_total": 14,
+      "home_scored": 6,
+      "home_conceded": 9,
+      "away_scored": 8,
+      "away_conceded": 6,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -512,23 +512,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1399908",
-      "home_team": "Morecambe",
-      "away_team": "Carlisle",
-      "league": "National League · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 35,
-      "home_total": 20,
-      "away_total": 15,
-      "home_scored": 9,
-      "home_conceded": 11,
-      "away_scored": 10,
-      "away_conceded": 5,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1399910",
       "home_team": "Sutton Utd",
       "away_team": "Southend",
@@ -541,6 +524,23 @@
       "home_conceded": 8,
       "away_scored": 9,
       "away_conceded": 7,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1399908",
+      "home_team": "Morecambe",
+      "away_team": "Carlisle",
+      "league": "National League · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 35,
+      "home_total": 20,
+      "away_total": 15,
+      "home_scored": 9,
+      "home_conceded": 11,
+      "away_scored": 10,
+      "away_conceded": 5,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -614,23 +614,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1402000",
-      "home_team": "Ebbsfleet United",
-      "away_team": "Dover",
-      "league": "National League - South · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 34,
-      "home_total": 19,
-      "away_total": 15,
-      "home_scored": 9,
-      "home_conceded": 10,
-      "away_scored": 5,
-      "away_conceded": 10,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1402005",
       "home_team": "Salisbury",
       "away_team": "Weston-super-Mare",
@@ -643,6 +626,23 @@
       "home_conceded": 8,
       "away_scored": 7,
       "away_conceded": 8,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1402000",
+      "home_team": "Ebbsfleet United",
+      "away_team": "Dover",
+      "league": "National League - South · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 34,
+      "home_total": 19,
+      "away_total": 15,
+      "home_scored": 9,
+      "home_conceded": 10,
+      "away_scored": 5,
+      "away_conceded": 10,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -699,23 +699,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1424824",
-      "home_team": "Dulwich Hamlet",
-      "away_team": "Carshalton Athletic",
-      "league": "Non League Premier - Isthmian · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 38,
-      "home_total": 18,
-      "away_total": 20,
-      "home_scored": 10,
-      "home_conceded": 8,
-      "away_scored": 13,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1424826",
       "home_team": "Cray Valley PM",
       "away_team": "Cray Wanderers",
@@ -728,6 +711,23 @@
       "home_conceded": 9,
       "away_scored": 11,
       "away_conceded": 9,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1424824",
+      "home_team": "Dulwich Hamlet",
+      "away_team": "Carshalton Athletic",
+      "league": "Non League Premier - Isthmian · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 38,
+      "home_total": 18,
+      "away_total": 20,
+      "home_scored": 10,
+      "home_conceded": 8,
+      "away_scored": 13,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -750,23 +750,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1424828",
-      "home_team": "Brentwood Town",
-      "away_team": "Welling United",
-      "league": "Non League Premier - Isthmian · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 32,
-      "home_total": 15,
-      "away_total": 17,
-      "home_scored": 7,
-      "home_conceded": 8,
-      "away_scored": 10,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1424830",
       "home_team": "Chichester City",
       "away_team": "Burgess Hill Town",
@@ -779,6 +762,23 @@
       "home_conceded": 10,
       "away_scored": 9,
       "away_conceded": 12,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1424828",
+      "home_team": "Brentwood Town",
+      "away_team": "Welling United",
+      "league": "Non League Premier - Isthmian · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 32,
+      "home_total": 15,
+      "away_total": 17,
+      "home_scored": 7,
+      "home_conceded": 8,
+      "away_scored": 10,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -1034,6 +1034,23 @@
       "home_conceded": 12,
       "away_scored": 12,
       "away_conceded": 5,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1394368",
+      "home_team": "FC Saarbrücken",
+      "away_team": "Alemannia Aachen",
+      "league": "3. Liga · Germany",
+      "ko_time_iso": "2026-04-08T17:00:00",
+      "grand_total": 30,
+      "home_total": 14,
+      "away_total": 16,
+      "home_scored": 6,
+      "home_conceded": 8,
+      "away_scored": 13,
+      "away_conceded": 3,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
