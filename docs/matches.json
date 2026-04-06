@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-06T17:39:22.379032+00:00",
+  "generated_at": "2026-04-06T18:43:57.554338+00:00",
   "matches": [
     {
       "fixture_id": "1535096",
@@ -84,7 +84,7 @@
       "away_conceded": 5,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
+      "status": "2H"
     },
     {
       "fixture_id": "1382256",
@@ -104,6 +104,23 @@
       "status": "FT"
     },
     {
+      "fixture_id": "1382258",
+      "home_team": "De Graafschap",
+      "away_team": "Jong AZ",
+      "league": "Eerste Divisie · Netherlands",
+      "ko_time_iso": "2026-04-06T14:45:00",
+      "grand_total": 36,
+      "home_total": 17,
+      "away_total": 19,
+      "home_scored": 8,
+      "home_conceded": 9,
+      "away_scored": 10,
+      "away_conceded": 9,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
       "fixture_id": "1382257",
       "home_team": "Cambuur",
       "away_team": "Dordrecht",
@@ -114,6 +131,23 @@
       "away_total": 16,
       "home_scored": 9,
       "home_conceded": 10,
+      "away_scored": 5,
+      "away_conceded": 11,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1382260",
+      "home_team": "Emmen",
+      "away_team": "MVV",
+      "league": "Eerste Divisie · Netherlands",
+      "ko_time_iso": "2026-04-06T14:45:00",
+      "grand_total": 34,
+      "home_total": 18,
+      "away_total": 16,
+      "home_scored": 7,
+      "home_conceded": 11,
       "away_scored": 5,
       "away_conceded": 11,
       "is_verified": true,
@@ -186,41 +220,7 @@
       "away_conceded": 11,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
-    },
-    {
-      "fixture_id": "1382258",
-      "home_team": "De Graafschap",
-      "away_team": "Jong AZ",
-      "league": "Eerste Divisie · Netherlands",
-      "ko_time_iso": "2026-04-06T14:45:00",
-      "grand_total": 36,
-      "home_total": 17,
-      "away_total": 19,
-      "home_scored": 8,
-      "home_conceded": 9,
-      "away_scored": 10,
-      "away_conceded": 9,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
-      "fixture_id": "1382260",
-      "home_team": "Emmen",
-      "away_team": "MVV",
-      "league": "Eerste Divisie · Netherlands",
-      "ko_time_iso": "2026-04-06T14:45:00",
-      "grand_total": 34,
-      "home_total": 18,
-      "away_total": 16,
-      "home_scored": 7,
-      "home_conceded": 11,
-      "away_scored": 5,
-      "away_conceded": 11,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
+      "status": "2H"
     },
     {
       "fixture_id": "1387039",
@@ -287,23 +287,6 @@
       "away_scored": 7,
       "away_conceded": 8,
       "is_verified": true,
-      "is_live": true,
-      "status": "HT"
-    },
-    {
-      "fixture_id": "1393062",
-      "home_team": "Brønshøj",
-      "away_team": "Holbæk B&I",
-      "league": "3. Division · Denmark",
-      "ko_time_iso": "2026-04-06T12:00:00",
-      "grand_total": 32,
-      "home_total": 16,
-      "away_total": 16,
-      "home_scored": 6,
-      "home_conceded": 10,
-      "away_scored": 5,
-      "away_conceded": 11,
-      "is_verified": true,
       "is_live": false,
       "status": "FT"
     },
@@ -320,6 +303,23 @@
       "home_conceded": 6,
       "away_scored": 6,
       "away_conceded": 10,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1393062",
+      "home_team": "Brønshøj",
+      "away_team": "Holbæk B&I",
+      "league": "3. Division · Denmark",
+      "ko_time_iso": "2026-04-06T12:00:00",
+      "grand_total": 32,
+      "home_total": 16,
+      "away_total": 16,
+      "home_scored": 6,
+      "home_conceded": 10,
+      "away_scored": 5,
+      "away_conceded": 11,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -342,23 +342,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1438310",
-      "home_team": "Blauw Geel",
-      "away_team": "Groene Ster",
-      "league": "Derde Divisie - Sunday · Netherlands",
-      "ko_time_iso": "2026-04-06T12:00:00",
-      "grand_total": 35,
-      "home_total": 16,
-      "away_total": 19,
-      "home_scored": 7,
-      "home_conceded": 9,
-      "away_scored": 5,
-      "away_conceded": 14,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
       "fixture_id": "1428117",
       "home_team": "Barwell",
       "away_team": "Spalding United",
@@ -371,6 +354,23 @@
       "home_conceded": 14,
       "away_scored": 7,
       "away_conceded": 8,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1438310",
+      "home_team": "Blauw Geel",
+      "away_team": "Groene Ster",
+      "league": "Derde Divisie - Sunday · Netherlands",
+      "ko_time_iso": "2026-04-06T12:00:00",
+      "grand_total": 35,
+      "home_total": 16,
+      "away_total": 19,
+      "home_scored": 7,
+      "home_conceded": 9,
+      "away_scored": 5,
+      "away_conceded": 14,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -461,6 +461,23 @@
       "status": "NS"
     },
     {
+      "fixture_id": "1434052",
+      "home_team": "Coventry City U21",
+      "away_team": "Huddersfield Town U21",
+      "league": "Professional Development League · England",
+      "ko_time_iso": "2026-04-07T12:00:00",
+      "grand_total": 38,
+      "home_total": 22,
+      "away_total": 16,
+      "home_scored": 8,
+      "home_conceded": 14,
+      "away_scored": 10,
+      "away_conceded": 6,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
       "fixture_id": "1434027",
       "home_team": "Fleetwood Town U21",
       "away_team": "AFC Bournemouth U21",
@@ -512,23 +529,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1434052",
-      "home_team": "Coventry City U21",
-      "away_team": "Huddersfield Town U21",
-      "league": "Professional Development League · England",
-      "ko_time_iso": "2026-04-07T12:00:00",
-      "grand_total": 38,
-      "home_total": 22,
-      "away_total": 16,
-      "home_scored": 8,
-      "home_conceded": 14,
-      "away_scored": 10,
-      "away_conceded": 6,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1395550",
       "home_team": "Llandudno",
       "away_team": "Guilsfield",
@@ -541,40 +541,6 @@
       "home_conceded": 5,
       "away_scored": 6,
       "away_conceded": 10,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
-      "fixture_id": "1399903",
-      "home_team": "Braintree",
-      "away_team": "Woking",
-      "league": "National League · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 33,
-      "home_total": 17,
-      "away_total": 16,
-      "home_scored": 7,
-      "home_conceded": 10,
-      "away_scored": 8,
-      "away_conceded": 8,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
-      "fixture_id": "1399904",
-      "home_team": "Eastleigh",
-      "away_team": "Yeovil Town",
-      "league": "National League · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 33,
-      "home_total": 19,
-      "away_total": 14,
-      "home_scored": 6,
-      "home_conceded": 13,
-      "away_scored": 8,
-      "away_conceded": 6,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -597,6 +563,40 @@
       "status": "FT"
     },
     {
+      "fixture_id": "1399904",
+      "home_team": "Eastleigh",
+      "away_team": "Yeovil Town",
+      "league": "National League · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 33,
+      "home_total": 19,
+      "away_total": 14,
+      "home_scored": 6,
+      "home_conceded": 13,
+      "away_scored": 8,
+      "away_conceded": 6,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1399903",
+      "home_team": "Braintree",
+      "away_team": "Woking",
+      "league": "National League · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 33,
+      "home_total": 17,
+      "away_total": 16,
+      "home_scored": 7,
+      "home_conceded": 10,
+      "away_scored": 8,
+      "away_conceded": 8,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
       "fixture_id": "1399908",
       "home_team": "Morecambe",
       "away_team": "Carlisle",
@@ -614,23 +614,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1399912",
-      "home_team": "Wealdstone",
-      "away_team": "Aldershot Town",
-      "league": "National League · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 35,
-      "home_total": 18,
-      "away_total": 17,
-      "home_scored": 8,
-      "home_conceded": 10,
-      "away_scored": 7,
-      "away_conceded": 10,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
       "fixture_id": "1399910",
       "home_team": "Sutton Utd",
       "away_team": "Southend",
@@ -643,6 +626,23 @@
       "home_conceded": 8,
       "away_scored": 9,
       "away_conceded": 7,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1399912",
+      "home_team": "Wealdstone",
+      "away_team": "Aldershot Town",
+      "league": "National League · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 35,
+      "home_total": 18,
+      "away_total": 17,
+      "home_scored": 8,
+      "home_conceded": 10,
+      "away_scored": 7,
+      "away_conceded": 10,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -852,23 +852,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1428575",
-      "home_team": "Walton & Hersham",
-      "away_team": "Chertsey Town",
-      "league": "Non League Premier - Southern South · England",
-      "ko_time_iso": "2026-04-06T14:00:00",
-      "grand_total": 33,
-      "home_total": 17,
-      "away_total": 16,
-      "home_scored": 11,
-      "home_conceded": 6,
-      "away_scored": 6,
-      "away_conceded": 10,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
       "fixture_id": "1424830",
       "home_team": "Chichester City",
       "away_team": "Burgess Hill Town",
@@ -881,6 +864,23 @@
       "home_conceded": 10,
       "away_scored": 9,
       "away_conceded": 12,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1428575",
+      "home_team": "Walton & Hersham",
+      "away_team": "Chertsey Town",
+      "league": "Non League Premier - Southern South · England",
+      "ko_time_iso": "2026-04-06T14:00:00",
+      "grand_total": 33,
+      "home_total": 17,
+      "away_total": 16,
+      "home_scored": 11,
+      "home_conceded": 6,
+      "away_scored": 6,
+      "away_conceded": 10,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -933,8 +933,8 @@
       "away_scored": 8,
       "away_conceded": 11,
       "is_verified": true,
-      "is_live": true,
-      "status": "2H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1434434",
@@ -950,8 +950,8 @@
       "away_scored": 11,
       "away_conceded": 9,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "1H"
     },
     {
       "fixture_id": "1537404",
@@ -967,8 +967,8 @@
       "away_scored": 9,
       "away_conceded": 9,
       "is_verified": true,
-      "is_live": true,
-      "status": "2H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1524318",
@@ -984,8 +984,8 @@
       "away_scored": 11,
       "away_conceded": 9,
       "is_verified": true,
-      "is_live": true,
-      "status": "2H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1392129",
@@ -1002,7 +1002,7 @@
       "away_conceded": 5,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
+      "status": "2H"
     },
     {
       "fixture_id": "1421909",
@@ -1019,7 +1019,7 @@
       "away_conceded": 11,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
+      "status": "2H"
     },
     {
       "fixture_id": "1389362",
@@ -1085,6 +1085,23 @@
       "home_conceded": 13,
       "away_scored": 10,
       "away_conceded": 6,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1528154",
+      "home_team": "Johor Darul Takzim FC",
+      "away_team": "Kuala Lumpur FA",
+      "league": "Malaysia Cup · Malaysia",
+      "ko_time_iso": "2026-04-07T12:15:00",
+      "grand_total": 39,
+      "home_total": 25,
+      "away_total": 14,
+      "home_scored": 23,
+      "home_conceded": 2,
+      "away_scored": 6,
+      "away_conceded": 8,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -1187,6 +1204,23 @@
       "home_conceded": 8,
       "away_scored": 6,
       "away_conceded": 10,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1405129",
+      "home_team": "Celtic II",
+      "away_team": "Linlithgow Rose",
+      "league": "Football League - Lowland League · Scotland",
+      "ko_time_iso": "2026-04-07T18:45:00",
+      "grand_total": 48,
+      "home_total": 25,
+      "away_total": 23,
+      "home_scored": 14,
+      "home_conceded": 11,
+      "away_scored": 16,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
