@@ -2313,5 +2313,43 @@ def main():
     if TELEGRAM_ENABLED:
         send_telegram(qualified, total, run_date)
 
+    # ── Export matches.json per GoalscanBot (Betfair) ────────────────
+    matches_export = []
+    for m in qualified:
+        try:
+            ko_dt = datetime.strptime(f"{m['date']} {m['kickoff']}", "%Y-%m-%d %H:%M")
+            ko_utc = ko_dt - timedelta(hours=2)
+            ko_iso = ko_utc.isoformat()
+        except Exception:
+            ko_iso = None
+        hs = m.get("home_stats") or {}
+        as_ = m.get("away_stats") or {}
+        matches_export.append({
+            "fixture_id":    str(m.get("fixture_id", "")),
+            "home_team":     m.get("home", ""),
+            "away_team":     m.get("away", ""),
+            "league":        f"{m.get('league', '')} · {m.get('country', '')}",
+            "ko_time_iso":   ko_iso,
+            "grand_total":   hs.get("total", 0) + as_.get("total", 0),
+            "home_total":    hs.get("total", 0),
+            "away_total":    as_.get("total", 0),
+            "home_scored":   hs.get("scored", 0),
+            "home_conceded": hs.get("conceded", 0),
+            "away_scored":   as_.get("scored", 0),
+            "away_conceded": as_.get("conceded", 0),
+            "is_verified":   True,
+            "is_live":       m.get("status", "NS") in ("1H", "HT", "2H", "ET", "P"),
+            "status":        m.get("status", "NS"),
+        })
+    matches_json_file = docs / "matches.json"
+    matches_json_file.write_text(
+        json.dumps({
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "matches": matches_export
+        }, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+    print(f"matches.json: {len(matches_export)} match esportati")
+
 if __name__ == "__main__":
     main()
