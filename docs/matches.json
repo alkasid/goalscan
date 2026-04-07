@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-07T01:18:31.562852+00:00",
+  "generated_at": "2026-04-07T04:25:58.561688+00:00",
   "matches": [
     {
       "fixture_id": "1535096",
@@ -16,7 +16,7 @@
       "away_conceded": 14,
       "is_verified": true,
       "is_live": false,
-      "status": "NS"
+      "status": "FT"
     },
     {
       "fixture_id": "1524000",
@@ -36,23 +36,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1434149",
-      "home_team": "Swansea City U21",
-      "away_team": "Peterborough United U21",
-      "league": "Professional Development League · England",
-      "ko_time_iso": "2026-04-07T11:00:00",
-      "grand_total": 47,
-      "home_total": 23,
-      "away_total": 24,
-      "home_scored": 17,
-      "home_conceded": 6,
-      "away_scored": 10,
-      "away_conceded": 14,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1434027",
       "home_team": "Fleetwood Town U21",
       "away_team": "AFC Bournemouth U21",
@@ -65,6 +48,23 @@
       "home_conceded": 18,
       "away_scored": 9,
       "away_conceded": 8,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1434149",
+      "home_team": "Swansea City U21",
+      "away_team": "Peterborough United U21",
+      "league": "Professional Development League · England",
+      "ko_time_iso": "2026-04-07T11:00:00",
+      "grand_total": 47,
+      "home_total": 23,
+      "away_total": 24,
+      "home_scored": 17,
+      "home_conceded": 6,
+      "away_scored": 10,
+      "away_conceded": 14,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -274,23 +274,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1405129",
-      "home_team": "Celtic II",
-      "away_team": "Linlithgow Rose",
-      "league": "Football League - Lowland League · Scotland",
-      "ko_time_iso": "2026-04-07T18:45:00",
-      "grand_total": 48,
-      "home_total": 25,
-      "away_total": 23,
-      "home_scored": 14,
-      "home_conceded": 11,
-      "away_scored": 16,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1405259",
       "home_team": "Albion Rovers",
       "away_team": "East Stirlingshire",
@@ -303,6 +286,23 @@
       "home_conceded": 6,
       "away_scored": 10,
       "away_conceded": 14,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1405129",
+      "home_team": "Celtic II",
+      "away_team": "Linlithgow Rose",
+      "league": "Football League - Lowland League · Scotland",
+      "ko_time_iso": "2026-04-07T18:45:00",
+      "grand_total": 48,
+      "home_total": 25,
+      "away_total": 23,
+      "home_scored": 14,
+      "home_conceded": 11,
+      "away_scored": 16,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -342,23 +342,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1534907",
-      "home_team": "Barcelona",
-      "away_team": "Atletico Madrid",
-      "league": "UEFA Champions League · World",
-      "ko_time_iso": "2026-04-08T19:00:00",
-      "grand_total": 51,
-      "home_total": 25,
-      "away_total": 26,
-      "home_scored": 18,
-      "home_conceded": 7,
-      "away_scored": 15,
-      "away_conceded": 11,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1417578",
       "home_team": "Cailungo",
       "away_team": "Pennarossa",
@@ -376,17 +359,17 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1436167",
-      "home_team": "Al-Hilal Saudi FC",
-      "away_team": "Al Kholood",
-      "league": "Pro League · Saudi-Arabia",
-      "ko_time_iso": "2026-04-08T18:00:00",
-      "grand_total": 39,
-      "home_total": 19,
-      "away_total": 20,
-      "home_scored": 13,
-      "home_conceded": 6,
-      "away_scored": 9,
+      "fixture_id": "1534907",
+      "home_team": "Barcelona",
+      "away_team": "Atletico Madrid",
+      "league": "UEFA Champions League · World",
+      "ko_time_iso": "2026-04-08T19:00:00",
+      "grand_total": 51,
+      "home_total": 25,
+      "away_total": 26,
+      "home_scored": 18,
+      "home_conceded": 7,
+      "away_scored": 15,
       "away_conceded": 11,
       "is_verified": true,
       "is_live": false,
@@ -405,6 +388,23 @@
       "home_conceded": 11,
       "away_scored": 5,
       "away_conceded": 9,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1436167",
+      "home_team": "Al-Hilal Saudi FC",
+      "away_team": "Al Kholood",
+      "league": "Pro League · Saudi-Arabia",
+      "ko_time_iso": "2026-04-08T18:00:00",
+      "grand_total": 39,
+      "home_total": 19,
+      "away_total": 20,
+      "home_scored": 13,
+      "home_conceded": 6,
+      "away_scored": 9,
+      "away_conceded": 11,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
