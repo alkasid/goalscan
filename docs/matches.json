@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-07T04:25:58.561688+00:00",
+  "generated_at": "2026-04-07T06:14:29.264928+00:00",
   "matches": [
     {
       "fixture_id": "1535096",
@@ -36,23 +36,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1434027",
-      "home_team": "Fleetwood Town U21",
-      "away_team": "AFC Bournemouth U21",
-      "league": "Professional Development League · England",
-      "ko_time_iso": "2026-04-07T12:00:00",
-      "grand_total": 43,
-      "home_total": 26,
-      "away_total": 17,
-      "home_scored": 8,
-      "home_conceded": 18,
-      "away_scored": 9,
-      "away_conceded": 8,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1434149",
       "home_team": "Swansea City U21",
       "away_team": "Peterborough United U21",
@@ -65,6 +48,23 @@
       "home_conceded": 6,
       "away_scored": 10,
       "away_conceded": 14,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1434027",
+      "home_team": "Fleetwood Town U21",
+      "away_team": "AFC Bournemouth U21",
+      "league": "Professional Development League · England",
+      "ko_time_iso": "2026-04-07T12:00:00",
+      "grand_total": 43,
+      "home_total": 26,
+      "away_total": 17,
+      "home_scored": 8,
+      "home_conceded": 18,
+      "away_scored": 9,
+      "away_conceded": 8,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -155,23 +155,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1394364",
-      "home_team": "MSV Duisburg",
-      "away_team": "VfL Osnabrück",
-      "league": "3. Liga · Germany",
-      "ko_time_iso": "2026-04-07T17:00:00",
-      "grand_total": 30,
-      "home_total": 16,
-      "away_total": 14,
-      "home_scored": 7,
-      "home_conceded": 9,
-      "away_scored": 13,
-      "away_conceded": 1,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1394366",
       "home_team": "Waldhof Mannheim",
       "away_team": "Hoffenheim II",
@@ -189,18 +172,18 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1394367",
-      "home_team": "SSV Jahn Regensburg",
-      "away_team": "Erzgebirge Aue",
+      "fixture_id": "1394364",
+      "home_team": "MSV Duisburg",
+      "away_team": "VfL Osnabrück",
       "league": "3. Liga · Germany",
       "ko_time_iso": "2026-04-07T17:00:00",
-      "grand_total": 42,
-      "home_total": 18,
-      "away_total": 24,
-      "home_scored": 9,
+      "grand_total": 30,
+      "home_total": 16,
+      "away_total": 14,
+      "home_scored": 7,
       "home_conceded": 9,
-      "away_scored": 8,
-      "away_conceded": 16,
+      "away_scored": 13,
+      "away_conceded": 1,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -218,6 +201,23 @@
       "home_conceded": 12,
       "away_scored": 12,
       "away_conceded": 5,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1394367",
+      "home_team": "SSV Jahn Regensburg",
+      "away_team": "Erzgebirge Aue",
+      "league": "3. Liga · Germany",
+      "ko_time_iso": "2026-04-07T17:00:00",
+      "grand_total": 42,
+      "home_total": 18,
+      "away_total": 24,
+      "home_scored": 9,
+      "home_conceded": 9,
+      "away_scored": 8,
+      "away_conceded": 16,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -274,23 +274,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1405259",
-      "home_team": "Albion Rovers",
-      "away_team": "East Stirlingshire",
-      "league": "Football League - Lowland League · Scotland",
-      "ko_time_iso": "2026-04-07T18:45:00",
-      "grand_total": 44,
-      "home_total": 20,
-      "away_total": 24,
-      "home_scored": 14,
-      "home_conceded": 6,
-      "away_scored": 10,
-      "away_conceded": 14,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1405129",
       "home_team": "Celtic II",
       "away_team": "Linlithgow Rose",
@@ -320,6 +303,23 @@
       "home_conceded": 8,
       "away_scored": 9,
       "away_conceded": 6,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1405259",
+      "home_team": "Albion Rovers",
+      "away_team": "East Stirlingshire",
+      "league": "Football League - Lowland League · Scotland",
+      "ko_time_iso": "2026-04-07T18:45:00",
+      "grand_total": 44,
+      "home_total": 20,
+      "away_total": 24,
+      "home_scored": 14,
+      "home_conceded": 6,
+      "away_scored": 10,
+      "away_conceded": 14,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
