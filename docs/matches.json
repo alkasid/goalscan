@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-08T16:10:06.020594+00:00",
+  "generated_at": "2026-04-08T17:59:26.765919+00:00",
   "matches": [
     {
       "fixture_id": "1493791",
@@ -70,23 +70,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1398648",
-      "home_team": "Esenler Erokspor",
-      "away_team": "Amed",
-      "league": "1. Lig · Turkey",
-      "ko_time_iso": "2026-04-09T17:00:00",
-      "grand_total": 35,
-      "home_total": 18,
-      "away_total": 17,
-      "home_scored": 9,
-      "home_conceded": 9,
-      "away_scored": 16,
-      "away_conceded": 1,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1433916",
       "home_team": "Hull City U21",
       "away_team": "Bristol City U21",
@@ -102,6 +85,23 @@
       "is_verified": true,
       "is_live": false,
       "status": "FT"
+    },
+    {
+      "fixture_id": "1398648",
+      "home_team": "Esenler Erokspor",
+      "away_team": "Amed",
+      "league": "1. Lig · Turkey",
+      "ko_time_iso": "2026-04-09T17:00:00",
+      "grand_total": 35,
+      "home_total": 18,
+      "away_total": 17,
+      "home_scored": 9,
+      "home_conceded": 9,
+      "away_scored": 16,
+      "away_conceded": 1,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
     },
     {
       "fixture_id": "1497812",
@@ -134,8 +134,8 @@
       "away_scored": 6,
       "away_conceded": 14,
       "is_verified": true,
-      "is_live": true,
-      "status": "HT"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1537593",
@@ -168,8 +168,8 @@
       "away_scored": 7,
       "away_conceded": 7,
       "is_verified": true,
-      "is_live": true,
-      "status": "2H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1491654",
@@ -185,8 +185,8 @@
       "away_scored": 12,
       "away_conceded": 7,
       "is_verified": true,
-      "is_live": true,
-      "status": "1H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1491656",
@@ -202,8 +202,8 @@
       "away_scored": 10,
       "away_conceded": 7,
       "is_verified": true,
-      "is_live": true,
-      "status": "1H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1491657",
@@ -219,8 +219,8 @@
       "away_scored": 10,
       "away_conceded": 10,
       "is_verified": true,
-      "is_live": true,
-      "status": "1H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1491658",
@@ -236,8 +236,8 @@
       "away_scored": 8,
       "away_conceded": 6,
       "is_verified": true,
-      "is_live": true,
-      "status": "1H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1491659",
@@ -253,8 +253,8 @@
       "away_scored": 6,
       "away_conceded": 12,
       "is_verified": true,
-      "is_live": true,
-      "status": "1H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1499063",
@@ -308,6 +308,23 @@
       "status": "NS"
     },
     {
+      "fixture_id": "1513518",
+      "home_team": "FC Levadia Tallinn",
+      "away_team": "Vaprus",
+      "league": "Meistriliiga · Estonia",
+      "ko_time_iso": "2026-04-08T16:00:00",
+      "grand_total": 36,
+      "home_total": 15,
+      "away_total": 21,
+      "home_scored": 10,
+      "home_conceded": 5,
+      "away_scored": 6,
+      "away_conceded": 15,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
       "fixture_id": "1394368",
       "home_team": "FC Saarbrücken",
       "away_team": "Alemannia Aachen",
@@ -321,8 +338,8 @@
       "away_scored": 13,
       "away_conceded": 3,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "HT"
     },
     {
       "fixture_id": "1394370",
@@ -338,8 +355,8 @@
       "away_scored": 6,
       "away_conceded": 10,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "HT"
     },
     {
       "fixture_id": "1394376",
@@ -372,8 +389,8 @@
       "away_scored": 8,
       "away_conceded": 6,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "1H"
     },
     {
       "fixture_id": "1395677",
@@ -422,6 +439,23 @@
       "home_conceded": 8,
       "away_scored": 8,
       "away_conceded": 6,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1537618",
+      "home_team": "H&H Export",
+      "away_team": "Real Madriz",
+      "league": "Primera Division · Nicaragua",
+      "ko_time_iso": "2026-04-09T21:00:00",
+      "grand_total": 34,
+      "home_total": 15,
+      "away_total": 19,
+      "home_scored": 6,
+      "home_conceded": 9,
+      "away_scored": 9,
+      "away_conceded": 10,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -529,23 +563,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1524125",
-      "home_team": "Capalaba",
-      "away_team": "Redlands United",
-      "league": "Queensland Premier League · Australia",
-      "ko_time_iso": "2026-04-10T10:30:00",
-      "grand_total": 34,
-      "home_total": 16,
-      "away_total": 18,
-      "home_scored": 5,
-      "home_conceded": 11,
-      "away_scored": 10,
-      "away_conceded": 8,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1522187",
       "home_team": "Brunswick Juventus FC",
       "away_team": "Langwarrin",
@@ -558,6 +575,23 @@
       "home_conceded": 5,
       "away_scored": 6,
       "away_conceded": 13,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1524125",
+      "home_team": "Capalaba",
+      "away_team": "Redlands United",
+      "league": "Queensland Premier League · Australia",
+      "ko_time_iso": "2026-04-10T10:30:00",
+      "grand_total": 34,
+      "home_total": 16,
+      "away_total": 18,
+      "home_scored": 5,
+      "home_conceded": 11,
+      "away_scored": 10,
+      "away_conceded": 8,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -699,23 +733,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1492668",
-      "home_team": "Galway United",
-      "away_team": "Shelbourne",
-      "league": "Premier Division · Ireland",
-      "ko_time_iso": "2026-04-10T18:45:00",
-      "grand_total": 32,
-      "home_total": 18,
-      "away_total": 14,
-      "home_scored": 9,
-      "home_conceded": 9,
-      "away_scored": 7,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1492670",
       "home_team": "Waterford",
       "away_team": "Drogheda United",
@@ -728,6 +745,23 @@
       "home_conceded": 13,
       "away_scored": 5,
       "away_conceded": 9,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1492668",
+      "home_team": "Galway United",
+      "away_team": "Shelbourne",
+      "league": "Premier Division · Ireland",
+      "ko_time_iso": "2026-04-10T18:45:00",
+      "grand_total": 32,
+      "home_total": 18,
+      "away_total": 14,
+      "home_scored": 9,
+      "home_conceded": 9,
+      "away_scored": 7,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
