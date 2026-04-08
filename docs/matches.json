@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-08T08:08:51.168756+00:00",
+  "generated_at": "2026-04-08T10:01:25.950966+00:00",
   "matches": [
     {
       "fixture_id": "1493791",
@@ -32,8 +32,8 @@
       "away_scored": 11,
       "away_conceded": 7,
       "is_verified": true,
-      "is_live": false,
-      "status": "NS"
+      "is_live": true,
+      "status": "HT"
     },
     {
       "fixture_id": "1517730",
@@ -325,6 +325,23 @@
       "status": "NS"
     },
     {
+      "fixture_id": "1394376",
+      "home_team": "Hoffenheim II",
+      "away_team": "FC Schweinfurt 05",
+      "league": "3. Liga · Germany",
+      "ko_time_iso": "2026-04-10T17:00:00",
+      "grand_total": 39,
+      "home_total": 18,
+      "away_total": 21,
+      "home_scored": 8,
+      "home_conceded": 10,
+      "away_scored": 7,
+      "away_conceded": 14,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
       "fixture_id": "1395677",
       "home_team": "Holywell",
       "away_team": "Newtown AFC",
@@ -393,6 +410,40 @@
       "status": "NS"
     },
     {
+      "fixture_id": "1403796",
+      "home_team": "PSIM Yogyakarta",
+      "away_team": "PSM Makassar",
+      "league": "Liga 1 · Indonesia",
+      "ko_time_iso": "2026-04-10T08:30:00",
+      "grand_total": 35,
+      "home_total": 17,
+      "away_total": 18,
+      "home_scored": 9,
+      "home_conceded": 8,
+      "away_scored": 7,
+      "away_conceded": 11,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1403797",
+      "home_team": "Persita",
+      "away_team": "Arema FC",
+      "league": "Liga 1 · Indonesia",
+      "ko_time_iso": "2026-04-10T12:00:00",
+      "grand_total": 34,
+      "home_total": 14,
+      "away_total": 20,
+      "home_scored": 8,
+      "home_conceded": 6,
+      "away_scored": 8,
+      "away_conceded": 12,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
       "fixture_id": "1521902",
       "home_team": "St. Albans Saints",
       "away_team": "Avondale",
@@ -405,6 +456,57 @@
       "home_conceded": 11,
       "away_scored": 12,
       "away_conceded": 4,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1524006",
+      "home_team": "Gold Coast Knights",
+      "away_team": "Rochedale Rovers",
+      "league": "Queensland NPL · Australia",
+      "ko_time_iso": "2026-04-10T09:30:00",
+      "grand_total": 41,
+      "home_total": 21,
+      "away_total": 20,
+      "home_scored": 15,
+      "home_conceded": 6,
+      "away_scored": 7,
+      "away_conceded": 13,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1522187",
+      "home_team": "Brunswick Juventus FC",
+      "away_team": "Langwarrin",
+      "league": "Victoria NPL 2 · Australia",
+      "ko_time_iso": "2026-04-10T10:30:00",
+      "grand_total": 34,
+      "home_total": 15,
+      "away_total": 19,
+      "home_scored": 10,
+      "home_conceded": 5,
+      "away_scored": 6,
+      "away_conceded": 13,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1524125",
+      "home_team": "Capalaba",
+      "away_team": "Redlands United",
+      "league": "Queensland Premier League · Australia",
+      "ko_time_iso": "2026-04-10T10:30:00",
+      "grand_total": 34,
+      "home_total": 16,
+      "away_total": 18,
+      "home_scored": 5,
+      "home_conceded": 11,
+      "away_scored": 10,
+      "away_conceded": 8,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -512,6 +614,23 @@
       "status": "NS"
     },
     {
+      "fixture_id": "1395028",
+      "home_team": "Lokeren-Temse",
+      "away_team": "Seraing United",
+      "league": "Challenger Pro League · Belgium",
+      "ko_time_iso": "2026-04-10T18:00:00",
+      "grand_total": 35,
+      "home_total": 19,
+      "away_total": 16,
+      "home_scored": 11,
+      "home_conceded": 8,
+      "away_scored": 12,
+      "away_conceded": 4,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
       "fixture_id": "1388560",
       "home_team": "FC Augsburg",
       "away_team": "1899 Hoffenheim",
@@ -592,6 +711,23 @@
       "home_conceded": 9,
       "away_scored": 8,
       "away_conceded": 9,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1505049",
+      "home_team": "2 de Mayo",
+      "away_team": "Sportivo Ameliano",
+      "league": "Division Profesional - Apertura · Paraguay",
+      "ko_time_iso": "2026-04-10T21:15:00",
+      "grand_total": 28,
+      "home_total": 14,
+      "away_total": 14,
+      "home_scored": 5,
+      "home_conceded": 9,
+      "away_scored": 9,
+      "away_conceded": 5,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
