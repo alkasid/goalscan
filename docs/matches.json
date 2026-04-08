@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-08T19:07:17.340544+00:00",
+  "generated_at": "2026-04-08T20:33:52.910500+00:00",
   "matches": [
     {
       "fixture_id": "1493791",
@@ -70,23 +70,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1398648",
-      "home_team": "Esenler Erokspor",
-      "away_team": "Amed",
-      "league": "1. Lig · Turkey",
-      "ko_time_iso": "2026-04-09T17:00:00",
-      "grand_total": 35,
-      "home_total": 18,
-      "away_total": 17,
-      "home_scored": 9,
-      "home_conceded": 9,
-      "away_scored": 16,
-      "away_conceded": 1,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1433916",
       "home_team": "Hull City U21",
       "away_team": "Bristol City U21",
@@ -102,6 +85,23 @@
       "is_verified": true,
       "is_live": false,
       "status": "FT"
+    },
+    {
+      "fixture_id": "1398648",
+      "home_team": "Esenler Erokspor",
+      "away_team": "Amed",
+      "league": "1. Lig · Turkey",
+      "ko_time_iso": "2026-04-09T17:00:00",
+      "grand_total": 35,
+      "home_total": 18,
+      "away_total": 17,
+      "home_scored": 9,
+      "home_conceded": 9,
+      "away_scored": 16,
+      "away_conceded": 1,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
     },
     {
       "fixture_id": "1497812",
@@ -172,23 +172,6 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1491654",
-      "home_team": "Al Ahli Doha",
-      "away_team": "Al-Duhail SC",
-      "league": "Stars League · Qatar",
-      "ko_time_iso": "2026-04-08T15:30:00",
-      "grand_total": 36,
-      "home_total": 17,
-      "away_total": 19,
-      "home_scored": 9,
-      "home_conceded": 8,
-      "away_scored": 12,
-      "away_conceded": 7,
-      "is_verified": true,
-      "is_live": false,
-      "status": "FT"
-    },
-    {
       "fixture_id": "1491656",
       "home_team": "Al-Rayyan SC",
       "away_team": "UMM Salal",
@@ -206,18 +189,18 @@
       "status": "FT"
     },
     {
-      "fixture_id": "1491658",
-      "home_team": "Al Shahaniya",
-      "away_team": "Al Shamal",
+      "fixture_id": "1491654",
+      "home_team": "Al Ahli Doha",
+      "away_team": "Al-Duhail SC",
       "league": "Stars League · Qatar",
       "ko_time_iso": "2026-04-08T15:30:00",
-      "grand_total": 34,
-      "home_total": 20,
-      "away_total": 14,
+      "grand_total": 36,
+      "home_total": 17,
+      "away_total": 19,
       "home_scored": 9,
-      "home_conceded": 11,
-      "away_scored": 8,
-      "away_conceded": 6,
+      "home_conceded": 8,
+      "away_scored": 12,
+      "away_conceded": 7,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -235,6 +218,23 @@
       "home_conceded": 9,
       "away_scored": 10,
       "away_conceded": 10,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1491658",
+      "home_team": "Al Shahaniya",
+      "away_team": "Al Shamal",
+      "league": "Stars League · Qatar",
+      "ko_time_iso": "2026-04-08T15:30:00",
+      "grand_total": 34,
+      "home_total": 20,
+      "away_total": 14,
+      "home_scored": 9,
+      "home_conceded": 11,
+      "away_scored": 8,
+      "away_conceded": 6,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -304,23 +304,6 @@
       "away_scored": 9,
       "away_conceded": 11,
       "is_verified": true,
-      "is_live": true,
-      "status": "HT"
-    },
-    {
-      "fixture_id": "1513518",
-      "home_team": "FC Levadia Tallinn",
-      "away_team": "Vaprus",
-      "league": "Meistriliiga · Estonia",
-      "ko_time_iso": "2026-04-08T16:00:00",
-      "grand_total": 36,
-      "home_total": 15,
-      "away_total": 21,
-      "home_scored": 10,
-      "home_conceded": 5,
-      "away_scored": 6,
-      "away_conceded": 15,
-      "is_verified": true,
       "is_live": false,
       "status": "FT"
     },
@@ -337,6 +320,23 @@
       "home_conceded": 6,
       "away_scored": 11,
       "away_conceded": 11,
+      "is_verified": true,
+      "is_live": false,
+      "status": "FT"
+    },
+    {
+      "fixture_id": "1513518",
+      "home_team": "FC Levadia Tallinn",
+      "away_team": "Vaprus",
+      "league": "Meistriliiga · Estonia",
+      "ko_time_iso": "2026-04-08T16:00:00",
+      "grand_total": 36,
+      "home_total": 15,
+      "away_total": 21,
+      "home_scored": 10,
+      "home_conceded": 5,
+      "away_scored": 6,
+      "away_conceded": 15,
       "is_verified": true,
       "is_live": false,
       "status": "FT"
@@ -406,8 +406,8 @@
       "away_scored": 8,
       "away_conceded": 6,
       "is_verified": true,
-      "is_live": true,
-      "status": "2H"
+      "is_live": false,
+      "status": "FT"
     },
     {
       "fixture_id": "1395677",
@@ -424,7 +424,7 @@
       "away_conceded": 7,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
+      "status": "2H"
     },
     {
       "fixture_id": "1534907",
@@ -441,7 +441,7 @@
       "away_conceded": 11,
       "is_verified": true,
       "is_live": true,
-      "status": "1H"
+      "status": "2H"
     },
     {
       "fixture_id": "1531796",
