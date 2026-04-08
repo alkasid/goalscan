@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-08T06:17:05.078775+00:00",
+  "generated_at": "2026-04-08T08:08:51.168756+00:00",
   "matches": [
     {
       "fixture_id": "1493791",
@@ -31,6 +31,23 @@
       "home_conceded": 11,
       "away_scored": 11,
       "away_conceded": 7,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1517730",
+      "home_team": "Blacktown Spartans",
+      "away_team": "Northern Tigers",
+      "league": "New South Wales NPL 2 · Australia",
+      "ko_time_iso": "2026-04-10T10:15:00",
+      "grand_total": 38,
+      "home_total": 22,
+      "away_total": 16,
+      "home_scored": 14,
+      "home_conceded": 8,
+      "away_scored": 11,
+      "away_conceded": 5,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -116,6 +133,23 @@
       "home_conceded": 9,
       "away_scored": 6,
       "away_conceded": 14,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1537593",
+      "home_team": "Al Buqa'a",
+      "away_team": "Al Wihdat",
+      "league": "League · Jordan",
+      "ko_time_iso": "2026-04-09T16:30:00",
+      "grand_total": 36,
+      "home_total": 19,
+      "away_total": 17,
+      "home_scored": 9,
+      "home_conceded": 10,
+      "away_scored": 12,
+      "away_conceded": 5,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
