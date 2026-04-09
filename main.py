@@ -229,6 +229,151 @@ def has_bet365_odds(fixture_id):
     data = api_get("odds", {"fixture": fixture_id, "bookmaker": BET365_ID})
     return len(data) > 0
 
+# ── Betfair Exchange: carica mercati da betfair_markets.json ─────────────────
+import re as _re
+
+def _load_betfair_markets():
+    """Legge docs/betfair_markets.json (pushato dal bot locale via betfair_sync.py)."""
+    bf_file = Path("docs/betfair_markets.json")
+    if not bf_file.exists():
+        print("  [Betfair] betfair_markets.json non trovato — pagine Betfair vuote")
+        return []
+    try:
+        data = json.loads(bf_file.read_text(encoding="utf-8"))
+        markets = data.get("markets", [])
+        gen = data.get("generated_at", "?")
+        print(f"  [Betfair] Caricati {len(markets)} mercati (generato: {gen})")
+        return markets
+    except Exception as e:
+        print(f"  [Betfair] Errore lettura JSON: {e}")
+        return []
+
+
+def _normalize_team(name):
+    """Normalizza nome squadra per matching fuzzy."""
+    n = name.lower().strip()
+    n = _re.sub(r'\b(fc|sc|ac|cf|afc|bfc|utd|united|city|sporting|club|real|deportivo)\b', '', n)
+    n = _re.sub(r'[^a-z0-9\s]', '', n)
+    return ' '.join(n.split())
+
+
+def _match_betfair_event(event_name, home_name, away_name):
+    """
+    Verifica se un evento Betfair corrisponde alla partita API-Football.
+    Betfair usa "Home v Away" come event_name.
+    Score: 0-4, >=2 = match.
+    """
+    ev = event_name.lower()
+    score = 0
+    h_norm = _normalize_team(home_name)
+    a_norm = _normalize_team(away_name)
+    h_words = [w for w in h_norm.split() if len(w) >= 3]
+    a_words = [w for w in a_norm.split() if len(w) >= 3]
+
+    for w in h_words:
+        if w in ev:
+            score += 1
+            break
+    for w in a_words:
+        if w in ev:
+            score += 1
+            break
+    # Match parziale: primi 4 caratteri
+    if score < 2:
+        if home_name[:4].lower() in ev:
+            score = max(score, 1)
+        if away_name[:4].lower() in ev:
+            score = max(score, 1) + (1 if score >= 1 else 0)
+    return score >= 2
+
+
+def cross_reference_betfair(fixtures_list, betfair_markets):
+    """
+    Incrocia fixtures API-Football con mercati Betfair.
+    Restituisce lista di match dict arricchiti con dati Betfair.
+    """
+    if not betfair_markets:
+        return []
+
+    matched = []
+    bf_used = set()
+
+    for fix in fixtures_list:
+        home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
+        away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
+        fixture_obj = fix.get("fixture", {})
+        fixture_id = fixture_obj.get("id")
+
+        try:
+            ko_utc = datetime.fromtimestamp(fixture_obj.get("timestamp", 0), tz=timezone.utc)
+            ko_cest = ko_utc + timedelta(hours=2)
+            ko_str = ko_cest.strftime("%H:%M")
+            date_str = ko_cest.strftime("%Y-%m-%d")
+        except Exception:
+            ko_str = "--:--"
+            date_str = "?"
+
+        best_bf = None
+        best_score = 0
+        for i, bm in enumerate(betfair_markets):
+            if i in bf_used:
+                continue
+            s = 0
+            if _match_betfair_event(bm.get("event_name", ""), home_name, away_name):
+                s = 2
+                # Bonus: controlla che la start_time sia vicina
+                if bm.get("start_time"):
+                    try:
+                        bf_start = datetime.fromisoformat(bm["start_time"].replace("Z", "+00:00"))
+                        diff = abs((bf_start - ko_utc).total_seconds())
+                        if diff < 7200:  # entro 2h
+                            s += 1
+                    except Exception:
+                        pass
+            if s > best_score:
+                best_score = s
+                best_bf = (i, bm)
+
+        if best_bf and best_score >= 2:
+            idx, bm = best_bf
+            bf_used.add(idx)
+
+            # Recupera stats squadre
+            league = fix.get("league", {})
+            league_id = fix.get("_league_id") or league.get("id")
+            season = fix.get("_season") or league.get("season")
+            home_id = fix.get("teams", {}).get("home", {}).get("id")
+            away_id = fix.get("teams", {}).get("away", {}).get("id")
+            hs = get_last_n_any(home_id, league_id, season) if home_id else None
+            as_ = get_last_n_any(away_id, league_id, season) if away_id else None
+
+            match_status = fixture_obj.get("status", {}).get("short", "NS")
+            goals = fix.get("goals", {})
+
+            matched.append({
+                "home": home_name,
+                "away": away_name,
+                "league": league.get("name", "?"),
+                "country": league.get("country", "?"),
+                "kickoff": ko_str,
+                "date": date_str,
+                "fixture_id": fixture_id,
+                "status": match_status,
+                "goals_home": goals.get("home"),
+                "goals_away": goals.get("away"),
+                "home_stats": hs,
+                "away_stats": as_,
+                "bf_market_id": bm.get("market_id"),
+                "bf_event_name": bm.get("event_name"),
+                "bf_runner_id": bm.get("runner_id"),
+                "bf_back_price": bm.get("best_back_price"),
+                "bf_back_size": bm.get("best_back_size"),
+            })
+
+    print(f"  [Betfair] Match incrociati: {len(matched)} / {len(fixtures_list)} fixtures")
+    return matched
+
+
 # ── Analisi singolo match ────────────────────────────────────────────────────
 def analyze_fixture(fix):
     fixture     = fix.get("fixture", {})
@@ -950,7 +1095,9 @@ updateLive();setInterval(updateLive,15000);
         f'<div class="hdivider"></div>'
         f'<a href="storico.html" class="nav-stats" style="margin-right:4px">📋 Storico</a>'
         f'<a href="stats.html" class="nav-stats" style="margin-right:4px">📊 Stats Avanzate</a>'
-        f'<a href="global_stats.html" class="nav-stats">🌍 Stats Globali</a>'
+        f'<a href="global_stats.html" class="nav-stats" style="margin-right:4px">🌍 Stats Globali</a>'
+        f'<a href="betfair.html" class="nav-stats" style="border-color:rgba(255,179,0,.3);color:#ffb300;background:rgba(255,179,0,.06);margin-right:4px">🔶 Betfair</a>'
+        f'<a href="betfair_stats.html" class="nav-stats" style="border-color:rgba(255,179,0,.3);color:#ffb300;background:rgba(255,179,0,.06)">📊 Stats BF</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
         f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
@@ -1350,6 +1497,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
   <a href="storico.html" class="nav-link">Storico</a>
   <a href="stats.html" class="nav-link active">Stats Avanzate</a>
   <a href="global_stats.html" class="nav-link">Stats Globali</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Stats BF</a>
   <div class="hright">\U0001f4c5 {run_date}</div>
 </header>
 <div class="scanbar">
@@ -1739,6 +1888,8 @@ cursor:pointer;user-select:none;margin:6px 0;}
   <a href="storico.html" class="nav-link active">Storico</a>
   <a href="stats.html" class="nav-link">Stats Avanzate</a>
   <a href="global_stats.html" class="nav-link">Stats Globali</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Stats BF</a>
   <div class="hright">\U0001f504 {run_date}</div>
 </header>
 <div class="scanbar">
@@ -2129,6 +2280,8 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         "<a href=\"storico.html\" class=\"nav-link\">Storico</a>"
         "<a href=\"stats.html\" class=\"nav-link\">Stats Avanzate</a>"
         "<a href=\"global_stats.html\" class=\"nav-link active\">Stats Globali</a>"
+        "<a href=\"betfair.html\" class=\"nav-link\" style=\"border-color:rgba(255,179,0,.3);color:#ffb300\">Betfair</a>"
+        "<a href=\"betfair_stats.html\" class=\"nav-link\" style=\"border-color:rgba(255,179,0,.3);color:#ffb300\">Stats BF</a>"
         "<div class=\"hright\">\U0001f4c5 " + run_date + "</div></header>"
         "<div class=\"scanbar\">"
         "<div class=\"si\">partite Bet365 <b>" + str(total_all) + "</b></div>"
@@ -2155,6 +2308,541 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         + "if(b.style.display==='none'){b.style.display='block';if(a)a.textContent='\u25b4'}"
         + "else{b.style.display='none';if(a)a.textContent='\u25be'}}</script>"
         + "</div></body></html>")
+
+
+# ── BETFAIR EXCHANGE — Dashboard ─────────────────────────────────────────────
+
+def generate_betfair_html(bf_matches, run_date, total_bf_markets):
+    """Genera betfair.html — dashboard con SOLO partite quotate su Betfair Exchange."""
+    from datetime import datetime, timezone, timedelta
+    today     = datetime.now(timezone.utc)
+    today_str = today.strftime("%Y-%m-%d")
+    d1_str    = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+    d2_str    = (today + timedelta(days=2)).strftime("%Y-%m-%d")
+
+    def fmt_short(d):
+        try:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            mesi = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"]
+            return f"{dt.day} {mesi[dt.month-1]}"
+        except: return d
+
+    day_labels = {
+        today_str: "OGGI",
+        d1_str:    "DOMANI",
+        d2_str:    "DOPODOMANI",
+    }
+    date_range = f"{fmt_short(today_str)} - {fmt_short(d2_str)}"
+
+    css = (
+        "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');"
+        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#ffb300;"
+        "--green:#00e5a0;--red:#ff3a3a;--orange:#ff8c00;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}"
+        "*{box-sizing:border-box;margin:0;padding:0;}"
+        "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
+        "header{background:rgba(8,13,24,0.95);backdrop-filter:blur(16px);"
+        "border-bottom:1px solid var(--border);padding:12px 24px;"
+        "display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;flex-wrap:wrap;}"
+        ".logo{display:flex;align-items:center;gap:10px;}"
+        ".logo-icon{font-size:1.4rem;}"
+        ".logo-text{font-size:1.15rem;font-weight:700;color:#ffb300;letter-spacing:-.01em;}"
+        ".logo-sub{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted);letter-spacing:.12em;display:block;margin-top:-2px;}"
+        ".hdivider{width:1px;height:28px;background:var(--border);}"
+        ".nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(255,179,0,.3);background:rgba(255,179,0,.06);transition:all .2s;margin-right:4px;}"
+        ".nav-link:hover{background:rgba(255,179,0,.12);}"
+        ".nav-link.active{background:rgba(255,179,0,.18);color:#fff;border-color:rgba(255,179,0,.5);}"
+        ".nav-link.green{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.06);}"
+        ".nav-link.green:hover{background:rgba(0,229,160,.12);}"
+        ".hstats{display:flex;gap:16px;flex-wrap:wrap;}"
+        ".hstat{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:5px;}"
+        ".hstat strong{color:var(--accent);font-size:.85rem;}"
+        ".hright{margin-left:auto;display:flex;align-items:center;gap:12px;}"
+        ".pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pdot 1.4s infinite;}"
+        "@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}"
+        ".update-time{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}"
+        ".scanbar{background:rgba(255,179,0,0.03);border-bottom:1px solid rgba(255,179,0,0.08);"
+        "padding:6px 24px;display:flex;gap:0;align-items:center;"
+        "font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);overflow:hidden;white-space:nowrap;flex-wrap:wrap;}"
+        ".scanbar-item{display:flex;align-items:center;gap:4px;padding:0 14px;border-right:1px solid rgba(255,255,255,0.06);}"
+        ".scanbar-item:first-child{padding-left:0;}"
+        ".scanbar-item::before{content:'>';color:var(--accent);margin-right:3px;}"
+        ".scanbar span{color:var(--accent);}"
+        ".wrap{padding:0 20px;}"
+        ".section-head{display:flex;align-items:center;gap:12px;padding:18px 0 10px;}"
+        ".section-label{font-size:1rem;font-weight:700;letter-spacing:.02em;color:var(--text);}"
+        ".section-label.slive{color:var(--red);}"
+        ".section-badge{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);"
+        "background:rgba(255,255,255,0.04);padding:2px 9px;border-radius:100px;border:1px solid var(--border);}"
+        ".section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,179,0,0.15),transparent);}"
+        ".section-line.red{background:linear-gradient(90deg,rgba(255,58,58,0.3),transparent);}"
+        ".sub-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);"
+        "letter-spacing:.1em;text-transform:uppercase;padding:6px 0 8px;"
+        "display:flex;align-items:center;gap:8px;}"
+        ".sub-label::after{content:'';flex:1;height:1px;background:var(--border);}"
+        ".sub-label.bl{color:#6aa3ff;}"
+        ".sub-label.gr{color:var(--green);}"
+        ".tgroup{margin-bottom:18px;}"
+        ".th{display:flex;align-items:center;gap:10px;margin-bottom:8px;}"
+        ".tl{font-family:'DM Mono',monospace;font-size:.78rem;font-weight:500;color:var(--accent);}"
+        ".tc{font-size:.65rem;color:var(--muted);}"
+        ".th::after{content:'';flex:1;height:1px;background:var(--border);}"
+        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;margin-bottom:14px;}"
+        ".card{border-radius:10px;padding:11px 13px;border:1px solid rgba(255,179,0,.15);"
+        "position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s;"
+        "background:linear-gradient(135deg,#0f1520 0%,#121a2a 100%);}"
+        ".card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;"
+        "background:linear-gradient(90deg,transparent,rgba(255,179,0,.1),transparent);}"
+        ".card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.5);}"
+        ".card.live{border-color:rgba(255,58,58,.4);}"
+        ".card.scoring{background:linear-gradient(135deg,#0a1510 0%,#0e2018 50%,#0a1510 100%);"
+        "border-color:rgba(0,229,160,.35);box-shadow:0 0 18px rgba(0,229,160,.1);}"
+        ".ctag{position:absolute;top:0;right:0;font-family:'DM Mono',monospace;font-size:.48rem;"
+        "letter-spacing:.08em;color:var(--muted);background:rgba(255,179,0,.08);"
+        "padding:2px 6px;border-radius:0 10px 0 6px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);}"
+        ".ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}"
+        ".league{font-size:.65rem;color:var(--muted);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;}"
+        ".cright{display:flex;align-items:center;gap:6px;}"
+        ".ko{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--accent);font-weight:500;}"
+        ".live-score{display:none;font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;"
+        "background:rgba(255,58,58,.12);color:var(--red);padding:1px 6px;border-radius:4px;"
+        "border:1px solid rgba(255,58,58,.2);animation:lbpulse 1.4s infinite;}"
+        ".live-score.ht{background:rgba(255,140,0,.1);color:var(--orange);border-color:rgba(255,140,0,.2);animation:none;}"
+        ".live-score.ft{background:rgba(74,85,112,.1);color:var(--muted);border-color:rgba(74,85,112,.15);animation:none;}"
+        "@keyframes lbpulse{0%,100%{opacity:1}50%{opacity:.35}}"
+        ".mu{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;}"
+        ".side{display:flex;flex-direction:column;gap:4px;}"
+        ".side.r{align-items:flex-end;text-align:right;}"
+        ".tn{font-size:.82rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;}"
+        ".pills{display:flex;gap:3px;align-items:center;}"
+        ".side.r .pills{justify-content:flex-end;}"
+        ".pill{font-size:.67rem;font-weight:700;padding:2px 5px;border-radius:3px;}"
+        ".pill.g{background:rgba(0,229,160,.12);color:var(--green);}"
+        ".pill.rc{background:rgba(255,58,58,.12);color:var(--red);}"
+        ".pill.tot{color:#05080f;border-radius:5px;padding:2px 7px;}"
+        ".center{text-align:center;}"
+        ".vs{font-size:.95rem;color:var(--muted);font-weight:700;}"
+        ".score-val{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#fff;line-height:1;display:none;}"
+        ".bf-row{display:flex;justify-content:space-between;align-items:center;margin-top:7px;"
+        "font-family:'DM Mono',monospace;font-size:.58rem;padding-top:5px;border-top:1px solid rgba(255,179,0,.1);}"
+        ".bf-tag{color:var(--accent);letter-spacing:.05em;}"
+        ".bf-odds{display:flex;gap:8px;}"
+        ".bf-odds span{color:var(--green);}"
+        ".bf-odds .liq{color:var(--muted);}"
+        ".day-block{margin:0;}"
+        ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
+        ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
+    )
+
+    def make_bf_card(m, corner=""):
+        hs = m.get("home_stats") or {}
+        as_ = m.get("away_stats") or {}
+        fid = m.get("fixture_id", "")
+        country = m.get("country", "")
+        league_display = f'{m["league"]} · {country}' if country and country != "World" else m["league"]
+        ctag = f'<div class="ctag">{corner}</div>' if corner else ""
+        # Stats pills — solo se dati disponibili
+        h_pills = ""
+        a_pills = ""
+        if hs and hs.get("total") is not None:
+            h_pills = (f'<span class="pill g">+{hs.get("scored",0)}</span>'
+                       f'<span class="pill rc">-{hs.get("conceded",0)}</span>'
+                       f'<span class="pill tot" style="background:{badge_color(hs["total"])}">{hs["total"]}</span>')
+        if as_ and as_.get("total") is not None:
+            a_pills = (f'<span class="pill g">+{as_.get("scored",0)}</span>'
+                       f'<span class="pill rc">-{as_.get("conceded",0)}</span>'
+                       f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>')
+
+        # Betfair odds row
+        price = m.get("bf_back_price")
+        size  = m.get("bf_back_size")
+        odds_html = ""
+        if price:
+            liq = f' <span class="liq">{size:.0f}€</span>' if size else ""
+            odds_html = f'<div class="bf-odds">BACK <span>{price:.2f}</span>{liq}</div>'
+
+        return (
+            f'<div class="card" data-fid="{fid}">{ctag}<div class="ct">'
+            f'<span class="league">{league_display}</span>'
+            f'<div class="cright">'
+            f'<span class="live-score"></span>'
+            f'<span class="ko">{m["kickoff"]}</span></div></div>'
+            f'<div class="mu"><div class="side">'
+            f'<span class="tn">{m["home"]}</span>'
+            f'<div class="pills">{h_pills}</div></div>'
+            f'<div class="center">'
+            f'<span class="vs">VS</span>'
+            f'<div class="score-val" data-score></div></div>'
+            f'<div class="side r"><span class="tn">{m["away"]}</span>'
+            f'<div class="pills">{a_pills}</div></div></div>'
+            f'<div class="bf-row">'
+            f'<span class="bf-tag">BETFAIR EXCHANGE</span>'
+            f'{odds_html}</div>'
+            f'</div>'
+        )
+
+    if not bf_matches:
+        body = ('<div class="empty"><h3>Nessun mercato Betfair Exchange trovato</h3>'
+                '<p>betfair_markets.json non disponibile o nessuna partita incrociata.</p></div>')
+    else:
+        LIVE_STATUS = {"1H","HT","2H","ET","P"}
+        FT_STATUS   = {"FT","AET","PEN"}
+        live = [m for m in bf_matches if m.get("status") in LIVE_STATUS]
+        upcoming = [m for m in bf_matches if m.get("status") not in LIVE_STATUS
+                    and m.get("status") not in FT_STATUS]
+
+        sections = []
+
+        # LIVE section
+        if live:
+            live_cards = "".join(make_bf_card(m, "LIVE") for m in live)
+            sections.append(
+                '<div class="day-block" id="live-section">'
+                '<div class="section-head">'
+                '<span class="section-label slive">LIVE</span>'
+                f'<span class="section-badge">{len(live)} in corso</span>'
+                '<div class="section-line red"></div></div>'
+                f'<div class="grid">{live_cards}</div></div>'
+            )
+
+        # Upcoming per data/orario
+        days = {}
+        for m in sorted(upcoming, key=lambda x: (x["date"], x["kickoff"])):
+            d = m["date"]
+            s = slot(m["kickoff"])
+            days.setdefault(d, {}).setdefault(s, []).append(m)
+
+        for day in sorted(days):
+            label = day_labels.get(day, day)
+            day_total = sum(len(v) for v in days[day].values())
+            day_html = (
+                f'<div class="day-block">'
+                f'<div class="section-head">'
+                f'<span class="section-label">{label}</span>'
+                f'<span class="section-badge">{day_total} mercati</span>'
+                f'<div class="section-line"></div></div>'
+            )
+            for ts in sorted(days[day]):
+                cards = "".join(make_bf_card(m) for m in days[day][ts])
+                day_html += (
+                    f'<div class="tgroup"><div class="th">'
+                    f'<span class="tl">{ts}</span>'
+                    f'<span class="tc">{len(days[day][ts])} match</span>'
+                    f'</div><div class="grid">{cards}</div></div>'
+                )
+            day_html += '</div>'
+            sections.append(day_html)
+
+        body = "\n".join(sections)
+
+    # Live update JS (stessa logica dashboard, senza remove FT)
+    live_js = '''<script>
+const PROXY='https://spring-hall-b29e.nwgir.workers.dev';
+const LIVE_ST=['1H','2H','ET','P','HT'];
+const FT_ST=['FT','AET','PEN'];
+async function updateLive(){
+  try{
+    var all=[].slice.call(document.querySelectorAll('.card[data-fid]'));
+    var ids=all.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
+    if(!ids.length)return;
+    var fixtures=[];
+    for(var i=0;i<ids.length;i+=20){
+      var chunk=ids.slice(i,i+20).join('-');
+      var r=await fetch(PROXY+'?endpoint=fixtures&ids='+chunk);
+      if(!r.ok)continue;
+      var data=await r.json();
+      fixtures=fixtures.concat(data.response||[]);
+    }
+    var fmap={};
+    fixtures.forEach(function(f){fmap[String(f.fixture.id)]=f;});
+    all.forEach(function(card){
+      var fid=card.getAttribute('data-fid');
+      var fix=fmap[fid]; if(!fix)return;
+      var st=fix.fixture.status.short;
+      var min=fix.fixture.status.elapsed;
+      var hg=fix.goals.home; var ag=fix.goals.away;
+      var isLive=LIVE_ST.indexOf(st)>=0;
+      var isHT=st==='HT';
+      var isFT=FT_ST.indexOf(st)>=0;
+      var b=card.querySelector('.live-score');
+      if(b){
+        if(isLive||isHT||isFT){
+          b.style.display='inline-flex';
+          b.className='live-score'+(isHT?' ht':isFT?' ft':'');
+          b.textContent=isFT?'FT':isHT?'HT':(min?min+"'":st);
+        } else { b.style.display='none'; }
+      }
+      if(hg!=null&&ag!=null){
+        var s=card.querySelector('[data-score]');
+        var v=card.querySelector('.vs');
+        if(s){s.textContent=hg+' - '+ag;s.style.display='block';if(v)v.style.display='none';}
+      }
+      if(isFT){ card.style.opacity='0.4'; }
+      if(isLive||isHT){ card.classList.add('live'); }
+    });
+    var ts=document.getElementById('bf-ts');
+    if(ts)ts.textContent=new Date().toLocaleTimeString();
+  }catch(e){console.log('bf-live',e);}
+}
+updateLive();setInterval(updateLive,30000);
+</script>'''
+
+    n_matched = len(bf_matches)
+    return (
+        f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
+        f'<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<title>Betfair Exchange · {run_date}</title>'
+        f'<style>{css}</style></head><body>'
+        f'<header>'
+        f'<div class="logo">'
+        f'<span class="logo-icon">🔶</span>'
+        f'<div><span class="logo-text">Betfair Exchange</span>'
+        f'<span class="logo-sub">OVER/UNDER 0.5 · MERCATI LIVE</span></div></div>'
+        f'<div class="hdivider"></div>'
+        f'<a href="index.html" class="nav-link green">Dashboard</a>'
+        f'<a href="betfair.html" class="nav-link active">Betfair</a>'
+        f'<a href="betfair_stats.html" class="nav-link">Stats Betfair</a>'
+        f'<a href="stats.html" class="nav-link green">Stats Avanzate</a>'
+        f'<a href="global_stats.html" class="nav-link green">Stats Globali</a>'
+        f'<div class="hstats">'
+        f'<div class="hstat"><strong>{total_bf_markets}</strong> mercati BF</div>'
+        f'<div class="hstat"><strong>{n_matched}</strong> incrociati</div>'
+        f'</div>'
+        f'<div class="hright">'
+        f'<div class="pulse-dot"></div>'
+        f'<span class="update-time" id="bf-ts"></span>'
+        f'</div></header>'
+        f'<div class="scanbar">'
+        f'<div class="scanbar-item">mercato <span>Over/Under 0.5</span> Betfair Exchange</div>'
+        f'<div class="scanbar-item"><span>{n_matched}</span> partite con mercato attivo</div>'
+        f'<div class="scanbar-item">copertura <span>{date_range}</span></div>'
+        f'<div class="scanbar-item">aggiornamento live <span>ogni 30s</span></div>'
+        f'</div>'
+        f'<div class="wrap">{body}</div>'
+        f'{live_js}</body></html>'
+    )
+
+
+# ── BETFAIR EXCHANGE — Stats Avanzate ───────────────────────────────────────
+
+def generate_betfair_stats_html(bf_matches, run_date):
+    """Genera betfair_stats.html — statistiche avanzate per partite Betfair Exchange."""
+    from datetime import datetime, timezone, timedelta
+
+    all_m = [m for m in bf_matches if m]
+    if not all_m:
+        return None
+
+    # Partite FT con stats
+    ft_matches = [m for m in all_m if m.get("status") in ("FT","AET","PEN")]
+    ns_matches = [m for m in all_m if m.get("status") == "NS"]
+    live_matches = [m for m in all_m if m.get("status") in ("1H","HT","2H","ET","P")]
+
+    # Statistiche quote Betfair
+    priced = [m for m in all_m if m.get("bf_back_price")]
+    prices = [m["bf_back_price"] for m in priced]
+    avg_price = round(sum(prices) / len(prices), 3) if prices else 0
+    min_price = min(prices) if prices else 0
+    max_price = max(prices) if prices else 0
+
+    # Distribuzione quote
+    ranges = [(1.0,1.10),(1.10,1.20),(1.20,1.30),(1.30,1.50),(1.50,2.0),(2.0,5.0)]
+    range_counts = []
+    for lo, hi in ranges:
+        c = sum(1 for p in prices if lo <= p < hi)
+        range_counts.append((f"{lo:.2f}-{hi:.2f}", c))
+
+    # Statistiche goal per chi ha stats
+    with_stats = [m for m in all_m if m.get("home_stats") and m.get("away_stats")]
+    total_goals_sum = 0
+    qualified_count = 0
+    high_total_list = []
+    for m in with_stats:
+        hs = m["home_stats"]
+        as_ = m["away_stats"]
+        ht = hs.get("total", 0)
+        at = as_.get("total", 0)
+        gt = ht + at
+        total_goals_sum += gt
+        if hs.get("qualifies") and as_.get("qualifies"):
+            qualified_count += 1
+        if gt >= THRESHOLD:
+            high_total_list.append(m)
+
+    avg_goal_total = round(total_goals_sum / len(with_stats), 1) if with_stats else 0
+
+    # FT stats
+    ft_goals = []
+    for m in ft_matches:
+        hg = m.get("goals_home") or 0
+        ag = m.get("goals_away") or 0
+        ft_goals.append(hg + ag)
+    ft_with_goal = sum(1 for g in ft_goals if g > 0)
+    ft_over05_pct = round(ft_with_goal / len(ft_goals) * 100) if ft_goals else 0
+    ft_over15 = sum(1 for g in ft_goals if g > 1)
+    ft_over15_pct = round(ft_over15 / len(ft_goals) * 100) if ft_goals else 0
+    ft_avg = round(sum(ft_goals) / len(ft_goals), 1) if ft_goals else 0
+
+    # Leghe più rappresentate
+    league_count = {}
+    for m in all_m:
+        lg = m.get("league", "?")
+        nat = m.get("country", "")
+        key = f"{lg}|{nat}"
+        league_count.setdefault(key, 0)
+        league_count[key] += 1
+    top_leagues = sorted(league_count.items(), key=lambda x: x[1], reverse=True)[:12]
+
+    # CSS
+    css = (
+        "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');"
+        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#ffb300;"
+        "--green:#00e5a0;--red:#ff3a3a;--orange:#ff8c00;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}"
+        "*{box-sizing:border-box;margin:0;padding:0;}"
+        "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
+        "header{background:rgba(8,13,24,0.95);backdrop-filter:blur(16px);"
+        "border-bottom:1px solid var(--border);padding:12px 24px;"
+        "display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;flex-wrap:wrap;}"
+        ".logo{display:flex;align-items:center;gap:10px;}"
+        ".logo-icon{font-size:1.4rem;}"
+        ".logo-text{font-size:1.15rem;font-weight:700;color:#ffb300;letter-spacing:-.01em;}"
+        ".logo-sub{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted);letter-spacing:.12em;display:block;margin-top:-2px;}"
+        ".hdivider{width:1px;height:28px;background:var(--border);}"
+        ".nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(255,179,0,.3);background:rgba(255,179,0,.06);transition:all .2s;margin-right:4px;}"
+        ".nav-link:hover{background:rgba(255,179,0,.12);}"
+        ".nav-link.active{background:rgba(255,179,0,.18);color:#fff;border-color:rgba(255,179,0,.5);}"
+        ".nav-link.green{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.06);}"
+        ".nav-link.green:hover{background:rgba(0,229,160,.12);}"
+        ".wrap{max-width:1100px;margin:0 auto;padding:20px;}"
+        ".panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}"
+        ".ptitle{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--accent);letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase;}"
+        ".kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}"
+        ".kpi{background:rgba(255,179,0,.04);border:1px solid rgba(255,179,0,.12);border-radius:8px;padding:12px;text-align:center;}"
+        ".kpi-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent);}"
+        ".kpi-lbl{font-size:.6rem;color:var(--muted);margin-top:2px;letter-spacing:.05em;}"
+        ".kpi.green{background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.12);}"
+        ".kpi.green .kpi-val{color:var(--green);}"
+        ".bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.65rem;}"
+        ".bar-label{width:80px;text-align:right;color:var(--muted);font-family:'DM Mono',monospace;}"
+        ".bar-track{flex:1;height:16px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;}"
+        ".bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;"
+        "font-family:'DM Mono',monospace;font-size:.55rem;color:#fff;font-weight:500;min-width:20px;}"
+        ".league-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.65rem;}"
+        ".league-row:last-child{border-bottom:none;}"
+        ".league-name{color:var(--text);}"
+        ".league-count{color:var(--accent);font-family:'DM Mono',monospace;}"
+        # Top picks table
+        ".picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;}"
+        ".pick-card{background:rgba(255,179,0,.04);border:1px solid rgba(255,179,0,.1);border-radius:8px;padding:10px 12px;}"
+        ".pick-teams{font-size:.78rem;font-weight:700;margin-bottom:4px;}"
+        ".pick-meta{font-size:.58rem;color:var(--muted);font-family:'DM Mono',monospace;}"
+        ".pick-meta .val{color:var(--accent);}"
+        ".pick-meta .grn{color:var(--green);}"
+    )
+
+    # Build HTML sections
+    # 1. KPI boxes
+    kpi_html = (
+        f'<div class="kpi-grid">'
+        f'<div class="kpi"><div class="kpi-val">{len(all_m)}</div><div class="kpi-lbl">MERCATI TOTALI</div></div>'
+        f'<div class="kpi"><div class="kpi-val">{len(priced)}</div><div class="kpi-lbl">CON QUOTA</div></div>'
+        f'<div class="kpi"><div class="kpi-val">{avg_price}</div><div class="kpi-lbl">QUOTA MEDIA</div></div>'
+        f'<div class="kpi"><div class="kpi-val">{min_price:.2f}</div><div class="kpi-lbl">QUOTA MIN</div></div>'
+        f'<div class="kpi"><div class="kpi-val">{max_price:.2f}</div><div class="kpi-lbl">QUOTA MAX</div></div>'
+        f'<div class="kpi green"><div class="kpi-val">{len(with_stats)}</div><div class="kpi-lbl">CON STATS G5</div></div>'
+        f'<div class="kpi green"><div class="kpi-val">{qualified_count}</div><div class="kpi-lbl">QUALIFICATI FILTRO</div></div>'
+        f'<div class="kpi green"><div class="kpi-val">{avg_goal_total}</div><div class="kpi-lbl">MEDIA GOAL G5</div></div>'
+        f'</div>'
+    )
+
+    # 2. Distribuzione quote
+    max_bar = max((c for _, c in range_counts), default=1) or 1
+    bars_html = ""
+    for label, count in range_counts:
+        pct = round(count / max_bar * 100)
+        bars_html += (
+            f'<div class="bar-row">'
+            f'<span class="bar-label">{label}</span>'
+            f'<div class="bar-track"><div class="bar-fill" style="width:{max(pct,5)}%;background:rgba(255,179,0,.5)">{count}</div></div>'
+            f'</div>'
+        )
+
+    # 3. FT panel (se ci sono)
+    ft_panel = ""
+    if ft_goals:
+        ft_panel = (
+            f'<div class="panel">'
+            f'<div class="ptitle">RISULTATI FT BETFAIR</div>'
+            f'<div class="kpi-grid">'
+            f'<div class="kpi green"><div class="kpi-val">{len(ft_goals)}</div><div class="kpi-lbl">PARTITE FT</div></div>'
+            f'<div class="kpi green"><div class="kpi-val">{ft_over05_pct}%</div><div class="kpi-lbl">OVER 0.5</div></div>'
+            f'<div class="kpi green"><div class="kpi-val">{ft_over15_pct}%</div><div class="kpi-lbl">OVER 1.5</div></div>'
+            f'<div class="kpi green"><div class="kpi-val">{ft_avg}</div><div class="kpi-lbl">MEDIA GOAL</div></div>'
+            f'</div></div>'
+        )
+
+    # 4. Top leagues
+    leagues_html = ""
+    for key, count in top_leagues:
+        parts = key.split("|")
+        lg = parts[0]
+        nat = parts[1] if len(parts) > 1 else ""
+        display = f"{lg} · {nat}" if nat else lg
+        leagues_html += f'<div class="league-row"><span class="league-name">{display}</span><span class="league-count">{count}</span></div>'
+
+    # 5. Top picks (partite con stats + quota)
+    top_picks = sorted(
+        [m for m in with_stats if m.get("bf_back_price")],
+        key=lambda x: (x["home_stats"]["total"] + x["away_stats"]["total"]),
+        reverse=True,
+    )[:16]
+    picks_html = ""
+    for m in top_picks:
+        hs = m["home_stats"]
+        as_ = m["away_stats"]
+        gt = hs["total"] + as_["total"]
+        price = m.get("bf_back_price", 0)
+        picks_html += (
+            f'<div class="pick-card">'
+            f'<div class="pick-teams">{m["home"]} vs {m["away"]}</div>'
+            f'<div class="pick-meta">'
+            f'{m["kickoff"]} · {m["league"]} · '
+            f'G5: <span class="grn">{gt}</span> · '
+            f'BACK: <span class="val">{price:.2f}</span></div></div>'
+        )
+
+    return (
+        f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
+        f'<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<title>Betfair Stats · {run_date}</title>'
+        f'<style>{css}</style></head><body>'
+        f'<header>'
+        f'<div class="logo">'
+        f'<span class="logo-icon">📊</span>'
+        f'<div><span class="logo-text">Betfair Stats</span>'
+        f'<span class="logo-sub">STATISTICHE AVANZATE · EXCHANGE</span></div></div>'
+        f'<div class="hdivider"></div>'
+        f'<a href="index.html" class="nav-link green">Dashboard</a>'
+        f'<a href="betfair.html" class="nav-link">Betfair</a>'
+        f'<a href="betfair_stats.html" class="nav-link active">Stats Betfair</a>'
+        f'<a href="stats.html" class="nav-link green">Stats Avanzate</a>'
+        f'<a href="global_stats.html" class="nav-link green">Stats Globali</a>'
+        f'</header>'
+        f'<div class="wrap">'
+        f'<div class="panel">'
+        f'<div class="ptitle">PANORAMICA MERCATI BETFAIR EXCHANGE</div>'
+        f'{kpi_html}</div>'
+        f'<div class="panel">'
+        f'<div class="ptitle">DISTRIBUZIONE QUOTE OVER 0.5</div>'
+        f'{bars_html}</div>'
+        f'{ft_panel}'
+        f'<div class="panel">'
+        f'<div class="ptitle">TOP LEGHE PER MERCATI</div>'
+        f'{leagues_html}</div>'
+        f'<div class="panel">'
+        f'<div class="ptitle">TOP PICKS · GOAL G5 + QUOTA BF</div>'
+        f'<div class="picks-grid">{picks_html}</div></div>'
+        f'</div></body></html>'
+    )
 
 
 def main():
@@ -2299,6 +2987,31 @@ def main():
         )
         print("  global_stats.html generato")
 
+    # ── [6] Pagine Betfair Exchange ────────────────────────────────────────
+    print("\n[6] Generazione pagine Betfair Exchange...")
+    bf_markets = _load_betfair_markets()
+    if bf_markets:
+        bf_matched = cross_reference_betfair(raw_fixtures, bf_markets)
+        bf_html = generate_betfair_html(bf_matched, run_date, len(bf_markets))
+        (docs / "betfair.html").write_text(
+            bf_html.encode("utf-8", errors="replace").decode("utf-8"),
+            encoding="utf-8"
+        )
+        print(f"  betfair.html generato ({len(bf_matched)} partite)")
+
+        bf_stats_html = generate_betfair_stats_html(bf_matched, run_date)
+        if bf_stats_html:
+            (docs / "betfair_stats.html").write_text(
+                bf_stats_html.encode("utf-8", errors="replace").decode("utf-8"),
+                encoding="utf-8"
+            )
+            print("  betfair_stats.html generato")
+    else:
+        # Genera pagine vuote (placeholder) se non ci sono dati Betfair
+        bf_html = generate_betfair_html([], run_date, 0)
+        (docs / "betfair.html").write_text(bf_html, encoding="utf-8")
+        print("  betfair.html generato (vuoto — betfair_markets.json non disponibile)")
+
     # Salva lista fixture_id per live_updater.py
     # Solo IDs di oggi e domani — non accumulare storici (causano chiamate eccessive dal Worker)
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -2312,44 +3025,6 @@ def main():
     print("\n[4] Invio Telegram...")
     if TELEGRAM_ENABLED:
         send_telegram(qualified, total, run_date)
-
-    # ── Export matches.json per GoalscanBot (Betfair) ────────────────
-    matches_export = []
-    for m in qualified:
-        try:
-            ko_dt = datetime.strptime(f"{m['date']} {m['kickoff']}", "%Y-%m-%d %H:%M")
-            ko_utc = ko_dt - timedelta(hours=2)
-            ko_iso = ko_utc.isoformat()
-        except Exception:
-            ko_iso = None
-        hs = m.get("home_stats") or {}
-        as_ = m.get("away_stats") or {}
-        matches_export.append({
-            "fixture_id":    str(m.get("fixture_id", "")),
-            "home_team":     m.get("home", ""),
-            "away_team":     m.get("away", ""),
-            "league":        f"{m.get('league', '')} · {m.get('country', '')}",
-            "ko_time_iso":   ko_iso,
-            "grand_total":   hs.get("total", 0) + as_.get("total", 0),
-            "home_total":    hs.get("total", 0),
-            "away_total":    as_.get("total", 0),
-            "home_scored":   hs.get("scored", 0),
-            "home_conceded": hs.get("conceded", 0),
-            "away_scored":   as_.get("scored", 0),
-            "away_conceded": as_.get("conceded", 0),
-            "is_verified":   True,
-            "is_live":       m.get("status", "NS") in ("1H", "HT", "2H", "ET", "P"),
-            "status":        m.get("status", "NS"),
-        })
-    matches_json_file = docs / "matches.json"
-    matches_json_file.write_text(
-        json.dumps({
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "matches": matches_export
-        }, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
-    print(f"matches.json: {len(matches_export)} match esportati")
 
 if __name__ == "__main__":
     main()
