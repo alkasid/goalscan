@@ -338,14 +338,28 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
             idx, bm = best_bf
             bf_used.add(idx)
 
-            # Recupera stats squadre
+            # ── Stessi 5 filtri della dashboard ──────────────────────────
             league = fix.get("league", {})
             league_id = fix.get("_league_id") or league.get("id")
             season = fix.get("_season") or league.get("season")
             home_id = fix.get("teams", {}).get("home", {}).get("id")
             away_id = fix.get("teams", {}).get("away", {}).get("id")
-            hs = get_last_n_any(home_id, league_id, season) if home_id else None
-            as_ = get_last_n_any(away_id, league_id, season) if away_id else None
+
+            # Filtro 1: almeno LAST_N (5) partite FT per squadra
+            hs  = get_last_n(home_id, league_id, season) if home_id else None
+            as_ = get_last_n(away_id, league_id, season) if away_id else None
+            if hs is None or as_ is None:
+                continue
+
+            # Filtro 2+3: scored >= MIN_SCORED e total >= THRESHOLD per ENTRAMBE
+            if not (hs["qualifies"] and as_["qualifies"]):
+                continue
+
+            # Filtro 4: ANTI 0-0 — max(conceded) >= MIN_CO_MAX
+            if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
+                continue
+
+            # Filtro 5: mercato Betfair presente (già verificato dal matching)
 
             match_status = fixture_obj.get("status", {}).get("short", "NS")
             goals = fix.get("goals", {})
@@ -370,7 +384,7 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
                 "bf_back_size": bm.get("best_back_size"),
             })
 
-    print(f"  [Betfair] Match incrociati: {len(matched)} / {len(fixtures_list)} fixtures")
+    print(f"  [Betfair] Match qualificati: {len(matched)} / {len(fixtures_list)} fixtures")
     return matched
 
 
@@ -1096,8 +1110,8 @@ updateLive();setInterval(updateLive,15000);
         f'<a href="storico.html" class="nav-stats" style="margin-right:4px">📋 Storico</a>'
         f'<a href="stats.html" class="nav-stats" style="margin-right:4px">📊 Stats Avanzate</a>'
         f'<a href="global_stats.html" class="nav-stats" style="margin-right:4px">🌍 Stats Globali</a>'
-        f'<a href="betfair.html" class="nav-stats" style="border-color:rgba(255,179,0,.3);color:#ffb300;background:rgba(255,179,0,.06);margin-right:4px">🔶 Betfair</a>'
-        f'<a href="betfair_stats.html" class="nav-stats" style="border-color:rgba(255,179,0,.3);color:#ffb300;background:rgba(255,179,0,.06)">📊 Stats BF</a>'
+        f'<a href="betfair.html" class="nav-stats" style="border-color:rgba(0,229,160,.3);color:#00e5a0;background:rgba(0,229,160,.06);margin-right:4px">🎯 Betfair</a>'
+        f'<a href="betfair_stats.html" class="nav-stats" style="border-color:rgba(0,229,160,.3);color:#00e5a0;background:rgba(0,229,160,.06)">📊 Stats BF</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_analyzed}</strong> analizzati</div>'
         f'<div class="hstat"><strong>{len(matches)}</strong> alert</div>'
@@ -1497,8 +1511,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
   <a href="storico.html" class="nav-link">Storico</a>
   <a href="stats.html" class="nav-link active">Stats Avanzate</a>
   <a href="global_stats.html" class="nav-link">Stats Globali</a>
-  <a href="betfair.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Betfair</a>
-  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Stats BF</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Stats BF</a>
   <div class="hright">\U0001f4c5 {run_date}</div>
 </header>
 <div class="scanbar">
@@ -1888,8 +1902,8 @@ cursor:pointer;user-select:none;margin:6px 0;}
   <a href="storico.html" class="nav-link active">Storico</a>
   <a href="stats.html" class="nav-link">Stats Avanzate</a>
   <a href="global_stats.html" class="nav-link">Stats Globali</a>
-  <a href="betfair.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Betfair</a>
-  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Stats BF</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Stats BF</a>
   <div class="hright">\U0001f504 {run_date}</div>
 </header>
 <div class="scanbar">
@@ -2310,10 +2324,9 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         + "</div></body></html>")
 
 
-# ── BETFAIR EXCHANGE — Dashboard ─────────────────────────────────────────────
+# ── BETFAIR EXCHANGE — Dashboard (stessi colori/stile della dashboard principale) ──
 
 def generate_betfair_html(bf_matches, run_date, total_bf_markets):
-    """Genera betfair.html — dashboard con SOLO partite quotate su Betfair Exchange."""
     from datetime import datetime, timezone, timedelta
     today     = datetime.now(timezone.utc)
     today_str = today.strftime("%Y-%m-%d")
@@ -2328,15 +2341,16 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         except: return d
 
     day_labels = {
-        today_str: "OGGI",
-        d1_str:    "DOMANI",
-        d2_str:    "DOPODOMANI",
+        today_str: "📅 OGGI",
+        d1_str:    "📅 DOMANI",
+        d2_str:    "📅 DOPODOMANI",
     }
-    date_range = f"{fmt_short(today_str)} - {fmt_short(d2_str)}"
+
+    date_range = f"{fmt_short(today_str)} → {fmt_short(d2_str)}"
 
     css = (
         "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');"
-        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#ffb300;"
+        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#00e5a0;"
         "--green:#00e5a0;--red:#ff3a3a;--orange:#ff8c00;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}"
         "*{box-sizing:border-box;margin:0;padding:0;}"
         "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
@@ -2345,14 +2359,12 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         "display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;flex-wrap:wrap;}"
         ".logo{display:flex;align-items:center;gap:10px;}"
         ".logo-icon{font-size:1.4rem;}"
-        ".logo-text{font-size:1.15rem;font-weight:700;color:#ffb300;letter-spacing:-.01em;}"
+        ".logo-text{font-size:1.15rem;font-weight:700;background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.01em;}"
         ".logo-sub{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted);letter-spacing:.12em;display:block;margin-top:-2px;}"
         ".hdivider{width:1px;height:28px;background:var(--border);}"
-        ".nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(255,179,0,.3);background:rgba(255,179,0,.06);transition:all .2s;margin-right:4px;}"
-        ".nav-link:hover{background:rgba(255,179,0,.12);}"
-        ".nav-link.active{background:rgba(255,179,0,.18);color:#fff;border-color:rgba(255,179,0,.5);}"
-        ".nav-link.green{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.06);}"
-        ".nav-link.green:hover{background:rgba(0,229,160,.12);}"
+        ".nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(0,229,160,.3);background:rgba(0,229,160,.06);transition:all .2s;margin-right:4px;}"
+        ".nav-link:hover{background:rgba(0,229,160,.12);}"
+        ".nav-link.active{background:rgba(0,229,160,.18);color:#fff;border-color:rgba(0,229,160,.5);}"
         ".hstats{display:flex;gap:16px;flex-wrap:wrap;}"
         ".hstat{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:5px;}"
         ".hstat strong{color:var(--accent);font-size:.85rem;}"
@@ -2360,7 +2372,7 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         ".pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pdot 1.4s infinite;}"
         "@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}"
         ".update-time{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}"
-        ".scanbar{background:rgba(255,179,0,0.03);border-bottom:1px solid rgba(255,179,0,0.08);"
+        ".scanbar{background:rgba(0,229,160,0.03);border-bottom:1px solid rgba(0,229,160,0.08);"
         "padding:6px 24px;display:flex;gap:0;align-items:center;"
         "font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);overflow:hidden;white-space:nowrap;flex-wrap:wrap;}"
         ".scanbar-item{display:flex;align-items:center;gap:4px;padding:0 14px;border-right:1px solid rgba(255,255,255,0.06);}"
@@ -2373,7 +2385,7 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         ".section-label.slive{color:var(--red);}"
         ".section-badge{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);"
         "background:rgba(255,255,255,0.04);padding:2px 9px;border-radius:100px;border:1px solid var(--border);}"
-        ".section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,179,0,0.15),transparent);}"
+        ".section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,229,160,0.15),transparent);}"
         ".section-line.red{background:linear-gradient(90deg,rgba(255,58,58,0.3),transparent);}"
         ".sub-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);"
         "letter-spacing:.1em;text-transform:uppercase;padding:6px 0 8px;"
@@ -2387,17 +2399,17 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         ".tc{font-size:.65rem;color:var(--muted);}"
         ".th::after{content:'';flex:1;height:1px;background:var(--border);}"
         ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;margin-bottom:14px;}"
-        ".card{border-radius:10px;padding:11px 13px;border:1px solid rgba(255,179,0,.15);"
+        ".card{border-radius:10px;padding:11px 13px;border:1px solid rgba(0,229,160,.15);"
         "position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s;"
         "background:linear-gradient(135deg,#0f1520 0%,#121a2a 100%);}"
         ".card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;"
-        "background:linear-gradient(90deg,transparent,rgba(255,179,0,.1),transparent);}"
+        "background:linear-gradient(90deg,transparent,rgba(0,229,160,.1),transparent);}"
         ".card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.5);}"
         ".card.live{border-color:rgba(255,58,58,.4);}"
         ".card.scoring{background:linear-gradient(135deg,#0a1510 0%,#0e2018 50%,#0a1510 100%);"
         "border-color:rgba(0,229,160,.35);box-shadow:0 0 18px rgba(0,229,160,.1);}"
         ".ctag{position:absolute;top:0;right:0;font-family:'DM Mono',monospace;font-size:.48rem;"
-        "letter-spacing:.08em;color:var(--muted);background:rgba(255,179,0,.08);"
+        "letter-spacing:.08em;color:var(--muted);background:rgba(0,229,160,.08);"
         "padding:2px 6px;border-radius:0 10px 0 6px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);}"
         ".ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}"
         ".league{font-size:.65rem;color:var(--muted);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;}"
@@ -2423,7 +2435,7 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
         ".vs{font-size:.95rem;color:var(--muted);font-weight:700;}"
         ".score-val{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#fff;line-height:1;display:none;}"
         ".bf-row{display:flex;justify-content:space-between;align-items:center;margin-top:7px;"
-        "font-family:'DM Mono',monospace;font-size:.58rem;padding-top:5px;border-top:1px solid rgba(255,179,0,.1);}"
+        "font-family:'DM Mono',monospace;font-size:.58rem;padding-top:5px;border-top:1px solid rgba(0,229,160,.1);}"
         ".bf-tag{color:var(--accent);letter-spacing:.05em;}"
         ".bf-odds{display:flex;gap:8px;}"
         ".bf-odds span{color:var(--green);}"
@@ -2594,15 +2606,15 @@ updateLive();setInterval(updateLive,30000);
         f'<style>{css}</style></head><body>'
         f'<header>'
         f'<div class="logo">'
-        f'<span class="logo-icon">🔶</span>'
-        f'<div><span class="logo-text">Betfair Exchange</span>'
+        f'<span class="logo-icon">🎯</span>'
+        f'<div><span class="logo-text">Betfair Exchange · Variatio Initialis</span>'
         f'<span class="logo-sub">OVER/UNDER 0.5 · MERCATI LIVE</span></div></div>'
         f'<div class="hdivider"></div>'
-        f'<a href="index.html" class="nav-link green">Dashboard</a>'
+        f'<a href="index.html" class="nav-link">Dashboard</a>'
         f'<a href="betfair.html" class="nav-link active">Betfair</a>'
         f'<a href="betfair_stats.html" class="nav-link">Stats Betfair</a>'
-        f'<a href="stats.html" class="nav-link green">Stats Avanzate</a>'
-        f'<a href="global_stats.html" class="nav-link green">Stats Globali</a>'
+        f'<a href="stats.html" class="nav-link">Stats Avanzate</a>'
+        f'<a href="global_stats.html" class="nav-link">Stats Globali</a>'
         f'<div class="hstats">'
         f'<div class="hstat"><strong>{total_bf_markets}</strong> mercati BF</div>'
         f'<div class="hstat"><strong>{n_matched}</strong> incrociati</div>'
@@ -2625,224 +2637,437 @@ updateLive();setInterval(updateLive,30000);
 # ── BETFAIR EXCHANGE — Stats Avanzate ───────────────────────────────────────
 
 def generate_betfair_stats_html(bf_matches, run_date):
-    """Genera betfair_stats.html — statistiche avanzate per partite Betfair Exchange."""
-    from datetime import datetime, timezone, timedelta
+    """Genera betfair_stats.html — stessa struttura identica di stats.html ma dati Betfair."""
+    from datetime import datetime, timezone
 
     all_m = [m for m in bf_matches if m]
     if not all_m:
         return None
 
-    # Partite FT con stats
     ft_matches = [m for m in all_m if m.get("status") in ("FT","AET","PEN")]
-    ns_matches = [m for m in all_m if m.get("status") == "NS"]
-    live_matches = [m for m in all_m if m.get("status") in ("1H","HT","2H","ET","P")]
+    total_all = len(all_m)
 
-    # Statistiche quote Betfair
-    priced = [m for m in all_m if m.get("bf_back_price")]
-    prices = [m["bf_back_price"] for m in priced]
-    avg_price = round(sum(prices) / len(prices), 3) if prices else 0
-    min_price = min(prices) if prices else 0
-    max_price = max(prices) if prices else 0
+    if len(ft_matches) == 0:
+        return None
 
-    # Distribuzione quote
-    ranges = [(1.0,1.10),(1.10,1.20),(1.20,1.30),(1.30,1.50),(1.50,2.0),(2.0,5.0)]
-    range_counts = []
-    for lo, hi in ranges:
-        c = sum(1 for p in prices if lo <= p < hi)
-        range_counts.append((f"{lo:.2f}-{hi:.2f}", c))
+    first_goal_minutes = []
+    total_goals_list   = []
+    results_count      = {}
+    league_stats       = {}
+    match_events       = []
 
-    # Statistiche goal per chi ha stats
-    with_stats = [m for m in all_m if m.get("home_stats") and m.get("away_stats")]
-    total_goals_sum = 0
-    qualified_count = 0
-    high_total_list = []
-    for m in with_stats:
-        hs = m["home_stats"]
-        as_ = m["away_stats"]
-        ht = hs.get("total", 0)
-        at = as_.get("total", 0)
-        gt = ht + at
-        total_goals_sum += gt
-        if hs.get("qualifies") and as_.get("qualifies"):
-            qualified_count += 1
-        if gt >= THRESHOLD:
-            high_total_list.append(m)
-
-    avg_goal_total = round(total_goals_sum / len(with_stats), 1) if with_stats else 0
-
-    # FT stats
-    ft_goals = []
     for m in ft_matches:
-        hg = m.get("goals_home") or 0
-        ag = m.get("goals_away") or 0
-        ft_goals.append(hg + ag)
-    ft_with_goal = sum(1 for g in ft_goals if g > 0)
-    ft_over05_pct = round(ft_with_goal / len(ft_goals) * 100) if ft_goals else 0
-    ft_over15 = sum(1 for g in ft_goals if g > 1)
-    ft_over15_pct = round(ft_over15 / len(ft_goals) * 100) if ft_goals else 0
-    ft_avg = round(sum(ft_goals) / len(ft_goals), 1) if ft_goals else 0
+        fid       = m.get("fixture_id")
+        hg        = m.get("goals_home") or 0
+        ag        = m.get("goals_away") or 0
+        cached_min = m.get("first_min_cached")
+        evs = [] if cached_min is not None else (
+            get_fixture_events(fid) if (fid and (hg + ag) > 0) else [])
+        tot_g = hg + ag
 
-    # Leghe più rappresentate
-    league_count = {}
-    for m in all_m:
-        lg = m.get("league", "?")
+        if cached_min is not None:
+            first_min = cached_min
+        else:
+            mins = []
+            for e in evs:
+                if e.get("type") == "Goal" and e.get("detail") != "Missed Penalty":
+                    raw   = e.get("time", {}).get("elapsed")
+                    extra = e.get("time", {}).get("extra") or 0
+                    if raw is not None:
+                        mins.append(int(raw) + int(extra))
+            mins.sort()
+            first_min = mins[0] if mins else None
+        if first_min is not None:
+            first_goal_minutes.append(first_min)
+
+        total_goals_list.append(tot_g)
+
+        sc = f"{hg}-{ag}"
+        results_count[sc] = results_count.get(sc, 0) + 1
+
+        lg  = m.get("league", "?")
         nat = m.get("country", "")
         key = f"{lg}|{nat}"
-        league_count.setdefault(key, 0)
-        league_count[key] += 1
-    top_leagues = sorted(league_count.items(), key=lambda x: x[1], reverse=True)[:12]
+        if key not in league_stats:
+            league_stats[key] = {"n": 0, "goals": 0, "league": lg, "nation": nat}
+        league_stats[key]["n"]     += 1
+        league_stats[key]["goals"] += tot_g
 
-    # CSS
-    css = (
-        "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');"
-        ":root{--bg:#080d18;--surface:#0c1220;--card:#0f1827;--accent:#ffb300;"
-        "--green:#00e5a0;--red:#ff3a3a;--orange:#ff8c00;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}"
-        "*{box-sizing:border-box;margin:0;padding:0;}"
-        "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding-bottom:60px;}"
-        "header{background:rgba(8,13,24,0.95);backdrop-filter:blur(16px);"
-        "border-bottom:1px solid var(--border);padding:12px 24px;"
-        "display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;flex-wrap:wrap;}"
-        ".logo{display:flex;align-items:center;gap:10px;}"
-        ".logo-icon{font-size:1.4rem;}"
-        ".logo-text{font-size:1.15rem;font-weight:700;color:#ffb300;letter-spacing:-.01em;}"
-        ".logo-sub{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted);letter-spacing:.12em;display:block;margin-top:-2px;}"
-        ".hdivider{width:1px;height:28px;background:var(--border);}"
-        ".nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--accent);text-decoration:none;padding:4px 12px;border-radius:5px;border:1px solid rgba(255,179,0,.3);background:rgba(255,179,0,.06);transition:all .2s;margin-right:4px;}"
-        ".nav-link:hover{background:rgba(255,179,0,.12);}"
-        ".nav-link.active{background:rgba(255,179,0,.18);color:#fff;border-color:rgba(255,179,0,.5);}"
-        ".nav-link.green{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.06);}"
-        ".nav-link.green:hover{background:rgba(0,229,160,.12);}"
-        ".wrap{max-width:1100px;margin:0 auto;padding:20px;}"
-        ".panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}"
-        ".ptitle{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--accent);letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase;}"
-        ".kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}"
-        ".kpi{background:rgba(255,179,0,.04);border:1px solid rgba(255,179,0,.12);border-radius:8px;padding:12px;text-align:center;}"
-        ".kpi-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--accent);}"
-        ".kpi-lbl{font-size:.6rem;color:var(--muted);margin-top:2px;letter-spacing:.05em;}"
-        ".kpi.green{background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.12);}"
-        ".kpi.green .kpi-val{color:var(--green);}"
-        ".bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.65rem;}"
-        ".bar-label{width:80px;text-align:right;color:var(--muted);font-family:'DM Mono',monospace;}"
-        ".bar-track{flex:1;height:16px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;}"
-        ".bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;"
-        "font-family:'DM Mono',monospace;font-size:.55rem;color:#fff;font-weight:500;min-width:20px;}"
-        ".league-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.65rem;}"
-        ".league-row:last-child{border-bottom:none;}"
-        ".league-name{color:var(--text);}"
-        ".league-count{color:var(--accent);font-family:'DM Mono',monospace;}"
-        # Top picks table
-        ".picks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;}"
-        ".pick-card{background:rgba(255,179,0,.04);border:1px solid rgba(255,179,0,.1);border-radius:8px;padding:10px 12px;}"
-        ".pick-teams{font-size:.78rem;font-weight:700;margin-bottom:4px;}"
-        ".pick-meta{font-size:.58rem;color:var(--muted);font-family:'DM Mono',monospace;}"
-        ".pick-meta .val{color:var(--accent);}"
-        ".pick-meta .grn{color:var(--green);}"
-    )
+        match_events.append({
+            "home": m.get("home", "?"), "away": m.get("away", "?"),
+            "league": lg, "nation": nat,
+            "score": sc, "first_min": first_min, "total_goals": tot_g,
+        })
 
-    # Build HTML sections
-    # 1. KPI boxes
-    kpi_html = (
-        f'<div class="kpi-grid">'
-        f'<div class="kpi"><div class="kpi-val">{len(all_m)}</div><div class="kpi-lbl">MERCATI TOTALI</div></div>'
-        f'<div class="kpi"><div class="kpi-val">{len(priced)}</div><div class="kpi-lbl">CON QUOTA</div></div>'
-        f'<div class="kpi"><div class="kpi-val">{avg_price}</div><div class="kpi-lbl">QUOTA MEDIA</div></div>'
-        f'<div class="kpi"><div class="kpi-val">{min_price:.2f}</div><div class="kpi-lbl">QUOTA MIN</div></div>'
-        f'<div class="kpi"><div class="kpi-val">{max_price:.2f}</div><div class="kpi-lbl">QUOTA MAX</div></div>'
-        f'<div class="kpi green"><div class="kpi-val">{len(with_stats)}</div><div class="kpi-lbl">CON STATS G5</div></div>'
-        f'<div class="kpi green"><div class="kpi-val">{qualified_count}</div><div class="kpi-lbl">QUALIFICATI FILTRO</div></div>'
-        f'<div class="kpi green"><div class="kpi-val">{avg_goal_total}</div><div class="kpi-lbl">MEDIA GOAL G5</div></div>'
-        f'</div>'
-    )
+    total_ft = len(ft_matches)
+    with_goal   = sum(1 for x in total_goals_list if x > 0)
+    zero_zero   = total_ft - with_goal
+    avg_goals   = round(sum(total_goals_list) / total_ft, 1) if total_ft else 0
+    avg_first   = round(sum(first_goal_minutes) / len(first_goal_minutes), 1) if first_goal_minutes else 0
+    min_first   = min(first_goal_minutes) if first_goal_minutes else 0
+    max_first   = max(first_goal_minutes) if first_goal_minutes else 0
+    strike_rate = round(with_goal / total_ft * 100) if total_ft else 0
+    total_goals = sum(total_goals_list)
+    over25      = sum(1 for x in total_goals_list if x > 2)
+    over15      = sum(1 for x in total_goals_list if x > 1)
+    gg          = sum(1 for m2 in ft_matches
+                      if (m2.get("goals_home") or 0) > 0 and (m2.get("goals_away") or 0) > 0)
 
-    # 2. Distribuzione quote
-    max_bar = max((c for _, c in range_counts), default=1) or 1
-    bars_html = ""
-    for label, count in range_counts:
-        pct = round(count / max_bar * 100)
-        bars_html += (
-            f'<div class="bar-row">'
-            f'<span class="bar-label">{label}</span>'
-            f'<div class="bar-track"><div class="bar-fill" style="width:{max(pct,5)}%;background:rgba(255,179,0,.5)">{count}</div></div>'
+    fasce = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75), (76, 999)]
+    fascia_data = []
+    for lo, hi in fasce:
+        n      = sum(1 for x in first_goal_minutes if lo <= x <= hi)
+        pct    = round(n / len(first_goal_minutes) * 100, 1) if first_goal_minutes else 0
+        mins_in = [x for x in first_goal_minutes if lo <= x <= hi]
+        avg_m  = round(sum(mins_in) / len(mins_in), 1) if mins_in else 0
+        lbl    = f"{lo}–90+'" if hi == 999 else f"{lo}–{hi}'"
+        fascia_data.append({"lbl": lbl, "n": n, "pct": pct, "avg": avg_m})
+
+    max_fascia_n = max((f["n"] for f in fascia_data), default=1) or 1
+
+    hm_slots = []
+    for i in range(18):
+        lo2 = i * 5 + 1
+        hi2 = (i + 1) * 5
+        hm_slots.append(sum(1 for x in first_goal_minutes if lo2 <= x <= hi2))
+
+    top_matches  = sorted(match_events, key=lambda x: x["total_goals"], reverse=True)[:10]
+    top_leagues  = sorted(league_stats.values(), key=lambda x: x["n"], reverse=True)[:8]
+    max_lg_n     = max((l["n"] for l in top_leagues), default=1) or 1
+    quickest     = sorted([m2 for m2 in match_events if m2["first_min"] is not None],
+                          key=lambda x: x["first_min"])[:7]
+
+    ris_buckets = {
+        "1-0|0-1": {"label": "1-0 / 0-1",  "sub": "vittoria scarto minimo",           "color": "var(--accent)", "n": 0},
+        "2-1|1-2": {"label": "2-1 / 1-2",  "sub": "3 goal · GG sì",                  "color": "var(--blue)",   "n": 0},
+        "2-0|0-2": {"label": "2-0 / 0-2",  "sub": "clean sheet",                      "color": "var(--yellow)", "n": 0},
+        "3+":      {"label": "3+ diff",     "sub": "alta produttività",                "color": "var(--orange)", "n": 0},
+        "0-0":     {"label": "0 – 0",       "sub": "nessun goal malgrado ≥12 ultime 5","color": "var(--red)",    "n": 0},
+    }
+    for sc, cnt in results_count.items():
+        try:
+            h2, a2 = int(sc.split("-")[0]), int(sc.split("-")[1])
+        except Exception:
+            continue
+        if sc == "0-0":
+            ris_buckets["0-0"]["n"] += cnt
+        elif sc in ("1-0", "0-1"):
+            ris_buckets["1-0|0-1"]["n"] += cnt
+        elif sc in ("2-1", "1-2"):
+            ris_buckets["2-1|1-2"]["n"] += cnt
+        elif sc in ("2-0", "0-2"):
+            ris_buckets["2-0|0-2"]["n"] += cnt
+        else:
+            ris_buckets["3+"]["n"] += cnt
+
+    def pill_color(n):
+        if n >= 7: return "#ff3a3a"
+        if n >= 6: return "#ff8c00"
+        if n >= 5: return "#f5c542"
+        return "#4a5570"
+
+    bar_colors = [
+        "linear-gradient(90deg,#00e5a0,#00b87a)",
+        "linear-gradient(90deg,#1a6aff,#0d4acc)",
+        "linear-gradient(90deg,#f5c542,#d4a017)",
+        "linear-gradient(90deg,#ff8c00,#cc6e00)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+    ]
+    avg_colors = ["var(--accent)", "#6a9fff", "var(--yellow)", "var(--orange)", "var(--red)", "var(--red)"]
+
+    fascia_rows = ""
+    for i, f in enumerate(fascia_data):
+        w = round(f["n"] / max_fascia_n * 100) if max_fascia_n else 0
+        inner_lbl = str(f["n"]) if w > 30 else ""
+        fascia_rows += (
+            f'<tr><td><span class="flbl">{f["lbl"]}</span></td>'
+            f'<td><div class="bwrap"><div class="bfill" style="width:{w}%;background:{bar_colors[i]}">{inner_lbl}</div></div></td>'
+            f'<td class="nr">{f["n"]}</td><td class="pr">{f["pct"]}%</td>'
+            f'<td class="ar" style="color:{avg_colors[i]}">{f["avg"]}\'</td></tr>'
+        )
+
+    hm_js = str(hm_slots)
+
+    ris_html = ""
+    ris_items = list(ris_buckets.values())
+    for idx, r in enumerate(ris_items):
+        pct  = round(r["n"] / total_ft * 100, 1) if total_ft else 0
+        span = ' style="grid-column:span 2"' if (idx == len(ris_items) - 1 and len(ris_items) % 2 == 1) else ""
+        ml   = ' style="margin-left:auto"' if span else ""
+        ris_html += (
+            f'<div class="ris-item"{span}>'
+            f'<div class="ris-dot" style="background:{r["color"]}"></div>'
+            f'<div><div class="ris-name">{r["label"]}</div><div class="ris-sub">{r["sub"]}</div></div>'
+            f'<div{ml}><div class="ris-val" style="color:{r["color"]}">{r["n"]}</div>'
+            f'<div class="ris-pct">{pct}%</div></div></div>'
+        )
+
+    def tm_row(m2, rk):
+        pc = pill_color(m2["total_goals"])
+        fm = f"{m2['first_min']}'" if m2["first_min"] is not None else "—"
+        return (
+            '<div style="display:grid;grid-template-columns:16px 1fr 46px 24px 22px;'
+            'gap:5px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.025)">'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.55rem;color:var(--muted)">{rk}</div>'
+            f'<div><div style="font-size:.66rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+            f'{m2["home"]} vs {m2["away"]}</div>'
+            f'<div style="font-size:.52rem;color:var(--muted)">{m2["league"]} · {m2["nation"]}</div></div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.68rem;font-weight:700;color:var(--accent);text-align:right">{m2["score"]}</div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--orange);text-align:right">{fm}</div>'
+            f'<div style="text-align:right"><span style="font-size:.55rem;font-weight:700;padding:1px 4px;'
+            f'border-radius:3px;color:#05080f;background:{pc}">{m2["total_goals"]}</span></div></div>'
+        )
+
+    tm_html = "".join(tm_row(m2, i + 1) for i, m2 in enumerate(top_matches))
+
+    lg_flags = {
+        "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Germany": "🇩🇪", "Mexico": "🇲🇽", "Austria": "🇦🇹",
+        "Serbia": "🇷🇸", "Brazil": "🇧🇷", "Nicaragua": "🇳🇮", "Chile": "🇨🇱",
+        "Italy": "🇮🇹", "Spain": "🇪🇸", "France": "🇫🇷", "Portugal": "🇵🇹",
+        "Argentina": "🇦🇷", "Colombia": "🇨🇴", "Peru": "🇵🇪", "Netherlands": "🇳🇱",
+        "Belgium": "🇧🇪", "Poland": "🇵🇱", "Uruguay": "🇺🇾", "Ecuador": "🇪🇨",
+    }
+    lg_html = ""
+    for lg in top_leagues:
+        flag  = lg_flags.get(lg["nation"], "🌍")
+        avg_g = round(lg["goals"] / lg["n"], 1) if lg["n"] else 0
+        w     = round(lg["n"] / max_lg_n * 100)
+        ac    = "var(--orange)" if avg_g >= 4 else "var(--yellow)" if avg_g >= 3 else "var(--muted)"
+        lg_html += (
+            f'<div class="lg-row">'
+            f'<div class="lg-flag">{flag}</div>'
+            f'<div class="lg-name">{lg["league"]}</div>'
+            f'<div class="lg-bw"><div class="lg-bf" style="width:{w}%"></div></div>'
+            f'<div class="lg-n">{lg["n"]}</div>'
+            f'<div class="lg-avg" style="color:{ac}">{avg_g}</div></div>'
+        )
+    best_lg     = max(top_leagues, key=lambda x: x["goals"] / x["n"] if x["n"] else 0) if top_leagues else None
+    best_lg_txt = f'{best_lg["league"]} {round(best_lg["goals"]/best_lg["n"],1)}' if best_lg else "—"
+
+    dot_colors = ["var(--accent)", "var(--blue)", "var(--yellow)", "var(--orange)",
+                  "var(--red)", "var(--purple)", "var(--muted)"]
+    tl_html = ""
+    for i, m2 in enumerate(quickest):
+        c      = dot_colors[i % len(dot_colors)]
+        shadow = f"box-shadow:0 0 5px {c}" if c != "var(--muted)" else ""
+        rec    = ' <span style="color:var(--muted);font-size:.5rem">record</span>' if i == 0 else ""
+        tl_html += (
+            f'<div class="tl-item">'
+            f'<div class="tl-dot" style="background:{c};{shadow}"></div>'
+            f'<div class="tl-min" style="color:{c}">{m2["first_min"]}\'{rec}</div>'
+            f'<div class="tl-match">{m2["home"]} vs {m2["away"]}</div>'
+            f'<div class="tl-detail">{m2["league"]} · {m2["nation"]} · {m2["score"]} · {m2["total_goals"]} goal</div>'
             f'</div>'
         )
 
-    # 3. FT panel (se ci sono)
-    ft_panel = ""
-    if ft_goals:
-        ft_panel = (
-            f'<div class="panel">'
-            f'<div class="ptitle">RISULTATI FT BETFAIR</div>'
-            f'<div class="kpi-grid">'
-            f'<div class="kpi green"><div class="kpi-val">{len(ft_goals)}</div><div class="kpi-lbl">PARTITE FT</div></div>'
-            f'<div class="kpi green"><div class="kpi-val">{ft_over05_pct}%</div><div class="kpi-lbl">OVER 0.5</div></div>'
-            f'<div class="kpi green"><div class="kpi-val">{ft_over15_pct}%</div><div class="kpi-lbl">OVER 1.5</div></div>'
-            f'<div class="kpi green"><div class="kpi-val">{ft_avg}</div><div class="kpi-lbl">MEDIA GOAL</div></div>'
-            f'</div></div>'
-        )
+    over25_pct = round(over25 / total_ft * 100) if total_ft else 0
+    over15_pct = round(over15 / total_ft * 100) if total_ft else 0
+    gg_pct     = round(gg / total_ft * 100) if total_ft else 0
+    early_pct  = round(sum(f["n"] for f in fascia_data[:2]) / len(first_goal_minutes) * 100) if first_goal_minutes else 0
 
-    # 4. Top leagues
-    leagues_html = ""
-    for key, count in top_leagues:
-        parts = key.split("|")
-        lg = parts[0]
-        nat = parts[1] if len(parts) > 1 else ""
-        display = f"{lg} · {nat}" if nat else lg
-        leagues_html += f'<div class="league-row"><span class="league-name">{display}</span><span class="league-count">{count}</span></div>'
+    zz_pct  = round(zero_zero / total_ft * 100, 1) if total_ft else 0
 
-    # 5. Top picks (partite con stats + quota)
-    top_picks = sorted(
-        [m for m in with_stats if m.get("bf_back_price")],
-        key=lambda x: (x["home_stats"]["total"] + x["away_stats"]["total"]),
-        reverse=True,
-    )[:16]
-    picks_html = ""
-    for m in top_picks:
-        hs = m["home_stats"]
-        as_ = m["away_stats"]
-        gt = hs["total"] + as_["total"]
-        price = m.get("bf_back_price", 0)
-        picks_html += (
-            f'<div class="pick-card">'
-            f'<div class="pick-teams">{m["home"]} vs {m["away"]}</div>'
-            f'<div class="pick-meta">'
-            f'{m["kickoff"]} · {m["league"]} · '
-            f'G5: <span class="grn">{gt}</span> · '
-            f'BACK: <span class="val">{price:.2f}</span></div></div>'
-        )
+    CSS = """
+:root{--bg:#05080f;--card:#0c1220;--accent:#00e5a0;--blue:#1a6aff;--red:#ff3a3a;--orange:#ff8c00;--yellow:#f5c542;--purple:#b06aff;--text:#dde3f0;--muted:#4a5570;--border:rgba(255,255,255,0.06);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 55% 35% at 15% 8%,rgba(0,229,160,0.045) 0%,transparent 70%),radial-gradient(ellipse 45% 30% at 85% 85%,rgba(26,106,255,0.05) 0%,transparent 70%),radial-gradient(ellipse 35% 25% at 55% 40%,rgba(255,58,58,0.025) 0%,transparent 70%);}
+header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 26px;display:flex;align-items:center;gap:16px;}
+.logo-text{font-size:1.1rem;font-weight:700;background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);letter-spacing:.15em;display:block;margin-top:-2px;-webkit-text-fill-color:var(--muted);}
+.hdiv{width:1px;height:22px;background:var(--border);}
+.nav-link{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);text-decoration:none;padding:3px 9px;border-radius:5px;border:1px solid transparent;transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--border);}
+.nav-link.active{color:var(--accent);border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.06);}
+.hright{margin-left:auto;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--muted);}
+.scanbar{background:rgba(0,229,160,.02);border-bottom:1px solid rgba(0,229,160,.07);padding:4px 26px;display:flex;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--muted);}
+.si{padding:0 13px;border-right:1px solid rgba(255,255,255,.05);display:flex;gap:3px;align-items:center;}
+.si::before{content:'›';color:var(--accent);}
+.si b{color:var(--accent);font-weight:500;}
+.wrap{padding:14px 26px;position:relative;z-index:1;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:11px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:11px;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden;animation:fadein .35s ease both;}
+.panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.scope{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin-bottom:9px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.stag{padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.5);font-size:.49rem;}
+.stag.g{border-color:rgba(0,229,160,.2);color:rgba(0,229,160,.7);background:rgba(0,229,160,.04);}
+.stag.b{border-color:rgba(26,106,255,.2);color:rgba(100,160,255,.7);background:rgba(26,106,255,.04);}
+.stag.y{border-color:rgba(245,197,66,.2);color:rgba(245,197,66,.7);background:rgba(245,197,66,.04);}
+.ptitle{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.ptitle::after{content:'';flex:1;height:1px;background:var(--border);}
+.kpi{border-radius:9px;overflow:hidden;transition:transform .15s;}
+.kpi:hover{transform:translateY(-2px);}
+.kpi-bar{height:2px;}
+.k1 .kpi-bar{background:linear-gradient(90deg,var(--accent),transparent);}
+.k2 .kpi-bar{background:linear-gradient(90deg,var(--blue),transparent);}
+.k3 .kpi-bar{background:linear-gradient(90deg,var(--yellow),transparent);}
+.k4 .kpi-bar{background:linear-gradient(90deg,var(--red),transparent);}
+.k5 .kpi-bar{background:linear-gradient(90deg,var(--orange),transparent);}
+.kpi-inner{padding:10px 12px 8px;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:2px;}
+.k1 .kpi-val{color:var(--accent);}.k2 .kpi-val{color:var(--blue);}.k3 .kpi-val{color:var(--yellow);}.k4 .kpi-val{color:var(--red);}.k5 .kpi-val{color:var(--orange);}
+.kpi-lbl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.kpi-sub{font-family:'DM Mono',monospace;font-size:.51rem;color:var(--muted);margin-top:2px;opacity:.6;}
+.kpi-foot{padding:3px 12px;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);border-top:1px solid var(--border);display:flex;gap:4px;align-items:center;}
+.kpi-foot::before{content:'↳';opacity:.35;}
+.k1 .kpi-foot{background:rgba(0,229,160,.03);}.k2 .kpi-foot{background:rgba(26,106,255,.03);}.k3 .kpi-foot{background:rgba(245,197,66,.03);}.k4 .kpi-foot{background:rgba(255,58,58,.03);}.k5 .kpi-foot{background:rgba(255,140,0,.03);}
+.ft{width:100%;border-collapse:collapse;}
+.ft th{font-family:'DM Mono',monospace;font-size:.49rem;color:var(--muted);text-align:left;padding:0 5px 5px;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.ft th.r{text-align:right;}
+.ft td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle;}
+.ft tr:last-child td{border:none;}
+.flbl{font-family:'DM Mono',monospace;font-size:.63rem;white-space:nowrap;}
+.bwrap{background:rgba(255,255,255,.04);border-radius:2px;height:16px;overflow:hidden;}
+.bfill{height:100%;border-radius:2px;display:flex;align-items:center;padding:0 5px;font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,.9);font-weight:600;white-space:nowrap;}
+.nr{font-family:'DM Mono',monospace;font-size:.63rem;text-align:right;}
+.pr{font-family:'DM Mono',monospace;font-size:.59rem;text-align:right;color:var(--muted);}
+.ar{font-family:'DM Mono',monospace;font-size:.59rem;text-align:right;}
+.insight{margin-top:8px;padding-top:7px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.55rem;color:var(--muted);display:flex;gap:10px;}
+.insight b{color:var(--accent);}
+.hm-wrap{margin-top:9px;padding-top:8px;border-top:1px solid var(--border);}
+.hm-title{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;}
+.hm-row{display:flex;gap:2px;}
+.hm-cell{flex:1;height:20px;border-radius:2px;cursor:default;transition:transform .1s;}
+.hm-cell:hover{transform:scaleY(1.25);}
+.hm-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.46rem;color:var(--muted);margin-top:3px;}
+.hm-legend{display:flex;align-items:center;gap:5px;margin-top:4px;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);}
+.hm-legend-bar{flex:1;height:5px;border-radius:2px;background:linear-gradient(90deg,rgba(0,229,160,.1),var(--accent));}
+.ris-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}
+.ris-item{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:6px;padding:7px 9px;display:flex;align-items:center;gap:7px;}
+.ris-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+.ris-name{font-size:.67rem;flex:1;}
+.ris-sub{font-size:.54rem;color:var(--muted);}
+.ris-val{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:700;text-align:right;}
+.ris-pct{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--muted);text-align:right;}
+.cross-row{display:flex;gap:7px;}
+.cbox{flex:1;border-radius:6px;padding:6px 8px;text-align:center;border:1px solid;}
+.cval{font-family:'DM Mono',monospace;font-size:.95rem;font-weight:700;}
+.clbl{font-size:.53rem;color:var(--muted);margin-top:1px;line-height:1.3;}
+.lg-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.lg-flag{font-size:.82rem;width:16px;text-align:center;}
+.lg-name{font-size:.65rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lg-bw{width:80px;background:rgba(255,255,255,.04);border-radius:2px;height:5px;}
+.lg-bf{height:5px;border-radius:2px;background:var(--accent);opacity:.65;}
+.lg-n{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);width:20px;text-align:right;}
+.lg-avg{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--yellow);width:26px;text-align:right;}
+.tl{position:relative;padding-left:16px;}
+.tl::before{content:'';position:absolute;left:4px;top:0;bottom:0;width:1px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:8px;}
+.tl-dot{position:absolute;left:-14px;top:4px;width:6px;height:6px;border-radius:50%;}
+.tl-min{font-family:'DM Mono',monospace;font-size:.57rem;margin-bottom:1px;}
+.tl-match{font-size:.68rem;font-weight:600;}
+.tl-detail{font-size:.57rem;color:var(--muted);}
+"""
 
-    return (
-        f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
-        f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>Betfair Stats · {run_date}</title>'
-        f'<style>{css}</style></head><body>'
-        f'<header>'
-        f'<div class="logo">'
-        f'<span class="logo-icon">📊</span>'
-        f'<div><span class="logo-text">Betfair Stats</span>'
-        f'<span class="logo-sub">STATISTICHE AVANZATE · EXCHANGE</span></div></div>'
-        f'<div class="hdivider"></div>'
-        f'<a href="index.html" class="nav-link green">Dashboard</a>'
-        f'<a href="betfair.html" class="nav-link">Betfair</a>'
-        f'<a href="betfair_stats.html" class="nav-link active">Stats Betfair</a>'
-        f'<a href="stats.html" class="nav-link green">Stats Avanzate</a>'
-        f'<a href="global_stats.html" class="nav-link green">Stats Globali</a>'
-        f'</header>'
-        f'<div class="wrap">'
-        f'<div class="panel">'
-        f'<div class="ptitle">PANORAMICA MERCATI BETFAIR EXCHANGE</div>'
-        f'{kpi_html}</div>'
-        f'<div class="panel">'
-        f'<div class="ptitle">DISTRIBUZIONE QUOTE OVER 0.5</div>'
-        f'{bars_html}</div>'
-        f'{ft_panel}'
-        f'<div class="panel">'
-        f'<div class="ptitle">TOP LEGHE PER MERCATI</div>'
-        f'{leagues_html}</div>'
-        f'<div class="panel">'
-        f'<div class="ptitle">TOP PICKS · GOAL G5 + QUOTA BF</div>'
-        f'<div class="picks-grid">{picks_html}</div></div>'
-        f'</div></body></html>'
-    )
+    THRESHOLD_VAL = THRESHOLD
+    LAST_N_VAL    = LAST_N
+
+    return f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoalScan · Stats Betfair Exchange</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>
+<header>
+  <div><span class="logo-text">GoalScan</span><span class="logo-sub">LIVE INTELLIGENCE · BETFAIR EXCHANGE</span></div>
+  <div class="hdiv"></div>
+  <a href="index.html" class="nav-link">Dashboard</a>
+  <a href="storico.html" class="nav-link">Storico</a>
+  <a href="stats.html" class="nav-link">Stats Avanzate</a>
+  <a href="global_stats.html" class="nav-link">Stats Globali</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link active" style="border-color:rgba(0,229,160,.3);color:#00e5a0">Stats BF</a>
+  <div class="hright">📅 {run_date}</div>
+</header>
+<div class="scanbar">
+  <div class="si">mercati Betfair analizzati <b>{total_all}</b></div>
+  <div class="si">copertura temporale <b>·</b></div>
+  <div class="si">exchange <b>OVER 0.5 GOALS</b></div>
+  <div class="si">partite FT analizzate <b>{total_ft}</b></div>
+</div>
+<div class="wrap">
+<div class="g5">
+  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} mercati · Betfair</div></div><div class="kpi-foot">exchange · over 0.5 · tutti i mercati</div></div>
+  <div class="panel kpi k2"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_first}'</div><div class="kpi-lbl">Media 1° goal</div><div class="kpi-sub">range {min_first}' – {max_first}'</div></div><div class="kpi-foot">su {with_goal} partite con ≥1 goal</div></div>
+  <div class="panel kpi k3"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{strike_rate}%</div><div class="kpi-lbl">Strike rate goal</div><div class="kpi-sub">{with_goal} con goal su {total_ft} FT</div></div><div class="kpi-foot">mercati Betfair · tutte le leghe</div></div>
+  <div class="panel kpi k4"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{zero_zero}</div><div class="kpi-lbl">Chiuse 0-0</div><div class="kpi-sub">{zz_pct}% degli FT</div></div><div class="kpi-foot">mercati Betfair · tutte le leghe</div></div>
+  <div class="panel kpi k5"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_goals}</div><div class="kpi-lbl">Media goal/partita</div><div class="kpi-sub">{total_goals} goal totali</div></div><div class="kpi-foot">{total_ft} partite FT · mercati BF</div></div>
+</div>
+<div class="g3">
+  <div class="panel">
+    <div class="ptitle">⏱ Distribuzione 1° goal</div>
+    <div class="scope"><span class="stag g">Betfair</span><span class="stag">{with_goal} partite con ≥1 goal</span><span class="stag b">exchange · tutte le leghe</span></div>
+    <table class="ft"><thead><tr><th style="width:48px">FASCIA</th><th>BARRA <span style="opacity:.4;font-size:.43rem">n° partite col 1°goal in quel range</span></th><th class="r">N</th><th class="r">%</th><th class="r">AVG</th></tr></thead><tbody>{fascia_rows}</tbody></table>
+    <div class="hm-wrap">
+      <div class="hm-title">INTENSITÀ GOAL PER MINUTO (slot 5') — gradiente temperatura</div>
+      <div class="hm-row" id="hm"></div>
+      <div class="hm-labels"><span>1'</span><span>15'</span><span>30'</span><span>45'</span><span>60'</span><span>75'</span><span>90'</span></div>
+      <div class="hm-legend"><span>meno</span><div class="hm-legend-bar"></div><span>più</span></div>
+    </div>
+    <div class="insight">💡 <b>{early_pct}%</b> dei 1° goal entro il 30' &nbsp;·&nbsp; <b>{zero_zero}</b> partite rimaste 0-0</div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">📊 Risultati finali & mercati</div>
+    <div class="scope"><span class="stag g">Betfair</span><span class="stag">{total_ft} partite FT</span><span class="stag b">exchange · over 0.5</span></div>
+    <div class="ris-grid">{ris_html}</div>
+    <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);margin:6px 0 5px;letter-spacing:.08em">SPLIT MERCATI · {total_ft} FT</div>
+    <div class="cross-row">
+      <div class="cbox" style="border-color:rgba(187,134,252,.25);background:rgba(187,134,252,.05)"><div class="cval" style="color:#bb86fc">{over15_pct}%</div><div class="clbl">OVER 1.5<br><span style="color:#bb86fc;font-size:.57rem">{over15}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.05)"><div class="cval" style="color:var(--accent)">{over25_pct}%</div><div class="clbl">OVER 2.5<br><span style="color:var(--accent);font-size:.57rem">{over25}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(255,58,58,.2);background:rgba(255,58,58,.04)"><div class="cval" style="color:var(--red)">{100-over25_pct}%</div><div class="clbl">UNDER 2.5<br><span style="color:var(--red);font-size:.57rem">{total_ft-over25}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(26,106,255,.25);background:rgba(26,106,255,.05)"><div class="cval" style="color:#6a9fff">{gg_pct}%</div><div class="clbl">GG SÌ<br><span style="color:#6a9fff;font-size:.57rem">{gg}/{total_ft}</span></div></div>
+      <div class="cbox" style="border-color:rgba(245,197,66,.2);background:rgba(245,197,66,.04)"><div class="cval" style="color:var(--yellow)">{avg_goals}</div><div class="clbl">AVG GOAL<br><span style="color:var(--yellow);font-size:.57rem">{total_goals} tot</span></div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px;">
+    <div class="panel">
+      <div class="ptitle">🌍 Top leghe · mercati FT</div>
+      <div class="scope"><span class="stag g">Betfair</span><span class="stag">{total_ft} FT</span><span class="stag y">per n° mercati</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)"><span>LEGA</span><span>MERCATI &nbsp; AVG GOAL</span></div>
+      {lg_html}
+      <div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.52rem;color:var(--muted)">💡 avg goal più alto: <span style="color:var(--yellow)">{best_lg_txt}</span></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">⚡ Primi goal più veloci</div>
+      <div class="scope"><span class="stag g">Betfair</span><span class="stag">mercati FT con 1°goal più precoce</span></div>
+      <div class="tl">{tl_html}</div>
+    </div>
+  </div>
+</div>
+<div class="panel">
+  <div class="ptitle">🏆 Partite più prolifiche · top 10</div>
+  <div class="scope"><span class="stag g">Betfair</span><span class="stag">{total_ft} mercati FT</span><span class="stag y">ordinate per goal totali</span><span class="stag b">exchange · over 0.5</span></div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 20px;">{tm_html}</div>
+</div>
+</div>
+<script>
+const hmData={hm_js};
+const maxH=Math.max(...hmData);
+const hmEl=document.getElementById('hm');
+hmData.forEach((v,i)=>{{
+  const d=document.createElement('div');d.className='hm-cell';
+  const p=maxH>0?v/maxH:0;
+  let r,g,b;
+  if(p<0.33){{r=0;g=Math.round(100+p*3*129);b=Math.round(200-p*3*100);}}
+  else if(p<0.66){{r=Math.round((p-0.33)*3*245);g=Math.round(229-((p-0.33)*3*50));b=50;}}
+  else{{r=Math.round(200+p*55);g=Math.round(180-p*3*80);b=0;}}
+  d.style.background=`rgba(${{r}},${{g}},${{b}},${{0.15+p*0.78}})`;
+  const slot=(i+1)*5;d.title=`${{slot-4}}'-${{slot}}': ${{v}} partite`;
+  d.onmouseenter=()=>d.style.transform='scaleY(1.25)';
+  d.onmouseleave=()=>d.style.transform='';
+  hmEl.appendChild(d);
+}});
+</script>
+</body>
+</html>"""
 
 
 def main():
