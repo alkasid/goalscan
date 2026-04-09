@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-09T04:30:07.864378+00:00",
+  "generated_at": "2026-04-09T06:19:47.325546+00:00",
   "matches": [
     {
       "fixture_id": "1537616",
@@ -478,23 +478,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1531267",
-      "home_team": "Wolfsberger AC",
-      "away_team": "Ried",
-      "league": "Bundesliga · Austria",
-      "ko_time_iso": "2026-04-11T15:00:00",
-      "grand_total": 34,
-      "home_total": 16,
-      "away_total": 18,
-      "home_scored": 5,
-      "home_conceded": 11,
-      "away_scored": 8,
-      "away_conceded": 10,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1531266",
       "home_team": "SCR Altach",
       "away_team": "Grazer AK",
@@ -507,6 +490,23 @@
       "home_conceded": 8,
       "away_scored": 11,
       "away_conceded": 5,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1531267",
+      "home_team": "Wolfsberger AC",
+      "away_team": "Ried",
+      "league": "Bundesliga · Austria",
+      "ko_time_iso": "2026-04-11T15:00:00",
+      "grand_total": 34,
+      "home_total": 16,
+      "away_total": 18,
+      "home_scored": 5,
+      "home_conceded": 11,
+      "away_scored": 8,
+      "away_conceded": 10,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
@@ -1056,23 +1056,6 @@
       "status": "NS"
     },
     {
-      "fixture_id": "1389768",
-      "home_team": "Maccabi Netanya",
-      "away_team": "Hapoel Haifa",
-      "league": "Ligat Ha'al · Israel",
-      "ko_time_iso": "2026-04-11T17:00:00",
-      "grand_total": 37,
-      "home_total": 23,
-      "away_total": 14,
-      "home_scored": 10,
-      "home_conceded": 13,
-      "away_scored": 5,
-      "away_conceded": 9,
-      "is_verified": true,
-      "is_live": false,
-      "status": "NS"
-    },
-    {
       "fixture_id": "1490196",
       "home_team": "Toronto FC",
       "away_team": "FC Cincinnati",
@@ -1085,6 +1068,23 @@
       "home_conceded": 7,
       "away_scored": 7,
       "away_conceded": 15,
+      "is_verified": true,
+      "is_live": false,
+      "status": "NS"
+    },
+    {
+      "fixture_id": "1389768",
+      "home_team": "Maccabi Netanya",
+      "away_team": "Hapoel Haifa",
+      "league": "Ligat Ha'al · Israel",
+      "ko_time_iso": "2026-04-11T17:00:00",
+      "grand_total": 37,
+      "home_total": 23,
+      "away_total": 14,
+      "home_scored": 10,
+      "home_conceded": 13,
+      "away_scored": 5,
+      "away_conceded": 9,
       "is_verified": true,
       "is_live": false,
       "status": "NS"
