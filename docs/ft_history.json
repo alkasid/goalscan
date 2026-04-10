@@ -32933,10 +32933,10 @@
     "date": "2026-04-10",
     "kickoff": "18:00",
     "status": "FT",
-    "goals_home": 0,
-    "goals_away": 0,
-    "score": "0-0",
-    "first_min_cached": null,
+    "goals_home": 1,
+    "goals_away": 1,
+    "score": "1-1",
+    "first_min_cached": 57,
     "saved_at": "2026-04-10T19:11:57.584694+00:00"
   },
   "1388868": {
@@ -33013,5 +33013,35 @@
     "score": "5-0",
     "first_min_cached": 42,
     "saved_at": "2026-04-10T19:11:58.308505+00:00"
+  },
+  "1382267": {
+    "fixture_id": 1382267,
+    "home": "Waalwijk",
+    "away": "Emmen",
+    "league": "Eerste Divisie",
+    "country": "Netherlands",
+    "date": "2026-04-10",
+    "kickoff": "18:00",
+    "status": "FT",
+    "goals_home": 5,
+    "goals_away": 0,
+    "score": "5-0",
+    "first_min_cached": 18,
+    "saved_at": "2026-04-10T19:55:15.154107+00:00"
+  },
+  "1395028": {
+    "fixture_id": 1395028,
+    "home": "Lokeren-Temse",
+    "away": "Seraing United",
+    "league": "Challenger Pro League",
+    "country": "Belgium",
+    "date": "2026-04-10",
+    "kickoff": "18:00",
+    "status": "FT",
+    "goals_home": 1,
+    "goals_away": 1,
+    "score": "1-1",
+    "first_min_cached": 55,
+    "saved_at": "2026-04-10T19:55:15.363679+00:00"
   }
 }
