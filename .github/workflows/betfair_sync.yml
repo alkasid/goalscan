@@ -1,0 +1,46 @@
+name: Betfair Sync
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: goalscan-push
+  cancel-in-progress: false
+jobs:
+  sync-betfair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Betfair Sync
+        run: python betfair_sync.py
+        env:
+          BETFAIR_APP_KEY:  ${{ secrets.BETFAIR_APP_KEY }}
+          BETFAIR_USERNAME: ${{ secrets.BETFAIR_USERNAME }}
+          BETFAIR_PASSWORD: ${{ secrets.BETFAIR_PASSWORD }}
+          BETFAIR_ENDPOINT: ${{ secrets.BETFAIR_ENDPOINT }}
+      - name: Commit & push betfair_markets.json
+        run: |
+          git config user.name "goal-bot"
+          git config user.email "goal-bot@users.noreply.github.com"
+          git add docs/betfair_markets.json
+          git diff --staged --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "chore: betfair_markets.json $(date -u +'%Y-%m-%d %H:%M UTC')"
+          # Retry push con rebase (gestisce concorrenza con bot.yml/updater.yml)
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            echo "Push attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "All push attempts failed"
+          exit 1

@@ -56,9 +56,24 @@ Qui si lavora sulla **logica Python del bot**:
 
 ## Sync Betfair — come arriva `docs/betfair_markets.json`
 
-**Stato attuale (audit 2026-04-18)**: il producer storico `betfair_sync.py` NON esiste piu' in questo repo (non c'e' nei workflow, non c'e' come file, non e' referenziato da nessuna parte eccetto un commento obsoleto nel codice). Il file `docs/betfair_markets.json` viene re-committato ad ogni run di `bot.yml` ma con contenuto stantio (snapshot del 2026-04-09). Finche' un produttore reale non riprende a pushare, **tutti i mercati vengono scartati dal filtro Exchange** (vedi sotto) e `docs/betfair.html` esce vuoto — comportamento corretto (meglio vuoto che falsi positivi).
+**Stato attuale (2026-04-18)**: producer implementato nel repo come `betfair_sync.py` + workflow `.github/workflows/betfair_sync.yml` (opzione B). Gira ogni 15 minuti, login Interactive su `identitysso.betfair.<tld>`, chiama `listMarketCatalogue` + `listMarketBook`, scrive `docs/betfair_markets.json` e committa. Stesso concurrency group `goalscan-push` di bot/updater → il rebase protegge da conflitti.
 
-**Schema file** (semplice, non cambiare senza coordinarsi):
+**Secrets richiesti** (Repository Settings -> Secrets and variables -> Actions):
+
+| Secret | Obbligatorio | Uso |
+|---|---|---|
+| `BETFAIR_APP_KEY` | SI | Application Key (developer.betfair.com) |
+| `BETFAIR_USERNAME` | SI | username Betfair conto bot |
+| `BETFAIR_PASSWORD` | SI | password Betfair (se 2FA: vedi nota) |
+| `BETFAIR_ENDPOINT` | NO | dominio login, default "com"; usa "it" per betfair.it |
+
+**2FA**: Interactive Login non supporta TOTP lato server. Se il conto ha 2FA attivo: o si disattiva sul sub-account bot, oppure si refactora `login()` in `betfair_sync.py` per usare il Non-Interactive Login (`identitysso-cert.betfair.<tld>`) con cert SSL client caricato come secret base64.
+
+**Scope mercati**: `OVER_UNDER_05` calcio (eventTypeId `1`), runner_id `5851482` (storicamente "Under 0.5 Goals", coerente con il dato pre-esistente). Finestra kickoff -2h → +7gg. Ordinati per `MAXIMUM_TRADED` (prima i piu' liquidi). Cap 200 mercati per run.
+
+Cambiare `MARKET_TYPE` o `SELECTION_RUNNER_ID` in `betfair_sync.py` cambia cosa finisce su `betfair.html`. Se cambi il runner, aggiorna anche il titolo/testo di `generate_betfair_html` in `main.py` per coerenza.
+
+**Schema file** (contract, NON cambiare senza coordinarsi con main.py + goalscanbot):
 ```json
 {
   "generated_at": "<ISO8601 UTC>",
@@ -68,18 +83,21 @@ Qui si lavora sulla **logica Python del bot**:
       "market_id": "1.XXXXXXXXX",     // Exchange only: formato 1.<digits>
       "event_name": "Home v Away",     // convenzione Exchange (' v ' non 'vs')
       "start_time": "<ISO8601>",       // kickoff
-      "runner_id": <int>,              // 5851482 = Over 2.5 Goals
-      "best_back_price": <float|null>, // miglior quota back
+      "runner_id": 5851482,            // costante: stesso runner per tutti
+      "best_back_price": <float|null>, // miglior quota back (null se no price)
       "best_back_size": <float|null>   // liquidita' EUR sul miglior back
     }
   ]
 }
 ```
 
-**Opzioni per ripristinare un producer affidabile** (nessuna ancora implementata, decisione in sospeso):
-- **B — Workflow GitHub Actions dedicato** (consigliato): nuovo `.github/workflows/betfair_sync.yml` ogni 15 min, secrets `BETFAIR_APP_KEY` + `BETFAIR_USERNAME` + `BETFAIR_PASSWORD`, chiama `listMarketCatalogue` + `listMarketBook`, scrive `docs/betfair_markets.json`. Stesso concurrency group di bot/updater. Pro: self-contained nel repo; Contro: session token Betfair va rinnovato ad ogni run.
-- **A — Riattivare `betfair_sync.py` su Raspberry Pi via cron**: richiede che lo script esista ancora da qualche parte (backup? branch morto? disco del Pi?).
-- **C — Integrare il sync dentro goalscanbot** (Pi, gia' h24): aggiungere task periodico al main del Pi. Pro: processo in meno; Contro: accoppia due progetti.
+**Log diagnostica** nel workflow `Betfair Sync`:
+```
+[BetfairSync] listMarketCatalogue -> X mercati
+[BetfairSync] listMarketBook   -> X book
+[BetfairSync] scritto docs/betfair_markets.json | totali=X con_price=Y con_liquidita>=1EUR=Z
+```
+Se `con_liquidita` crolla per piu' run consecutivi → o e' un orario morto (notte italiana), o Betfair sta rifiutando il login. Controllare lo `status` del login nei log.
 
 ### Filtro Exchange-only (implementato in main.py)
 
