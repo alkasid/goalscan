@@ -434,15 +434,24 @@ def _team_side_match(ev_side, team_name_norm):
 
 def _match_betfair_event(event_name, home_name, away_name):
     """Match event_name Betfair (format 'Home v Away') con team names API-Football.
-    True solo se BOTH lato sinistro matcha home AND lato destro matcha away."""
+    Prova sia l'ordine normale (home-left/away-right) sia quello invertito
+    (home-right/away-left): succede raramente su derby, tornei a sede neutra
+    o piccole divergenze di convenzione fra provider."""
     ev_norm = _normalize_team(event_name)
     parts = ev_norm.split(" v ")
     if len(parts) != 2:
         return False
     ev_left  = parts[0].strip()
     ev_right = parts[1].strip()
-    return (_team_side_match(ev_left,  _normalize_team(home_name)) and
-            _team_side_match(ev_right, _normalize_team(away_name)))
+    h_norm = _normalize_team(home_name)
+    a_norm = _normalize_team(away_name)
+    # Ordine normale
+    if _team_side_match(ev_left, h_norm) and _team_side_match(ev_right, a_norm):
+        return True
+    # Ordine invertito
+    if _team_side_match(ev_left, a_norm) and _team_side_match(ev_right, h_norm):
+        return True
+    return False
 
 
 def cross_reference_betfair(fixtures_list, betfair_markets):
@@ -582,6 +591,15 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
           f"matched={len(matched)} | skip_youth={skip_youth} "
           f"no_bf_match={no_bf_match} no_stats={no_stats} "
           f"fail_goal={fail_qualify} fail_anti00={fail_anti00}")
+
+    # Breakdown per giorno (per capire se DOMANI ha copertura sensata)
+    by_day_matched = {}
+    for m in matched:
+        d = m.get("date", "?")
+        by_day_matched[d] = by_day_matched.get(d, 0) + 1
+    if by_day_matched:
+        dist = ", ".join(f"{k}:{v}" for k, v in sorted(by_day_matched.items()))
+        print(f"  [Betfair] matched per giorno: {dist}")
     return matched
 
 
@@ -3414,6 +3432,27 @@ def main():
     bf_markets = _load_betfair_markets()
     if bf_markets:
         bf_matched = cross_reference_betfair(raw_fixtures, bf_markets)
+
+        # DIAGNOSTICA: fixtures Bet365-qualificate (sul dashboard principale)
+        # che NON hanno trovato match Betfair. Se in questa lista vediamo
+        # match mainstream (Premier / Liga / Serie A / Bundesliga) e' bug
+        # del matcher. Se e' solo roba minore, e' copertura Exchange genuina.
+        try:
+            qual_ids = {q["fixture_id"] for q in qualified if q.get("fixture_id")}
+            bf_ids   = {m["fixture_id"] for m in bf_matched if m.get("fixture_id")}
+            missing  = qual_ids - bf_ids
+            if missing:
+                miss_list = [q for q in qualified if q.get("fixture_id") in missing]
+                miss_list.sort(key=lambda q: (q.get("date", ""), q.get("kickoff", "")))
+                print(f"  [Betfair] DIAG: {len(missing)} fixtures Bet365-qualificate "
+                      f"SENZA BF match (prime 25):")
+                for q in miss_list[:25]:
+                    print(f"    [{q.get('date', '?')} {q.get('kickoff', '?')}] "
+                          f"{q.get('home', '?')} vs {q.get('away', '?')}  "
+                          f"({q.get('league', '?')} · {q.get('country', '?')})")
+        except Exception as _e:
+            print(f"  [Betfair] DIAG errore: {_e}")
+
         bf_html = generate_betfair_html(bf_matched, run_date, len(bf_markets))
         (docs / "betfair.html").write_text(
             bf_html.encode("utf-8", errors="replace").decode("utf-8"),
