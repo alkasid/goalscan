@@ -29,10 +29,38 @@ if [ ! -f .env ]; then
   echo "[run_betfair_sync] .env non trovato in $REPO_DIR. Copia .env.example e compila i valori." >&2
   exit 1
 fi
-set -a
-# shellcheck disable=SC1091
-source .env
-set +a
+
+# Parser .env robusto (NON usa 'source' → immune a apostrofi/quote non matchati
+# nei valori, che invece il login Betfair puo' generare).
+# Regole:
+#   - righe vuote o che iniziano con '#' sono ignorate
+#   - formato KEY=VALUE (KEY alfanumerico + underscore, maiuscolo)
+#   - se VALUE e' racchiuso da quote matching ('' o ""), li rimuove
+#   - nessun expansion shell sul VALUE
+while IFS= read -r _line || [ -n "${_line:-}" ]; do
+  # Trim leading whitespace
+  _stripped="${_line#"${_line%%[![:space:]]*}"}"
+  [ -z "$_stripped" ] && continue
+  case "$_stripped" in
+    \#*) continue ;;
+  esac
+  case "$_stripped" in
+    *=*) : ;;
+    *) continue ;;
+  esac
+  _key="${_stripped%%=*}"
+  _val="${_stripped#*=}"
+  # Rimuovi quote opzionali se matching su entrambi i lati
+  if [ "${#_val}" -ge 2 ]; then
+    _first="${_val:0:1}"
+    _last="${_val: -1}"
+    if [ "$_first" = "$_last" ] && { [ "$_first" = "'" ] || [ "$_first" = '"' ]; }; then
+      _val="${_val:1:${#_val}-2}"
+    fi
+  fi
+  export "$_key=$_val"
+done < .env
+unset _line _stripped _key _val _first _last
 
 if [ -z "${BETFAIR_APP_KEY:-}" ] || [ -z "${BETFAIR_USERNAME:-}" ] || [ -z "${BETFAIR_PASSWORD:-}" ]; then
   echo "[run_betfair_sync] .env incompleto (servono BETFAIR_APP_KEY/USERNAME/PASSWORD)" >&2
