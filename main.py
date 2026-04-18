@@ -456,10 +456,22 @@ def _match_betfair_event(event_name, home_name, away_name):
 
 def cross_reference_betfair(fixtures_list, betfair_markets):
     """
-    Incrocia fixtures API-Football con mercati Betfair Exchange.
-    Applica prima un filtro STRICT Exchange-only (_is_exchange_market):
-    scarta Sportsbook, mercati suspended, runner morti, start_time stantii.
-    Restituisce lista di match dict arricchiti con dati Betfair.
+    ARCHITETTURA INVERTITA (v2, 2026-04-19):
+      Iteriamo sui mercati Betfair Exchange (la verita' per "che cosa e'
+      tradable sull'Exchange") e per ciascuno cerchiamo la fixture
+      API-Football corrispondente dove applicare i filtri goal.
+      Garantisce che TUTTO cio' che Betfair espone venga considerato
+      (niente leak per matcher che scorda match), e niente di piu'
+      (niente false positive su fixture senza mercato BF reale).
+
+    Flusso:
+      1. filtra BF markets con _is_exchange_market (Exchange-only strict)
+      2. prepara eligible_fixtures (skip youth/women/reserve/primavera)
+         con nomi squadre pre-normalizzati (perf)
+      3. per ogni BF market:
+         - trova la fixture API-Football piu' vicina per time+name
+         - applica filtri goal (stessi della dashboard principale)
+         - se passa, aggiunge a 'matched'
     """
     if not betfair_markets:
         return []
@@ -467,42 +479,134 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
     total_raw = len(betfair_markets)
     betfair_markets, scartati = _filter_exchange_markets(betfair_markets)
     validi = len(betfair_markets)
-
-    # Log contatori: una riga che riassume il filtraggio Exchange
     motivi = " ".join(f"{k}={v}" for k, v in sorted(scartati.items())) or "-"
-    scartati_tot = total_raw - validi
     print(f"  [Betfair] markets totali: {total_raw} | exchange validi: {validi} "
-          f"| scartati: {scartati_tot} ({motivi})")
-
+          f"| scartati: {total_raw - validi} ({motivi})")
     if not betfair_markets:
         return []
 
-    matched = []
-    bf_used = set()
-    # Contatori diagnostici: dove perdono le fixtures?
-    skip_youth   = 0   # league in SKIP_KEYWORDS (evita anche get_last_n waste)
-    no_bf_match  = 0   # nessun mercato Betfair matchato via fuzzy
-    no_stats     = 0   # <LAST_N partite FT per una delle due squadre
-    fail_qualify = 0   # non supera MIN_SCORED / THRESHOLD per entrambe
-    fail_anti00  = 0   # max(conceded) < MIN_CO_MAX
-
+    # Prefiltra fixtures eligible + pre-normalizza team names (un solo pass
+    # su ~3000 fixtures invece di ~3000*200 dentro il loop principale)
+    eligible = []
+    fix_skipped_youth = 0
     for fix in fixtures_list:
-        home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
-        away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
-        fixture_obj = fix.get("fixture", {})
-        fixture_id = fixture_obj.get("id")
-        league = fix.get("league", {})
-
-        # GUARD: skippa lega youth/women/reserve PRIMA del matching per
-        # non sprecare get_last_n (e quindi chiamate API-Football) su
-        # fixtures che il bot non considera comunque.
-        league_name_lc = (league.get("name", "") or "").lower()
+        league_name_lc = (fix.get("league", {}).get("name", "") or "").lower()
         if any(k in league_name_lc for k in SKIP_KEYWORDS):
-            skip_youth += 1
+            fix_skipped_youth += 1
+            continue
+        h_raw = fix.get("teams", {}).get("home", {}).get("name", "") or ""
+        a_raw = fix.get("teams", {}).get("away", {}).get("name", "") or ""
+        # Skip anche fixture con team name che indicano youth/reserve
+        tn_lc = (h_raw + " " + a_raw).lower()
+        if any(k in tn_lc for k in (" u19", " u20", " u21", " u23", " ii", " iii")):
+            fix_skipped_youth += 1
+            continue
+        fix["_h_norm"] = _normalize_team(h_raw)
+        fix["_a_norm"] = _normalize_team(a_raw)
+        ts = fix.get("fixture", {}).get("timestamp")
+        fix["_ko_utc"] = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
+        eligible.append(fix)
+
+    matched = []
+    used_fix_ids = set()
+    no_fix_match = 0
+    no_stats     = 0
+    fail_qualify = 0
+    fail_anti00  = 0
+    bf_unmatched_events = []   # per DIAG: BF markets che non trovano fixture
+
+    for bm in betfair_markets:
+        event_name = bm.get("event_name", "") or ""
+        ev_norm = _normalize_team(event_name)
+        parts = ev_norm.split(" v ")
+        if len(parts) != 2:
+            no_fix_match += 1
+            bf_unmatched_events.append(bm)
+            continue
+        ev_left  = parts[0].strip()
+        ev_right = parts[1].strip()
+
+        # Parse BF start_time (UTC)
+        bf_start = None
+        st = bm.get("start_time") or ""
+        if st:
+            try:
+                bf_start = datetime.fromisoformat(st.replace("Z", "+00:00"))
+                if bf_start.tzinfo is None:
+                    bf_start = bf_start.replace(tzinfo=timezone.utc)
+            except Exception:
+                bf_start = None
+
+        # Cerca la fixture API-Football corrispondente (time + name)
+        best_fix = None
+        best_score = 0
+        for fix in eligible:
+            fid = fix.get("fixture", {}).get("id")
+            if fid in used_fix_ids:
+                continue
+            # Time-based pre-filter: scarta fixture oltre 12h dal market
+            # (ma concedi se BF start non parsabile)
+            if bf_start and fix["_ko_utc"]:
+                diff_h = abs((fix["_ko_utc"] - bf_start).total_seconds()) / 3600.0
+                if diff_h > 12:
+                    continue
+
+            h_norm = fix["_h_norm"]
+            a_norm = fix["_a_norm"]
+
+            # Name match: ordine normale o invertito
+            s = 0
+            if _team_side_match(ev_left, h_norm) and _team_side_match(ev_right, a_norm):
+                s = 4
+            elif _team_side_match(ev_left, a_norm) and _team_side_match(ev_right, h_norm):
+                s = 3
+            if s == 0:
+                continue
+
+            # Bonus: vicinanza oraria (< 2h = meglio)
+            if bf_start and fix["_ko_utc"]:
+                diff_h = abs((fix["_ko_utc"] - bf_start).total_seconds()) / 3600.0
+                if diff_h < 2:
+                    s += 2
+                elif diff_h < 6:
+                    s += 1
+
+            if s > best_score:
+                best_score = s
+                best_fix = (fix, fid)
+
+        if not best_fix:
+            no_fix_match += 1
+            bf_unmatched_events.append(bm)
             continue
 
+        fix, fix_id = best_fix
+        used_fix_ids.add(fix_id)
+
+        # Applica filtri goal (stessi del dashboard principale)
+        league = fix.get("league", {})
+        league_id = fix.get("_league_id") or league.get("id")
+        season = fix.get("_season") or league.get("season")
+        home_id = fix.get("teams", {}).get("home", {}).get("id")
+        away_id = fix.get("teams", {}).get("away", {}).get("id")
+
+        hs  = get_last_n(home_id, league_id, season) if home_id else None
+        as_ = get_last_n(away_id, league_id, season) if away_id else None
+        if hs is None or as_ is None:
+            no_stats += 1
+            continue
+        if not (hs["qualifies"] and as_["qualifies"]):
+            fail_qualify += 1
+            continue
+        if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
+            fail_anti00 += 1
+            continue
+
+        # Passa tutti i filtri - aggiungi
+        fixture_obj = fix.get("fixture", {})
         try:
-            ko_utc = datetime.fromtimestamp(fixture_obj.get("timestamp", 0), tz=timezone.utc)
+            ko_utc = fix["_ko_utc"] or datetime.fromtimestamp(
+                fixture_obj.get("timestamp", 0), tz=timezone.utc)
             ko_cest = ko_utc + timedelta(hours=2)
             ko_str = ko_cest.strftime("%H:%M")
             date_str = ko_cest.strftime("%Y-%m-%d")
@@ -510,75 +614,21 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
             ko_str = "--:--"
             date_str = "?"
 
-        best_bf = None
-        best_score = 0
-        for i, bm in enumerate(betfair_markets):
-            if i in bf_used:
-                continue
-            s = 0
-            if _match_betfair_event(bm.get("event_name", ""), home_name, away_name):
-                s = 2
-                # Bonus: controlla che la start_time sia vicina
-                if bm.get("start_time"):
-                    try:
-                        bf_start = datetime.fromisoformat(bm["start_time"].replace("Z", "+00:00"))
-                        diff = abs((bf_start - ko_utc).total_seconds())
-                        if diff < 7200:  # entro 2h
-                            s += 1
-                    except Exception:
-                        pass
-            if s > best_score:
-                best_score = s
-                best_bf = (i, bm)
-
-        if not (best_bf and best_score >= 2):
-            no_bf_match += 1
-            continue
-
-        idx, bm = best_bf
-        bf_used.add(idx)
-
-        # ── Stessi 5 filtri della dashboard ──────────────────────────
-        league_id = fix.get("_league_id") or league.get("id")
-        season = fix.get("_season") or league.get("season")
-        home_id = fix.get("teams", {}).get("home", {}).get("id")
-        away_id = fix.get("teams", {}).get("away", {}).get("id")
-
-        # Filtro 1: almeno LAST_N (5) partite FT per squadra
-        hs  = get_last_n(home_id, league_id, season) if home_id else None
-        as_ = get_last_n(away_id, league_id, season) if away_id else None
-        if hs is None or as_ is None:
-            no_stats += 1
-            continue
-
-        # Filtro 2+3: scored >= MIN_SCORED e total >= THRESHOLD per ENTRAMBE
-        if not (hs["qualifies"] and as_["qualifies"]):
-            fail_qualify += 1
-            continue
-
-        # Filtro 4: ANTI 0-0 — max(conceded) >= MIN_CO_MAX
-        if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
-            fail_anti00 += 1
-            continue
-
-        # Filtro 5: mercato Betfair presente (già verificato dal matching)
-
         match_status = fixture_obj.get("status", {}).get("short", "NS")
         goals = fix.get("goals", {})
+        home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
+        away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
 
         matched.append({
-            "home": home_name,
-            "away": away_name,
+            "home": home_name, "away": away_name,
             "league": league.get("name", "?"),
             "country": league.get("country", "?"),
-            "kickoff": ko_str,
-            "date": date_str,
-            "fixture_id": fixture_id,
+            "kickoff": ko_str, "date": date_str,
+            "fixture_id": fix_id,
             "status": match_status,
             "goals_home": goals.get("home"),
             "goals_away": goals.get("away"),
-            "home_stats": hs,
-            "away_stats": as_,
+            "home_stats": hs, "away_stats": as_,
             "bf_market_id": bm.get("market_id"),
             "bf_event_name": bm.get("event_name"),
             "bf_runner_id": bm.get("runner_id"),
@@ -586,13 +636,12 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
             "bf_back_size": bm.get("best_back_size"),
         })
 
-    # Diagnostica cross-reference: dove abbiamo perso le fixtures?
-    print(f"  [Betfair] cross-ref: {len(fixtures_list)} fixtures | "
-          f"matched={len(matched)} | skip_youth={skip_youth} "
-          f"no_bf_match={no_bf_match} no_stats={no_stats} "
-          f"fail_goal={fail_qualify} fail_anti00={fail_anti00}")
+    print(f"  [Betfair] cross-ref INVERTED: {validi} BF markets | "
+          f"matched={len(matched)} | no_fix_match={no_fix_match} "
+          f"no_stats={no_stats} fail_goal={fail_qualify} fail_anti00={fail_anti00} "
+          f"| skip_youth_fix={fix_skipped_youth}")
 
-    # Breakdown per giorno (per capire se DOMANI ha copertura sensata)
+    # Breakdown per giorno delle partite matched
     by_day_matched = {}
     for m in matched:
         d = m.get("date", "?")
@@ -600,6 +649,14 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
     if by_day_matched:
         dist = ", ".join(f"{k}:{v}" for k, v in sorted(by_day_matched.items()))
         print(f"  [Betfair] matched per giorno: {dist}")
+
+    # DIAG: BF markets che non hanno trovato fixture API (possibile gap
+    # API-Football o matcher). Questi sono i VERI mercati "persi".
+    if bf_unmatched_events:
+        print(f"  [Betfair] DIAG BF markets senza fixture API ({len(bf_unmatched_events)} totali, prime 20):")
+        for bm in sorted(bf_unmatched_events, key=lambda x: x.get("start_time", ""))[:20]:
+            print(f"    [{bm.get('start_time', '?')}] {bm.get('event_name', '?')}")
+
     return matched
 
 
