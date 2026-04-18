@@ -366,42 +366,83 @@ def _filter_exchange_markets(markets):
     return out, dict(counters)
 
 
+import unicodedata as _ud
+from difflib import SequenceMatcher as _SM
+
+
 def _normalize_team(name):
-    """Normalizza nome squadra per matching fuzzy."""
-    n = name.lower().strip()
-    n = _re.sub(r'\b(fc|sc|ac|cf|afc|bfc|utd|united|city|sporting|club|real|deportivo)\b', '', n)
-    n = _re.sub(r'[^a-z0-9\s]', '', n)
-    return ' '.join(n.split())
+    """Normalizza per matching fuzzy: lower, strip accenti (NFKD),
+    sostituisce tutto cio' che non e' alfanumerico con spazio, compatta.
+    NOTA: non rimuove piu' parole 'comuni' (fc/city/united/real/...)
+    perche' spesso sono proprio le parole DISTINTIVE (Manchester City
+    vs Manchester United, Real Madrid vs Atletico Madrid)."""
+    if not name:
+        return ""
+    n = _ud.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    n = n.lower()
+    n = _re.sub(r"[^a-z0-9]+", " ", n)
+    return " ".join(n.split())
+
+
+def _acronym(tokens):
+    """Prime lettere concatenate ('paris saint germain' -> 'psg')."""
+    return "".join(t[0] for t in tokens if t)
+
+
+def _team_side_match(ev_side, team_name_norm):
+    """True se un lato dell'event_name Betfair (gia' normalizzato)
+    corrisponde al nome squadra API-Football (gia' normalizzato).
+    Strategie progressive: uguaglianza, substring bidir, token overlap,
+    prefix match (gestisce 'man utd' vs 'manchester united'), acronym
+    (gestisce 'psg' vs 'paris saint germain'), similarity ratio."""
+    if not ev_side or not team_name_norm:
+        return False
+    # 1. Uguaglianza esatta (caso piu' comune dopo normalize)
+    if ev_side == team_name_norm:
+        return True
+    # 2. Substring bidirezionale (copre 'bayern' vs 'bayern munich',
+    #    'ettifaq' vs 'al ettifaq', ecc.)
+    if ev_side in team_name_norm or team_name_norm in ev_side:
+        return True
+    ev_toks = [t for t in ev_side.split() if len(t) >= 3]
+    tm_toks = [t for t in team_name_norm.split() if len(t) >= 3]
+    if not ev_toks or not tm_toks:
+        return False
+    # 3. Token overlap su tokens significativi (>=4 char per evitare
+    #    false positive su 'fc'/'ac'/'sc')
+    ev_big = {t for t in ev_toks if len(t) >= 4}
+    tm_big = {t for t in tm_toks if len(t) >= 4}
+    if ev_big & tm_big:
+        return True
+    # 4. Prefix match primo token: 'man utd' vs 'manchester united'
+    #    ('man' e' prefisso di 'manchester'). Min 3 char sul prefisso.
+    ef, tf = ev_toks[0], tm_toks[0]
+    if (len(ef) >= 3 and tf.startswith(ef)) or (len(tf) >= 3 and ef.startswith(tf)):
+        return True
+    # 5. Acronym: ev e' acronimo del nome o viceversa
+    #    ('psg' vs 'paris saint germain')
+    if len(ev_toks) == 1 and len(tm_toks) >= 2 and ev_toks[0] == _acronym(tm_toks):
+        return True
+    if len(tm_toks) == 1 and len(ev_toks) >= 2 and tm_toks[0] == _acronym(ev_toks):
+        return True
+    # 6. Similarity ratio (catch traslitterazioni: 'munchen' vs 'munich',
+    #    'moenchengladbach' vs 'm gladbach'). Soglia 0.72 empirica.
+    if _SM(None, ev_side, team_name_norm).ratio() >= 0.72:
+        return True
+    return False
 
 
 def _match_betfair_event(event_name, home_name, away_name):
-    """
-    Verifica se un evento Betfair corrisponde alla partita API-Football.
-    Betfair usa "Home v Away" come event_name.
-    Score: 0-4, >=2 = match.
-    """
-    ev = event_name.lower()
-    score = 0
-    h_norm = _normalize_team(home_name)
-    a_norm = _normalize_team(away_name)
-    h_words = [w for w in h_norm.split() if len(w) >= 3]
-    a_words = [w for w in a_norm.split() if len(w) >= 3]
-
-    for w in h_words:
-        if w in ev:
-            score += 1
-            break
-    for w in a_words:
-        if w in ev:
-            score += 1
-            break
-    # Match parziale: primi 4 caratteri
-    if score < 2:
-        if home_name[:4].lower() in ev:
-            score = max(score, 1)
-        if away_name[:4].lower() in ev:
-            score = max(score, 1) + (1 if score >= 1 else 0)
-    return score >= 2
+    """Match event_name Betfair (format 'Home v Away') con team names API-Football.
+    True solo se BOTH lato sinistro matcha home AND lato destro matcha away."""
+    ev_norm = _normalize_team(event_name)
+    parts = ev_norm.split(" v ")
+    if len(parts) != 2:
+        return False
+    ev_left  = parts[0].strip()
+    ev_right = parts[1].strip()
+    return (_team_side_match(ev_left,  _normalize_team(home_name)) and
+            _team_side_match(ev_right, _normalize_team(away_name)))
 
 
 def cross_reference_betfair(fixtures_list, betfair_markets):
@@ -429,12 +470,27 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
 
     matched = []
     bf_used = set()
+    # Contatori diagnostici: dove perdono le fixtures?
+    skip_youth   = 0   # league in SKIP_KEYWORDS (evita anche get_last_n waste)
+    no_bf_match  = 0   # nessun mercato Betfair matchato via fuzzy
+    no_stats     = 0   # <LAST_N partite FT per una delle due squadre
+    fail_qualify = 0   # non supera MIN_SCORED / THRESHOLD per entrambe
+    fail_anti00  = 0   # max(conceded) < MIN_CO_MAX
 
     for fix in fixtures_list:
         home_name = fix.get("teams", {}).get("home", {}).get("name", "?")
         away_name = fix.get("teams", {}).get("away", {}).get("name", "?")
         fixture_obj = fix.get("fixture", {})
         fixture_id = fixture_obj.get("id")
+        league = fix.get("league", {})
+
+        # GUARD: skippa lega youth/women/reserve PRIMA del matching per
+        # non sprecare get_last_n (e quindi chiamate API-Football) su
+        # fixtures che il bot non considera comunque.
+        league_name_lc = (league.get("name", "") or "").lower()
+        if any(k in league_name_lc for k in SKIP_KEYWORDS):
+            skip_youth += 1
+            continue
 
         try:
             ko_utc = datetime.fromtimestamp(fixture_obj.get("timestamp", 0), tz=timezone.utc)
@@ -466,57 +522,66 @@ def cross_reference_betfair(fixtures_list, betfair_markets):
                 best_score = s
                 best_bf = (i, bm)
 
-        if best_bf and best_score >= 2:
-            idx, bm = best_bf
-            bf_used.add(idx)
+        if not (best_bf and best_score >= 2):
+            no_bf_match += 1
+            continue
 
-            # ── Stessi 5 filtri della dashboard ──────────────────────────
-            league = fix.get("league", {})
-            league_id = fix.get("_league_id") or league.get("id")
-            season = fix.get("_season") or league.get("season")
-            home_id = fix.get("teams", {}).get("home", {}).get("id")
-            away_id = fix.get("teams", {}).get("away", {}).get("id")
+        idx, bm = best_bf
+        bf_used.add(idx)
 
-            # Filtro 1: almeno LAST_N (5) partite FT per squadra
-            hs  = get_last_n(home_id, league_id, season) if home_id else None
-            as_ = get_last_n(away_id, league_id, season) if away_id else None
-            if hs is None or as_ is None:
-                continue
+        # ── Stessi 5 filtri della dashboard ──────────────────────────
+        league_id = fix.get("_league_id") or league.get("id")
+        season = fix.get("_season") or league.get("season")
+        home_id = fix.get("teams", {}).get("home", {}).get("id")
+        away_id = fix.get("teams", {}).get("away", {}).get("id")
 
-            # Filtro 2+3: scored >= MIN_SCORED e total >= THRESHOLD per ENTRAMBE
-            if not (hs["qualifies"] and as_["qualifies"]):
-                continue
+        # Filtro 1: almeno LAST_N (5) partite FT per squadra
+        hs  = get_last_n(home_id, league_id, season) if home_id else None
+        as_ = get_last_n(away_id, league_id, season) if away_id else None
+        if hs is None or as_ is None:
+            no_stats += 1
+            continue
 
-            # Filtro 4: ANTI 0-0 — max(conceded) >= MIN_CO_MAX
-            if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
-                continue
+        # Filtro 2+3: scored >= MIN_SCORED e total >= THRESHOLD per ENTRAMBE
+        if not (hs["qualifies"] and as_["qualifies"]):
+            fail_qualify += 1
+            continue
 
-            # Filtro 5: mercato Betfair presente (già verificato dal matching)
+        # Filtro 4: ANTI 0-0 — max(conceded) >= MIN_CO_MAX
+        if max(hs["conceded"], as_["conceded"]) < MIN_CO_MAX:
+            fail_anti00 += 1
+            continue
 
-            match_status = fixture_obj.get("status", {}).get("short", "NS")
-            goals = fix.get("goals", {})
+        # Filtro 5: mercato Betfair presente (già verificato dal matching)
 
-            matched.append({
-                "home": home_name,
-                "away": away_name,
-                "league": league.get("name", "?"),
-                "country": league.get("country", "?"),
-                "kickoff": ko_str,
-                "date": date_str,
-                "fixture_id": fixture_id,
-                "status": match_status,
-                "goals_home": goals.get("home"),
-                "goals_away": goals.get("away"),
-                "home_stats": hs,
-                "away_stats": as_,
-                "bf_market_id": bm.get("market_id"),
-                "bf_event_name": bm.get("event_name"),
-                "bf_runner_id": bm.get("runner_id"),
-                "bf_back_price": bm.get("best_back_price"),
-                "bf_back_size": bm.get("best_back_size"),
-            })
+        match_status = fixture_obj.get("status", {}).get("short", "NS")
+        goals = fix.get("goals", {})
 
-    print(f"  [Betfair] Match qualificati: {len(matched)} / {len(fixtures_list)} fixtures")
+        matched.append({
+            "home": home_name,
+            "away": away_name,
+            "league": league.get("name", "?"),
+            "country": league.get("country", "?"),
+            "kickoff": ko_str,
+            "date": date_str,
+            "fixture_id": fixture_id,
+            "status": match_status,
+            "goals_home": goals.get("home"),
+            "goals_away": goals.get("away"),
+            "home_stats": hs,
+            "away_stats": as_,
+            "bf_market_id": bm.get("market_id"),
+            "bf_event_name": bm.get("event_name"),
+            "bf_runner_id": bm.get("runner_id"),
+            "bf_back_price": bm.get("best_back_price"),
+            "bf_back_size": bm.get("best_back_size"),
+        })
+
+    # Diagnostica cross-reference: dove abbiamo perso le fixtures?
+    print(f"  [Betfair] cross-ref: {len(fixtures_list)} fixtures | "
+          f"matched={len(matched)} | skip_youth={skip_youth} "
+          f"no_bf_match={no_bf_match} no_stats={no_stats} "
+          f"fail_goal={fail_qualify} fail_anti00={fail_anti00}")
     return matched
 
 
