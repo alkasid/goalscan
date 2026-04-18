@@ -37,7 +37,7 @@ TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
 TELEGRAM_CHAT  = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
 TELEGRAM_ENABLED = False  # disattivato temporaneamente
 
-SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23"]
+SKIP_KEYWORDS = ["u17","u18","u19","u20","u21","u23","youth","reserve","women"," w ","u-17","u-20","u-21","u-23","primavera"]
 
 # ── Cache in memoria ─────────────────────────────────────────────────────────
 _cache = {}
@@ -3433,23 +3433,33 @@ def main():
     if bf_markets:
         bf_matched = cross_reference_betfair(raw_fixtures, bf_markets)
 
-        # DIAGNOSTICA: fixtures Bet365-qualificate (sul dashboard principale)
-        # che NON hanno trovato match Betfair. Se in questa lista vediamo
-        # match mainstream (Premier / Liga / Serie A / Bundesliga) e' bug
-        # del matcher. Se e' solo roba minore, e' copertura Exchange genuina.
+        # DIAGNOSTICA: fixtures Bet365-qualificate che NON hanno trovato match Betfair.
+        # Separa partite GIA' GIOCATE (status FT/AET/PEN — BF Exchange chiude il
+        # mercato post-match, quindi quelle mancanze sono fisiologiche) dalle
+        # partite FUTURE (gli unici "missed" che meritano indagine).
         try:
             qual_ids = {q["fixture_id"] for q in qualified if q.get("fixture_id")}
             bf_ids   = {m["fixture_id"] for m in bf_matched if m.get("fixture_id")}
             missing  = qual_ids - bf_ids
             if missing:
                 miss_list = [q for q in qualified if q.get("fixture_id") in missing]
-                miss_list.sort(key=lambda q: (q.get("date", ""), q.get("kickoff", "")))
-                print(f"  [Betfair] DIAG: {len(missing)} fixtures Bet365-qualificate "
-                      f"SENZA BF match (prime 25):")
-                for q in miss_list[:25]:
-                    print(f"    [{q.get('date', '?')} {q.get('kickoff', '?')}] "
-                          f"{q.get('home', '?')} vs {q.get('away', '?')}  "
-                          f"({q.get('league', '?')} · {q.get('country', '?')})")
+                FT_STATUS = {"FT", "AET", "PEN"}
+                played = [q for q in miss_list if q.get("status") in FT_STATUS]
+                future = [q for q in miss_list if q.get("status") not in FT_STATUS]
+                print(f"  [Betfair] DIAG missed: {len(missing)} totali | "
+                      f"gia' giocati (FT/AET/PEN)={len(played)} (normale) | "
+                      f"future bettabili={len(future)} (<- qui guardiamo)")
+                if future:
+                    by_date = {}
+                    for q in sorted(future, key=lambda x: (x.get("date", ""), x.get("kickoff", ""))):
+                        by_date.setdefault(q.get("date", "?"), []).append(q)
+                    for d in sorted(by_date):
+                        items = by_date[d]
+                        print(f"    [{d}] missed bettabili: {len(items)} -> prime 15:")
+                        for q in items[:15]:
+                            print(f"      {q.get('kickoff', '?')} "
+                                  f"{q.get('home', '?')} vs {q.get('away', '?')} "
+                                  f"({q.get('league', '?')} · {q.get('country', '?')})")
         except Exception as _e:
             print(f"  [Betfair] DIAG errore: {_e}")
 
