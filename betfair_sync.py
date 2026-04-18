@@ -67,8 +67,12 @@ WINDOW_PAST_HOURS  = 2
 WINDOW_FUTURE_DAYS = 7
 
 # Limiti Betfair API
-MAX_RESULTS_PER_CATALOGUE = 200   # listMarketCatalogue cap
+# 1000 e' il cap hard di listMarketCatalogue (oltre ignora). Ordine
+# FIRST_TO_START garantisce copertura cronologica uniforme (OGGI + DOMANI
+# + DOPODOMANI) invece che concentrarsi sui soli match a volume alto.
+MAX_RESULTS_PER_CATALOGUE = 1000
 MARKET_BOOK_CHUNK         = 30    # listMarketBook max marketIds per call
+CATALOGUE_SORT            = "FIRST_TO_START"
 
 # Output
 OUTPUT_PATH = Path("docs/betfair_markets.json")
@@ -150,7 +154,7 @@ def list_market_catalogue(token, start_from, start_to):
         },
         "marketProjection": ["EVENT", "MARKET_START_TIME", "RUNNER_DESCRIPTION"],
         "maxResults": MAX_RESULTS_PER_CATALOGUE,
-        "sort": "MAXIMUM_TRADED",  # prima i piu' liquidi
+        "sort": CATALOGUE_SORT,
     }
     return _api(token, "listMarketCatalogue", payload)
 
@@ -261,6 +265,19 @@ def main():
                      if (x.get("best_back_size") or 0) >= 1.0)
     print(f"[BetfairSync] scritto {OUTPUT_PATH} | "
           f"totali={len(markets)} con_price={with_price} con_liquidita>=1EUR={with_liq}")
+
+    # Distribuzione per giorno (utile per diagnosticare copertura OGGI/DOMANI/...)
+    by_day = {}
+    for x in markets:
+        st = x.get("start_time") or ""
+        try:
+            d = datetime.fromisoformat(st.replace("Z", "+00:00")).date().isoformat()
+        except Exception:
+            d = "?"
+        by_day[d] = by_day.get(d, 0) + 1
+    if by_day:
+        dist = ", ".join(f"{k}:{v}" for k, v in sorted(by_day.items()))
+        print(f"[BetfairSync] distribuzione per giorno: {dist}")
 
 
 if __name__ == "__main__":
