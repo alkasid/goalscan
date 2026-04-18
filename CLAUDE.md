@@ -56,24 +56,58 @@ Qui si lavora sulla **logica Python del bot**:
 
 ## Sync Betfair — come arriva `docs/betfair_markets.json`
 
-**Stato attuale (2026-04-18)**: producer implementato nel repo come `betfair_sync.py` + workflow `.github/workflows/betfair_sync.yml` (opzione B). Gira ogni 15 minuti, login Interactive su `identitysso.betfair.<tld>`, chiama `listMarketCatalogue` + `listMarketBook`, scrive `docs/betfair_markets.json` e committa. Stesso concurrency group `goalscan-push` di bot/updater → il rebase protegge da conflitti.
+**Stato attuale (2026-04-18)**: producer eseguito sul **Raspberry Pi** (stessa macchina di goalscanbot) via cron. Script `betfair_sync.py` nel repo, lanciato da `scripts/run_betfair_sync.sh` che carica i secret da `.env` locale (fuori dal git) e pusha `docs/betfair_markets.json` al repo. Scelta motivata dalla volontà di **non esporre credenziali Betfair su GitHub**: le stesse creds che il bot di goalscanbot usa per scommettere vengono riusate per il sync.
 
-**Secrets richiesti** (Repository Settings -> Secrets and variables -> Actions):
+⚠️ Il workflow `.github/workflows/betfair_sync.yml` è stato **rimosso** (opzione B abbandonata in favore del cron su Pi). Se serve tornare indietro: `git log --all -- .github/workflows/betfair_sync.yml` mostra il commit che lo introduceva (feat: e81a207 o simile).
 
-| Secret | Obbligatorio | Uso |
+### Setup sul Raspberry Pi
+
+1. Clone del repo in una cartella dedicata (es. `/home/pi/goalscan`):
+   ```bash
+   git clone https://github.com/alkasid/goalscan.git /home/pi/goalscan
+   cd /home/pi/goalscan
+   pip install -r requirements.txt
+   ```
+2. Copia `.env.example` in `.env` e compila le 3 variabili:
+   ```bash
+   cp .env.example .env
+   $EDITOR .env   # BETFAIR_APP_KEY, BETFAIR_USERNAME, BETFAIR_PASSWORD
+   chmod 600 .env  # leggibile solo dall'utente
+   ```
+3. Configura git per push (SSH key o PAT HTTPS salvata nella keychain).
+4. Rendi eseguibile il wrapper e aggiungilo a cron:
+   ```bash
+   chmod +x scripts/run_betfair_sync.sh
+   crontab -e
+   ```
+   Aggiungi:
+   ```cron
+   */15 * * * * /home/pi/goalscan/scripts/run_betfair_sync.sh >> /var/log/betfair_sync.log 2>&1
+   ```
+
+### File coinvolti
+
+| File | Stato | Contenuto |
 |---|---|---|
-| `BETFAIR_APP_KEY` | SI | Application Key (developer.betfair.com) |
-| `BETFAIR_USERNAME` | SI | username Betfair conto bot |
-| `BETFAIR_PASSWORD` | SI | password Betfair (se 2FA: vedi nota) |
-| `BETFAIR_ENDPOINT` | NO | dominio login, default "com"; usa "it" per betfair.it |
+| `betfair_sync.py` | nel repo | fetcher Betfair (legge env, scrive docs/betfair_markets.json) |
+| `scripts/run_betfair_sync.sh` | nel repo | wrapper cron: `.env` + pull rebase + python + commit + push retry |
+| `.env.example` | nel repo | template dei 3 secret, commentato |
+| `.env` | **NON nel repo** (gitignored) | valori reali dei secret, solo sul Pi |
 
-**2FA**: Interactive Login non supporta TOTP lato server. Se il conto ha 2FA attivo: o si disattiva sul sub-account bot, oppure si refactora `login()` in `betfair_sync.py` per usare il Non-Interactive Login (`identitysso-cert.betfair.<tld>`) con cert SSL client caricato come secret base64.
+### 2FA
 
-**Scope mercati**: `OVER_UNDER_05` calcio (eventTypeId `1`), runner_id `5851482` (storicamente "Under 0.5 Goals", coerente con il dato pre-esistente). Finestra kickoff -2h → +7gg. Ordinati per `MAXIMUM_TRADED` (prima i piu' liquidi). Cap 200 mercati per run.
+Interactive Login di Betfair non supporta TOTP lato server. Se il conto ha 2FA attivo:
+- disattivarlo sul sub-account dedicato al bot (consigliato), oppure
+- refactor `login()` in `betfair_sync.py` per Non-Interactive Login (`identitysso-cert.betfair.<tld>`) con cert SSL client in `.env` (path al `.crt` + `.key` caricati localmente).
+
+### Scope mercati
+
+`OVER_UNDER_05` calcio (eventTypeId `1`), runner_id `5851482` ("Under 0.5 Goals", coerente con il dato pre-esistente). Finestra kickoff -2h → +7gg. Ordinati per `MAXIMUM_TRADED` (prima i piu' liquidi). Cap 200 mercati per run.
 
 Cambiare `MARKET_TYPE` o `SELECTION_RUNNER_ID` in `betfair_sync.py` cambia cosa finisce su `betfair.html`. Se cambi il runner, aggiorna anche il titolo/testo di `generate_betfair_html` in `main.py` per coerenza.
 
-**Schema file** (contract, NON cambiare senza coordinarsi con main.py + goalscanbot):
+### Schema file (contract)
+
 ```json
 {
   "generated_at": "<ISO8601 UTC>",
@@ -91,13 +125,25 @@ Cambiare `MARKET_TYPE` o `SELECTION_RUNNER_ID` in `betfair_sync.py` cambia cosa 
 }
 ```
 
-**Log diagnostica** nel workflow `Betfair Sync`:
+NON cambiare lo schema senza coordinarsi con main.py + goalscanbot.
+
+### Log diagnostica
+
+Nel log del cron (`/var/log/betfair_sync.log` o dove l'hai rediretto):
 ```
+=== [run_betfair_sync] start <timestamp> ===
+[BetfairSync] endpoint=com market=OVER_UNDER_05 runner=5851482 window=...
+[BetfairSync] login OK
 [BetfairSync] listMarketCatalogue -> X mercati
 [BetfairSync] listMarketBook   -> X book
 [BetfairSync] scritto docs/betfair_markets.json | totali=X con_price=Y con_liquidita>=1EUR=Z
+[run_betfair_sync] push OK (attempt 1)
 ```
 Se `con_liquidita` crolla per piu' run consecutivi → o e' un orario morto (notte italiana), o Betfair sta rifiutando il login. Controllare lo `status` del login nei log.
+
+### Monitoring suggerito (TODO)
+
+Per accorgersi se il cron muore: healthchecks.io (gratis). Nel cron aggiungere `&& curl -fsS --retry 3 https://hc-ping.com/<uuid>` dopo lo script. Se ping manca per >30 min healthchecks invia alert email/telegram.
 
 ### Filtro Exchange-only (implementato in main.py)
 
