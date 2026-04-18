@@ -389,46 +389,81 @@ def _acronym(tokens):
     return "".join(t[0] for t in tokens if t)
 
 
+def _acronym_variants(tokens):
+    """Restituisce piu' candidati di acronimo: solo iniziali + variante che
+    mantiene token corti interi.
+      ['paris','saint','germain'] -> {'psg'}
+      ['odense','bk']             -> {'ob', 'obk'}
+      ['aarhus','gf']             -> {'ag', 'agf'}"""
+    if not tokens:
+        return set()
+    out = set()
+    out.add("".join(t[0] for t in tokens if t))
+    parts = []
+    for t in tokens:
+        if not t:
+            continue
+        parts.append(t if len(t) <= 3 else t[0])
+    out.add("".join(parts))
+    return out
+
+
 def _team_side_match(ev_side, team_name_norm):
     """True se un lato dell'event_name Betfair (gia' normalizzato)
     corrisponde al nome squadra API-Football (gia' normalizzato).
-    Strategie progressive: uguaglianza, substring bidir, token overlap,
-    prefix match (gestisce 'man utd' vs 'manchester united'), acronym
-    (gestisce 'psg' vs 'paris saint germain'), similarity ratio."""
+    Strategie progressive."""
     if not ev_side or not team_name_norm:
         return False
-    # 1. Uguaglianza esatta (caso piu' comune dopo normalize)
+    # 1. Uguaglianza esatta
     if ev_side == team_name_norm:
         return True
-    # 2. Substring bidirezionale (copre 'bayern' vs 'bayern munich',
+    # 2. Substring bidirezionale ('palmeiras' vs 'se palmeiras',
     #    'ettifaq' vs 'al ettifaq', ecc.)
     if ev_side in team_name_norm or team_name_norm in ev_side:
         return True
-    ev_toks = [t for t in ev_side.split() if len(t) >= 3]
-    tm_toks = [t for t in team_name_norm.split() if len(t) >= 3]
+
+    # Prepare token lists (tutti i token non vuoti, >= 2 char per acronym)
+    ev_all = [t for t in ev_side.split() if t]
+    tm_all = [t for t in team_name_norm.split() if t]
+
+    # 3. Acronym relaxed: singolo token breve (>=2 char) vs multi-token.
+    #    Prova piu' varianti (iniziali + token corti mantenuti interi):
+    #    'ob' vs 'odense bk', 'psg' vs 'paris saint germain', 'agf' vs 'aarhus gf'.
+    if len(ev_all) == 1 and len(tm_all) >= 2 and ev_all[0] in _acronym_variants(tm_all):
+        return True
+    if len(tm_all) == 1 and len(ev_all) >= 2 and tm_all[0] in _acronym_variants(ev_all):
+        return True
+
+    # Da qui in poi usa token >= 3 (evita rumore su 'fc', 'sc', 'ac' da soli)
+    ev_toks = [t for t in ev_all if len(t) >= 3]
+    tm_toks = [t for t in tm_all if len(t) >= 3]
     if not ev_toks or not tm_toks:
         return False
-    # 3. Token overlap su tokens significativi (>=4 char per evitare
-    #    false positive su 'fc'/'ac'/'sc')
+
+    # 4. Token overlap su tokens significativi (>=4 char)
     ev_big = {t for t in ev_toks if len(t) >= 4}
     tm_big = {t for t in tm_toks if len(t) >= 4}
     if ev_big & tm_big:
         return True
-    # 4. Prefix match primo token: 'man utd' vs 'manchester united'
-    #    ('man' e' prefisso di 'manchester'). Min 3 char sul prefisso.
+
+    # 5. Prefix match primo token: 'man utd' vs 'manchester united'
     ef, tf = ev_toks[0], tm_toks[0]
     if (len(ef) >= 3 and tf.startswith(ef)) or (len(tf) >= 3 and ef.startswith(tf)):
         return True
-    # 5. Acronym: ev e' acronimo del nome o viceversa
-    #    ('psg' vs 'paris saint germain')
-    if len(ev_toks) == 1 and len(tm_toks) >= 2 and ev_toks[0] == _acronym(tm_toks):
+
+    # 6. Longest Common Substring (LCS) >= 5 char e >= 50% del lato piu' corto:
+    #    cattura 'mgladbach' vs 'borussia monchengladbach' (condividono 'gladbach')
+    #    e simili fusioni/contrazioni che le altre strategie non colgono.
+    lcs = _SM(None, ev_side, team_name_norm).find_longest_match(
+        0, len(ev_side), 0, len(team_name_norm))
+    shorter = min(len(ev_side), len(team_name_norm))
+    if lcs.size >= 5 and shorter > 0 and (lcs.size / shorter) >= 0.5:
         return True
-    if len(tm_toks) == 1 and len(ev_toks) >= 2 and tm_toks[0] == _acronym(ev_toks):
-        return True
-    # 6. Similarity ratio (catch traslitterazioni: 'munchen' vs 'munich',
-    #    'moenchengladbach' vs 'm gladbach'). Soglia 0.72 empirica.
+
+    # 7. Similarity ratio (traslitterazioni tipo 'munchen' vs 'munich')
     if _SM(None, ev_side, team_name_norm).ratio() >= 0.72:
         return True
+
     return False
 
 
