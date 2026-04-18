@@ -232,8 +232,25 @@ def has_bet365_odds(fixture_id):
 # ── Betfair Exchange: carica mercati da betfair_markets.json ─────────────────
 import re as _re
 
+# Soglie filtro Exchange (strict) — regolabili senza toccare la logica
+_BF_MIN_BACK_PRICE   = 1.01     # quota minima valida (1.01 = limite teorico Betfair)
+_BF_MAX_BACK_PRICE   = 1000.0   # oltre = runner morto / mercato inattivo
+_BF_MIN_BACK_SIZE    = 1.0      # liquidita' minima in EUR sul miglior back
+_BF_MAX_PAST_HOURS   = 3        # tollera match iniziato da max 3h (LIVE)
+_BF_MAX_FUTURE_DAYS  = 7        # scarta mercati >7gg nel futuro (chiaramente stale)
+_BF_STALE_FILE_HOURS = 6        # warn se betfair_markets.json piu' vecchio di 6h
+
+# Regex: Exchange market id format "1.XXXXXXXXX"
+_BF_EXCHANGE_ID_RE = _re.compile(r"^1\.\d+$")
+
+
 def _load_betfair_markets():
-    """Legge docs/betfair_markets.json (pushato dal bot locale via betfair_sync.py)."""
+    """Legge docs/betfair_markets.json. Produttore: vedi CLAUDE.md §'Sync Betfair'.
+
+    Restituisce la lista dei mercati raw (non filtrati). Il filtro Exchange
+    vero e proprio e' applicato da _filter_exchange_markets() dentro
+    cross_reference_betfair().
+    """
     bf_file = Path("docs/betfair_markets.json")
     if not bf_file.exists():
         print("  [Betfair] betfair_markets.json non trovato — pagine Betfair vuote")
@@ -242,11 +259,111 @@ def _load_betfair_markets():
         data = json.loads(bf_file.read_text(encoding="utf-8"))
         markets = data.get("markets", [])
         gen = data.get("generated_at", "?")
-        print(f"  [Betfair] Caricati {len(markets)} mercati (generato: {gen})")
+        print(f"  [Betfair] Caricati {len(markets)} mercati raw (generato: {gen})")
+
+        # Warn se il file e' palesemente stantio (produttore offline)
+        try:
+            gen_dt = datetime.fromisoformat(str(gen).replace("Z", "+00:00"))
+            if gen_dt.tzinfo is None:
+                gen_dt = gen_dt.replace(tzinfo=timezone.utc)
+            age_h = (datetime.now(timezone.utc) - gen_dt).total_seconds() / 3600.0
+            if age_h > _BF_STALE_FILE_HOURS:
+                print(f"  [Betfair] ⚠️  ATTENZIONE: betfair_markets.json e' stantio "
+                      f"({age_h:.1f}h > {_BF_STALE_FILE_HOURS}h). Il produttore "
+                      f"(betfair_sync) non sta pushando — mercati probabilmente "
+                      f"chiusi/scaduti. Il filtro Exchange scartera' la maggior parte.")
+        except Exception:
+            print(f"  [Betfair] ⚠️  generated_at non parsabile ({gen}) — "
+                  f"impossibile valutare freschezza")
+
         return markets
     except Exception as e:
         print(f"  [Betfair] Errore lettura JSON: {e}")
         return []
+
+
+def _is_exchange_market(bm, now_utc):
+    """Criteri STRICT per accettare un mercato come Betfair Exchange valido.
+
+    Ritorna (True, None) se passa tutti i check, altrimenti (False, <motivo>).
+
+    Criteri (tutti obbligatori):
+      1. market_id formato Exchange '1.XXXXXXXXX' (Sportsbook usa altro schema)
+      2. event_name non vuoto e contiene ' v ' (convenzione Exchange; Sportsbook
+         in altri contesti puo' usare 'vs')
+      3. runner_id intero > 0 (selection valida sul mercato)
+      4. best_back_price presente, compreso in [_BF_MIN_BACK_PRICE, _BF_MAX_BACK_PRICE]
+         (se None o fuori range: runner morto / mercato suspended / no-price)
+      5. best_back_size presente e >= _BF_MIN_BACK_SIZE (liquidita' minima reale)
+      6. start_time parsabile, non troppo nel passato (max _BF_MAX_PAST_HOURS h,
+         per ammettere i live in corso) ne' troppo nel futuro (_BF_MAX_FUTURE_DAYS gg)
+    """
+    mid = bm.get("market_id") or ""
+    if not _BF_EXCHANGE_ID_RE.match(str(mid)):
+        return False, "bad_market_id"
+
+    ev = (bm.get("event_name") or "").strip()
+    if not ev or " v " not in ev.lower():
+        return False, "bad_event_name"
+
+    runner = bm.get("runner_id")
+    try:
+        if runner is None or int(runner) <= 0:
+            return False, "bad_runner"
+    except (TypeError, ValueError):
+        return False, "bad_runner"
+
+    price = bm.get("best_back_price")
+    if price is None:
+        return False, "no_back_price"
+    try:
+        p = float(price)
+    except (TypeError, ValueError):
+        return False, "no_back_price"
+    if not (_BF_MIN_BACK_PRICE <= p <= _BF_MAX_BACK_PRICE):
+        return False, "price_out_of_range"
+
+    size = bm.get("best_back_size")
+    if size is None:
+        return False, "no_liquidity"
+    try:
+        sz = float(size)
+    except (TypeError, ValueError):
+        return False, "no_liquidity"
+    if sz < _BF_MIN_BACK_SIZE:
+        return False, "no_liquidity"
+
+    st = bm.get("start_time")
+    if not st:
+        return False, "bad_start_time"
+    try:
+        st_dt = datetime.fromisoformat(str(st).replace("Z", "+00:00"))
+        if st_dt.tzinfo is None:
+            st_dt = st_dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return False, "bad_start_time"
+    delta_h = (st_dt - now_utc).total_seconds() / 3600.0
+    if delta_h < -_BF_MAX_PAST_HOURS:
+        return False, "stale_start"
+    if delta_h > _BF_MAX_FUTURE_DAYS * 24:
+        return False, "future_too_far"
+
+    return True, None
+
+
+def _filter_exchange_markets(markets):
+    """Filtra la lista di mercati raw mantenendo solo quelli Exchange validi.
+    Restituisce (filtered_list, counters_dict)."""
+    now_utc = datetime.now(timezone.utc)
+    counters = defaultdict(int)
+    out = []
+    for bm in markets:
+        ok, reason = _is_exchange_market(bm, now_utc)
+        if ok:
+            out.append(bm)
+        else:
+            counters[reason] += 1
+    return out, dict(counters)
 
 
 def _normalize_team(name):
@@ -289,9 +406,24 @@ def _match_betfair_event(event_name, home_name, away_name):
 
 def cross_reference_betfair(fixtures_list, betfair_markets):
     """
-    Incrocia fixtures API-Football con mercati Betfair.
+    Incrocia fixtures API-Football con mercati Betfair Exchange.
+    Applica prima un filtro STRICT Exchange-only (_is_exchange_market):
+    scarta Sportsbook, mercati suspended, runner morti, start_time stantii.
     Restituisce lista di match dict arricchiti con dati Betfair.
     """
+    if not betfair_markets:
+        return []
+
+    total_raw = len(betfair_markets)
+    betfair_markets, scartati = _filter_exchange_markets(betfair_markets)
+    validi = len(betfair_markets)
+
+    # Log contatori: una riga che riassume il filtraggio Exchange
+    motivi = " ".join(f"{k}={v}" for k, v in sorted(scartati.items())) or "-"
+    scartati_tot = total_raw - validi
+    print(f"  [Betfair] markets totali: {total_raw} | exchange validi: {validi} "
+          f"| scartati: {scartati_tot} ({motivi})")
+
     if not betfair_markets:
         return []
 
