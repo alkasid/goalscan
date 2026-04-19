@@ -489,7 +489,7 @@ def _match_betfair_event(event_name, home_name, away_name):
     return False
 
 
-def cross_reference_betfair(qualified_fixtures, betfair_markets):
+def cross_reference_betfair(qualified_fixtures, betfair_markets, extras=None):
     """
     ARCHITETTURA v3 (2026-04-19, semplificata come da feedback utente):
       Parte dalle fixtures GIA' QUALIFICATE dalla dashboard principale
@@ -662,19 +662,25 @@ def cross_reference_betfair(qualified_fixtures, betfair_markets):
     # DIAG inverso: BF markets non usati (potenzialmente partite che non
     # passano il filtro goal, o che il matcher fallisce di collegare)
     unused_bf = [bp for bp in bf_prepared if bp["market_id"] not in used_bf_ids]
-    if unused_bf:
-        # Filter to markets in our 3-day window (start_utc in next ~72h)
-        now_utc = datetime.now(timezone.utc)
-        relevant_unused = []
-        for bp in unused_bf:
-            if bp["start_utc"] and (bp["start_utc"] - now_utc).total_seconds() < 3 * 86400:
-                relevant_unused.append(bp)
-        if relevant_unused:
-            print(f"  [Betfair] DIAG BF markets non utilizzati nei prossimi 3gg: "
-                  f"{len(relevant_unused)} (probabile fail_goal o league non qualificante; prime 15):")
-            for bp in sorted(relevant_unused, key=lambda x: x["start_utc"] or datetime.max.replace(tzinfo=timezone.utc))[:15]:
-                st = bp["start_utc"].strftime("%Y-%m-%d %H:%M UTC") if bp["start_utc"] else "?"
-                print(f"    [{st}] {bp['bm'].get('event_name', '?')}")
+    # Filter to markets in our 3-day window (next ~72h)
+    now_utc = datetime.now(timezone.utc)
+    relevant_unused = []
+    for bp in unused_bf:
+        if bp["start_utc"] and 0 <= (bp["start_utc"] - now_utc).total_seconds() < 3 * 86400:
+            relevant_unused.append(bp)
+    if relevant_unused:
+        print(f"  [Betfair] DIAG BF markets non utilizzati nei prossimi 3gg: "
+              f"{len(relevant_unused)} (probabile fail_goal o league non qualificante; prime 15):")
+        for bp in sorted(relevant_unused, key=lambda x: x["start_utc"] or datetime.max.replace(tzinfo=timezone.utc))[:15]:
+            st = bp["start_utc"].strftime("%Y-%m-%d %H:%M UTC") if bp["start_utc"] else "?"
+            print(f"    [{st}] {bp['bm'].get('event_name', '?')}")
+
+    # Se chiamante ha fornito extras dict, popolalo con dati utili per HTML
+    if extras is not None:
+        extras["unused_bf"] = relevant_unused   # lista di dict {bm, ev_left, ev_right, start_utc, market_id}
+        extras["missed_qualified_future"] = [
+            q for q in missed_diag if q.get("status") not in FT_STATUS
+        ]
 
     return matched
 
@@ -2617,7 +2623,7 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
 
 # ── BETFAIR EXCHANGE — Dashboard (stessi colori/stile della dashboard principale) ──
 
-def generate_betfair_html(bf_matches, run_date, total_bf_markets):
+def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
     from datetime import datetime, timezone, timedelta
     today     = datetime.now(timezone.utc)
     today_str = today.strftime("%Y-%m-%d")
@@ -2836,6 +2842,103 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets):
             sections.append(day_html)
 
         body = "\n".join(sections)
+
+    # ── Seconda sezione: "Altri mercati BF Exchange" (senza filtro goal) ──
+    # Mostra mercati BF trovati nei prossimi 3 giorni che NON passano il
+    # filtro dashboard. Solo visibilita' — goalscanbot NON legge queste
+    # card (classe CSS diversa da .card).
+    extra_html = ""
+    if extras and extras.get("unused_bf"):
+        unused = extras["unused_bf"]
+        # Raggruppa per data CEST
+        extra_days = {}
+        for bp in unused:
+            if not bp.get("start_utc"):
+                continue
+            ko_cest = bp["start_utc"] + timedelta(hours=2)
+            d = ko_cest.strftime("%Y-%m-%d")
+            t = ko_cest.strftime("%H:%M")
+            extra_days.setdefault(d, []).append({
+                "time": t,
+                "event": bp["bm"].get("event_name", "?"),
+                "price": bp["bm"].get("best_back_price"),
+                "size": bp["bm"].get("best_back_size"),
+                "market_id": bp.get("market_id"),
+            })
+
+        def make_extra_card(item):
+            parts = (item.get("event") or "").split(" v ")
+            home = parts[0].strip() if len(parts) >= 1 else item.get("event", "?")
+            away = parts[1].strip() if len(parts) == 2 else "?"
+            price = item.get("price")
+            size  = item.get("size")
+            odds_html = ""
+            if price is not None:
+                try:
+                    liq_str = f' <span class="ex-liq">{float(size):.0f}€</span>' if size else ""
+                    odds_html = (f'<div class="ex-odds">1 <span>{float(price):.2f}</span>'
+                                 f'{liq_str}</div>')
+                except Exception:
+                    pass
+            return (
+                f'<div class="bf-extra-card">'
+                f'<div class="ex-row-top">'
+                f'<span class="ex-time">{item.get("time","--:--")}</span>'
+                f'<span class="ex-tag">BF EXCHANGE</span></div>'
+                f'<div class="ex-teams">'
+                f'<span class="ex-team">{home}</span>'
+                f'<span class="ex-vs">vs</span>'
+                f'<span class="ex-team r">{away}</span></div>'
+                f'{odds_html}'
+                f'</div>'
+            )
+
+        extra_css = (
+            ".extra-section{margin-top:40px;border-top:2px solid rgba(255,140,0,.25);padding-top:24px;}"
+            ".extra-head{display:flex;align-items:center;gap:12px;padding:0 0 16px;}"
+            ".extra-label{font-size:1rem;font-weight:700;color:var(--orange);letter-spacing:.02em;}"
+            ".extra-sub{font-size:.72rem;color:var(--muted);max-width:600px;line-height:1.4;}"
+            ".extra-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;margin-bottom:14px;}"
+            ".bf-extra-card{background:rgba(255,140,0,0.04);border:1px solid rgba(255,140,0,.15);border-radius:8px;"
+            "padding:8px 10px;font-size:.72rem;transition:border-color .15s;}"
+            ".bf-extra-card:hover{border-color:rgba(255,140,0,.35);}"
+            ".ex-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.6rem;}"
+            ".ex-time{color:var(--orange);font-weight:600;}"
+            ".ex-tag{color:var(--muted);letter-spacing:.05em;}"
+            ".ex-teams{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px;}"
+            ".ex-team{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
+            ".ex-team.r{text-align:right;}"
+            ".ex-vs{color:var(--muted);font-size:.65rem;}"
+            ".ex-odds{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);border-top:1px solid rgba(255,140,0,.1);padding-top:5px;margin-top:4px;}"
+            ".ex-odds span{color:var(--orange);font-weight:700;}"
+            ".ex-liq{color:var(--muted);font-weight:500;}"
+            ".extra-day{margin-bottom:18px;}"
+            ".extra-day-hdr{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);padding:6px 0 8px;letter-spacing:.1em;text-transform:uppercase;}"
+        )
+        css += extra_css
+
+        sub = (f"Partite trovate su Betfair Exchange ma NON qualificate dal filtro goal del dashboard principale "
+               f"(THRESHOLD={THRESHOLD}, MIN_SCORED={MIN_SCORED}, MIN_CO_MAX={MIN_CO_MAX}). "
+               f"Solo visibilita': goalscanbot NON scommette su queste.")
+        extra_sections = [
+            '<div class="extra-section">'
+            '<div class="extra-head">'
+            f'<span class="extra-label">ALTRI MERCATI BETFAIR EXCHANGE</span>'
+            f'<span class="section-badge">{len(unused)} mercati</span></div>'
+            f'<div class="extra-sub">{sub}</div>'
+        ]
+        for d in sorted(extra_days):
+            items = sorted(extra_days[d], key=lambda x: x["time"])
+            label = day_labels.get(d, d)
+            cards = "".join(make_extra_card(it) for it in items)
+            extra_sections.append(
+                f'<div class="extra-day">'
+                f'<div class="extra-day-hdr">{label} — {len(items)} match</div>'
+                f'<div class="extra-grid">{cards}</div></div>'
+            )
+        extra_sections.append('</div>')
+        extra_html = "\n".join(extra_sections)
+        body = body + "\n" + extra_html
 
     # Live update JS (stessa logica dashboard, senza remove FT)
     live_js = '''<script>
@@ -3507,13 +3610,11 @@ def main():
     print("\n[6] Generazione pagine Betfair Exchange...")
     bf_markets = _load_betfair_markets()
     if bf_markets:
-        # Nuovo flusso v3: passa direttamente le fixtures GIA' QUALIFICATE
-        # dal dashboard (quelle che sarebbero su index.html con filtro goal
-        # + Bet365 odds). La cross_reference_betfair controlla per ciascuna
-        # se esiste il mercato Betfair Exchange corrispondente.
-        bf_matched = cross_reference_betfair(qualified, bf_markets)
+        bf_extras = {}
+        bf_matched = cross_reference_betfair(qualified, bf_markets, extras=bf_extras)
 
-        bf_html = generate_betfair_html(bf_matched, run_date, len(bf_markets))
+        bf_html = generate_betfair_html(bf_matched, run_date, len(bf_markets),
+                                        extras=bf_extras)
         (docs / "betfair.html").write_text(
             bf_html.encode("utf-8", errors="replace").decode("utf-8"),
             encoding="utf-8"
