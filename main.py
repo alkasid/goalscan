@@ -2940,6 +2940,85 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
         extra_html = "\n".join(extra_sections)
         body = body + "\n" + extra_html
 
+    # ── Terza sezione: qualificate dashboard SENZA mercato BF Exchange ──
+    # Per trasparenza totale: l'utente vede quali partite qualificate non
+    # hanno corrispettivo Exchange (perche' lega non tradabile su BF).
+    if extras and extras.get("missed_qualified_future"):
+        missed = extras["missed_qualified_future"]
+        missed_days = {}
+        for q in missed:
+            d = q.get("date", "?")
+            missed_days.setdefault(d, []).append(q)
+
+        def make_missed_card(q):
+            league = q.get("league", "?")
+            country = q.get("country", "?")
+            league_disp = f"{league} · {country}" if country and country != "World" else league
+            hs = q.get("home_stats") or {}
+            as_ = q.get("away_stats") or {}
+            h_total = hs.get("total", "?")
+            a_total = as_.get("total", "?")
+            return (
+                f'<div class="bf-missed-card">'
+                f'<div class="miss-row-top">'
+                f'<span class="miss-time">{q.get("kickoff","--:--")}</span>'
+                f'<span class="miss-league">{league_disp}</span></div>'
+                f'<div class="miss-teams">'
+                f'<span class="miss-team">{q.get("home","?")}</span>'
+                f'<span class="miss-vs">vs</span>'
+                f'<span class="miss-team r">{q.get("away","?")}</span></div>'
+                f'<div class="miss-stats">totale gol ultimi 5: '
+                f'<span>{h_total}</span> / <span>{a_total}</span> '
+                f'<span class="miss-note">· no 1X2 su BF Exchange</span></div>'
+                f'</div>'
+            )
+
+        missed_css = (
+            ".missed-section{margin-top:40px;border-top:2px solid rgba(255,58,58,.25);padding-top:24px;}"
+            ".missed-head{display:flex;align-items:center;gap:12px;padding:0 0 16px;}"
+            ".missed-label{font-size:1rem;font-weight:700;color:var(--red);letter-spacing:.02em;}"
+            ".missed-sub{font-size:.72rem;color:var(--muted);max-width:680px;line-height:1.4;}"
+            ".missed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px;margin-bottom:14px;}"
+            ".bf-missed-card{background:rgba(255,58,58,0.04);border:1px solid rgba(255,58,58,.15);"
+            "border-radius:8px;padding:9px 11px;font-size:.72rem;}"
+            ".miss-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.6rem;}"
+            ".miss-time{color:var(--red);font-weight:600;}"
+            ".miss-league{color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;}"
+            ".miss-teams{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px;}"
+            ".miss-team{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
+            ".miss-team.r{text-align:right;}"
+            ".miss-vs{color:var(--muted);font-size:.65rem;}"
+            ".miss-stats{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);border-top:1px solid rgba(255,58,58,.1);padding-top:5px;margin-top:4px;}"
+            ".miss-stats span{color:var(--text);font-weight:600;}"
+            ".miss-note{color:var(--muted);font-weight:400;margin-left:6px;}"
+            ".missed-day{margin-bottom:18px;}"
+            ".missed-day-hdr{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);padding:6px 0 8px;letter-spacing:.1em;text-transform:uppercase;}"
+        )
+        css += missed_css
+
+        missed_sections = [
+            '<div class="missed-section">'
+            '<div class="missed-head">'
+            f'<span class="missed-label">QUALIFICATE DASHBOARD SENZA 1X2 SU BF EXCHANGE</span>'
+            f'<span class="section-badge">{len(missed)} mercati</span></div>'
+            f'<div class="missed-sub">Partite che superano il filtro goal della dashboard '
+            f'principale ma per cui Betfair Exchange non pubblica il mercato 1X2. '
+            f'Verifica pure su betfair.it — la maggior parte sono leghe che Exchange '
+            f'non copre (reserve teams, NPL Australia, J2/J3 Giappone, Czech 3.liga, '
+            f'MLS Next Pro, Segunda RFEF Spagna, Primera El-Salvador, ecc.).</div>'
+        ]
+        for d in sorted(missed_days):
+            items = sorted(missed_days[d], key=lambda x: x.get("kickoff", ""))
+            label = day_labels.get(d, d)
+            cards = "".join(make_missed_card(q) for q in items)
+            missed_sections.append(
+                f'<div class="missed-day">'
+                f'<div class="missed-day-hdr">{label} — {len(items)} match</div>'
+                f'<div class="missed-grid">{cards}</div></div>'
+            )
+        missed_sections.append('</div>')
+        body = body + "\n" + "\n".join(missed_sections)
+
     # Live update JS (stessa logica dashboard, senza remove FT)
     live_js = '''<script>
 const PROXY='https://spring-hall-b29e.nwgir.workers.dev';
