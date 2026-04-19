@@ -601,13 +601,11 @@ def cross_reference_betfair(qualified_fixtures, betfair_markets, extras=None):
                 best_score = s
                 best = bp
 
-        if not best:
-            missed_diag.append(q)
-            continue
-
-        used_bf_ids.add(best["market_id"])
-        bm = best["bm"]
-        matched.append({
+        # Base card: include SEMPRE la fixture qualificata.
+        # BF data attached se il matcher ha trovato il mercato,
+        # altrimenti bf_* = None (goalscanbot al kickoff riprova
+        # live via Betfair API; se non c'e' salta).
+        card = {
             "home": home_name,
             "away": away_name,
             "league": q.get("league", "?"),
@@ -620,16 +618,28 @@ def cross_reference_betfair(qualified_fixtures, betfair_markets, extras=None):
             "goals_away": q.get("goals_away"),
             "home_stats": q.get("home_stats"),
             "away_stats": q.get("away_stats"),
-            "bf_market_id": bm.get("market_id"),
-            "bf_event_name": bm.get("event_name"),
-            "bf_runner_id": bm.get("runner_id"),
-            "bf_back_price": bm.get("best_back_price"),
-            "bf_back_size": bm.get("best_back_size"),
-        })
+            "bf_market_id": None,
+            "bf_event_name": None,
+            "bf_runner_id": None,
+            "bf_back_price": None,
+            "bf_back_size": None,
+        }
+        if best:
+            used_bf_ids.add(best["market_id"])
+            bm = best["bm"]
+            card["bf_market_id"]    = bm.get("market_id")
+            card["bf_event_name"]   = bm.get("event_name")
+            card["bf_runner_id"]    = bm.get("runner_id")
+            card["bf_back_price"]   = bm.get("best_back_price")
+            card["bf_back_size"]    = bm.get("best_back_size")
+        else:
+            missed_diag.append(q)
+        matched.append(card)
 
-    print(f"  [Betfair] cross-ref v3: {len(qualified_fixtures)} fixtures qualificate | "
-          f"matched={len(matched)} (con mercato BF) | "
-          f"missed={len(missed_diag)} (senza mercato BF)")
+    with_bf = sum(1 for c in matched if c.get("bf_market_id"))
+    print(f"  [Betfair] cross-ref v3: {len(qualified_fixtures)} fixtures qualificate "
+          f"tutte pubblicate | con 1X2 BF Exchange: {with_bf} | "
+          f"senza 1X2 BF (solo live): {len(matched) - with_bf}")
 
     # Breakdown per giorno delle partite matched
     by_day_matched = {}
@@ -2737,6 +2747,7 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
         ".bf-odds{display:flex;gap:8px;}"
         ".bf-odds span{color:var(--green);}"
         ".bf-odds .liq{color:var(--muted);}"
+        ".bf-odds .bf-live{color:var(--orange);font-size:.55rem;letter-spacing:.05em;}"
         ".day-block{margin:0;}"
         ".empty{text-align:center;padding:80px 20px;color:var(--muted);}"
         ".empty h3{font-size:1.2rem;color:var(--text);margin-bottom:6px;}"
@@ -2761,13 +2772,16 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
                        f'<span class="pill rc">-{as_.get("conceded",0)}</span>'
                        f'<span class="pill tot" style="background:{badge_color(as_["total"])}">{as_["total"]}</span>')
 
-        # Betfair odds row
+        # Betfair odds row: se il mercato 1X2 e' gia' pubblicato pre-match
+        # mostra quota HOME back + liquidita'; altrimenti "APRE LIVE"
+        # (goalscanbot al kickoff leggera' Exchange API e scommettera').
         price = m.get("bf_back_price")
         size  = m.get("bf_back_size")
-        odds_html = ""
         if price:
             liq = f' <span class="liq">{size:.0f}€</span>' if size else ""
-            odds_html = f'<div class="bf-odds">BACK <span>{price:.2f}</span>{liq}</div>'
+            odds_html = f'<div class="bf-odds">1 <span>{price:.2f}</span>{liq}</div>'
+        else:
+            odds_html = '<div class="bf-odds"><span class="bf-live">LIVE ONLY</span></div>'
 
         return (
             f'<div class="card" data-fid="{fid}">{ctag}<div class="ct">'
@@ -2843,12 +2857,10 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
 
         body = "\n".join(sections)
 
-    # ── Seconda sezione: "Altri mercati BF Exchange" (senza filtro goal) ──
-    # Mostra mercati BF trovati nei prossimi 3 giorni che NON passano il
-    # filtro dashboard. Solo visibilita' — goalscanbot NON legge queste
-    # card (classe CSS diversa da .card).
-    extra_html = ""
-    if extras and extras.get("unused_bf"):
+    # Sezioni extra disabilitate (richiesta utente 2026-04-19): la pagina
+    # betfair.html mostra SOLO le fixtures dashboard-qualificate, tutte,
+    # con BF data attached quando disponibile.
+    if False and extras and extras.get("unused_bf"):
         unused = extras["unused_bf"]
         # Raggruppa per data CEST
         extra_days = {}
@@ -2940,10 +2952,9 @@ def generate_betfair_html(bf_matches, run_date, total_bf_markets, extras=None):
         extra_html = "\n".join(extra_sections)
         body = body + "\n" + extra_html
 
-    # ── Terza sezione: qualificate dashboard SENZA mercato BF Exchange ──
-    # Per trasparenza totale: l'utente vede quali partite qualificate non
-    # hanno corrispettivo Exchange (perche' lega non tradabile su BF).
-    if extras and extras.get("missed_qualified_future"):
+    # Sezione missed disabilitata: ora le fixtures senza BF sono nella
+    # sezione principale insieme alle altre, semplicemente senza back price.
+    if False and extras and extras.get("missed_qualified_future"):
         missed = extras["missed_qualified_future"]
         missed_days = {}
         for q in missed:
