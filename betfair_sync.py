@@ -274,7 +274,7 @@ def main():
     start_to   = now + timedelta(days=WINDOW_FUTURE_DAYS)
 
     print(f"[BetfairSync] endpoint={ENDPOINT} market={MARKET_TYPE} "
-          f"runner={SELECTION_RUNNER_ID} window="
+          f"runner=HOME-per-market window="
           f"{start_from.isoformat()} -> {start_to.isoformat()}")
 
     token = login()
