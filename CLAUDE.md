@@ -102,9 +102,11 @@ Interactive Login di Betfair non supporta TOTP lato server. Se il conto ha 2FA a
 
 ### Scope mercati
 
-`OVER_UNDER_05` calcio (eventTypeId `1`), runner_id `5851482` ("Under 0.5 Goals", coerente con il dato pre-esistente). Finestra kickoff -2h → +7gg. Ordinati per `MAXIMUM_TRADED` (prima i piu' liquidi). Cap 200 mercati per run.
+`MATCH_ODDS` calcio (eventTypeId `1`, 1X2), usato come **sonda "la partita e' tradable su BF Exchange"**. Runner picked = **HOME team** per-market (selectionId varia per market, non piu' costante come 5851482). Finestra kickoff -2h → +7gg, ordinati `FIRST_TO_START`, cap 1000 per run.
 
-Cambiare `MARKET_TYPE` o `SELECTION_RUNNER_ID` in `betfair_sync.py` cambia cosa finisce su `betfair.html`. Se cambi il runner, aggiorna anche il titolo/testo di `generate_betfair_html` in `main.py` per coerenza.
+**Perche' MATCH_ODDS e non OVER_UNDER_05**: `OVER_UNDER_05` pre-match spesso non esiste o ha prezzi insignificanti (back Over 0.5 = 1.02 senza liquidita'). `MATCH_ODDS` e' presente su ~100% degli eventi Exchange, quindi funge da prova affidabile "partita X e' su BF". Il mercato `OVER_UNDER_05` viene aperto al kickoff live, e goalscanbot lo rileva a quel punto via Betfair API diretta (non serve averlo nel JSON pre-match).
+
+Cambiare `MARKET_TYPE` in `betfair_sync.py` cambia cosa finisce su `betfair.html`. Se cambi il market type, coordina con goalscanbot (che consuma `docs/betfair.html` e `docs/betfair_markets.json`).
 
 ### Schema file (contract)
 
@@ -114,18 +116,18 @@ Cambiare `MARKET_TYPE` o `SELECTION_RUNNER_ID` in `betfair_sync.py` cambia cosa 
   "total_markets": <int>,
   "markets": [
     {
-      "market_id": "1.XXXXXXXXX",     // Exchange only: formato 1.<digits>
-      "event_name": "Home v Away",     // convenzione Exchange (' v ' non 'vs')
-      "start_time": "<ISO8601>",       // kickoff
-      "runner_id": 5851482,            // costante: stesso runner per tutti
-      "best_back_price": <float|null>, // miglior quota back (null se no price)
-      "best_back_size": <float|null>   // liquidita' EUR sul miglior back
+      "market_id": "1.XXXXXXXXX",     // MATCH_ODDS Exchange market
+      "event_name": "Home v Away",
+      "start_time": "<ISO8601>",
+      "runner_id": <int>,             // HOME team selectionId (per-market)
+      "best_back_price": <float|null>, // back HOME (= "1" nel 1X2)
+      "best_back_size": <float|null>   // liquidita' EUR
     }
   ]
 }
 ```
 
-NON cambiare lo schema senza coordinarsi con main.py + goalscanbot.
+NON cambiare lo schema senza coordinarsi con main.py + goalscanbot. Il `market_id` qui e' del MATCH_ODDS; goalscanbot al kickoff apre il mercato `OVER_UNDER_05` live interrogando Betfair API diretta via l'event_id.
 
 ### Log diagnostica
 

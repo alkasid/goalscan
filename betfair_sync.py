@@ -26,15 +26,19 @@ Output schema (NON cambiare senza coordinarsi con main.py + goalscanbot):
     "total_markets": <int>,
     "markets": [
       {
-        "market_id": "1.XXXXXXXXX",
+        "market_id": "1.XXXXXXXXX",    // MATCH_ODDS Exchange market
         "event_name": "Home v Away",
         "start_time": "<ISO8601>",
-        "runner_id": 5851482,
-        "best_back_price": <float|null>,
+        "runner_id": <int>,            // HOME team selectionId (per-market)
+        "best_back_price": <float|null>, // back HOME (= "1" nel 1X2)
         "best_back_size": <float|null>
       }
     ]
   }
+Nota: il market_id e' MATCH_ODDS, NON OVER_UNDER_05. goalscanbot al kickoff
+apre il mercato OVER_UNDER_05 live interrogando Betfair API diretta con
+l'event_id (derivabile dal market_id, o via listEvents). Il market_id
+MATCH_ODDS qui serve come prova "questa partita esiste su BF Exchange".
 """
 
 import json
@@ -56,9 +60,18 @@ LOGIN_URL    = f"https://identitysso.betfair.{ENDPOINT}/api/login"
 EXCHANGE_URL = "https://api.betfair.com/exchange/betting/rest/v1.0"
 
 # ── Filtro mercati ──────────────────────────────────────────────────────────
+# MATCH_ODDS (1X2) invece di OVER_UNDER_05 perche':
+#   - OVER_UNDER_05 pre-match spesso non esiste o ha prezzi insignificanti
+#     (back Over 0.5 = 1.02, back Under 0.5 alto ma senza liquidita')
+#   - MATCH_ODDS e' disponibile ~100% degli eventi Exchange -> sonda affidabile
+#     per "questa partita e' tradable su BF Exchange"
+#   - goalscanbot apre il mercato OVER_UNDER_05 LIVE al kickoff via Betfair API
+#     diretta (non serve averlo nel JSON pre-match)
+# Runner HOME: per MATCH_ODDS ogni market ha 3 runners (Home, The Draw, Away)
+# con selectionId per-market. Identifichiamo HOME matchando runnerName con il
+# lato sinistro dell'event_name 'A v B'.
 EVENT_TYPE_SOCCER   = "1"          # ID Betfair per "Soccer"
-MARKET_TYPE         = "OVER_UNDER_05"  # coerente con betfair.html "OVER/UNDER 0.5"
-SELECTION_RUNNER_ID = 5851482      # runner_id storico del file (Under 0.5 Goals)
+MARKET_TYPE         = "MATCH_ODDS" # 1X2, sonda "partita esiste su Exchange"
 
 # Finestra: da -2h a +7gg. Consistente con main.py (_BF_MAX_PAST_HOURS=3,
 # _BF_MAX_FUTURE_DAYS=7). Usiamo -2h qui per avere un po' di margine prima
@@ -175,37 +188,66 @@ def list_market_books(token, market_ids):
     return out
 
 
+def _pick_home_runner(runners, event_name):
+    """Per MATCH_ODDS: identifica il runner HOME.
+    Strategia: matcha runnerName con lato sinistro di event_name 'A v B'.
+    Fallback: runner con sortPriority piu' basso (BF convenzione: home=1).
+    """
+    if not runners:
+        return None
+    ev = event_name or ""
+    parts = ev.split(" v ")
+    if len(parts) == 2:
+        home_lc = parts[0].strip().lower()
+        for r in runners:
+            rn = (r.get("runnerName") or "").strip().lower()
+            if rn == home_lc:
+                return r
+        # Partial match: primi 10 char
+        if len(home_lc) >= 3:
+            for r in runners:
+                rn = (r.get("runnerName") or "").strip().lower()
+                if rn.startswith(home_lc[:10]) or home_lc.startswith(rn[:10]):
+                    return r
+    # Fallback per sortPriority (BF: 1=home, 2=draw, 3=away per MATCH_ODDS)
+    runners_sorted = sorted(runners, key=lambda r: r.get("sortPriority") or 999)
+    return runners_sorted[0]
+
+
 def build_markets_list(catalogue, books):
-    """Costruisce la lista nel formato atteso da main.py."""
+    """Costruisce la lista nel formato atteso da main.py.
+    Per MATCH_ODDS: runner_id = HOME team selectionId (per-market),
+    best_back_price = quota back HOME team, best_back_size = liquidita' EUR."""
     books_by_id = {b.get("marketId"): b for b in books}
     out = []
     missing_runner = 0
     for m in catalogue:
         mid = m.get("marketId")
         if not mid or not str(mid).startswith("1."):
-            # sanity: deve essere formato Exchange '1.XXX'
             continue
 
         event = (m.get("event") or {}).get("name") or ""
         start = m.get("marketStartTime") or ""
 
-        # Selection id target: 5851482 (Under 0.5 Goals — convenzione storica).
-        # Se nel catalogue non c'e', skippa (non rompere il file).
+        # Identifica runner HOME nel catalogue
         runners = m.get("runners") or []
-        target = next((r for r in runners
-                       if r.get("selectionId") == SELECTION_RUNNER_ID), None)
-        if target is None:
+        home_runner = _pick_home_runner(runners, event)
+        if home_runner is None:
+            missing_runner += 1
+            continue
+        home_runner_id = home_runner.get("selectionId")
+        if not home_runner_id:
             missing_runner += 1
             continue
 
-        # Prezzo/liquidita' dal book
+        # Prezzo/liquidita' dal book (stesso runner)
         price, size = None, None
         book = books_by_id.get(mid) or {}
         book_runners = book.get("runners") or []
-        book_target = next((r for r in book_runners
-                            if r.get("selectionId") == SELECTION_RUNNER_ID), None)
-        if book_target and (book_target.get("status") or "ACTIVE") == "ACTIVE":
-            backs = (book_target.get("ex") or {}).get("availableToBack") or []
+        book_home = next((r for r in book_runners
+                          if r.get("selectionId") == home_runner_id), None)
+        if book_home and (book_home.get("status") or "ACTIVE") == "ACTIVE":
+            backs = (book_home.get("ex") or {}).get("availableToBack") or []
             if backs:
                 price = backs[0].get("price")
                 size  = backs[0].get("size")
@@ -214,14 +256,14 @@ def build_markets_list(catalogue, books):
             "market_id": mid,
             "event_name": event,
             "start_time": start,
-            "runner_id": SELECTION_RUNNER_ID,
+            "runner_id": home_runner_id,
             "best_back_price": price,
             "best_back_size": size,
         })
 
     if missing_runner:
         print(f"[BetfairSync] {missing_runner} mercati saltati "
-              f"(nessun runner {SELECTION_RUNNER_ID})")
+              f"(nessun runner HOME identificabile)")
     return out
 
 
