@@ -1,0 +1,72 @@
+name: Backfill global history
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: 'Max fixture da processare (default 20000)'
+        required: false
+        default: '20000'
+      max_workers:
+        description: 'Worker paralleli (default 8)'
+        required: false
+        default: '8'
+      save_every:
+        description: 'Save incrementale ogni N fixture (default 200)'
+        required: false
+        default: '200'
+
+permissions:
+  contents: write
+
+# Stesso group degli altri workflow per evitare push concorrenti
+concurrency:
+  group: goalscan-push
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run backfill
+        env:
+          API_FOOTBALL_KEY:     ${{ secrets.API_FOOTBALL_KEY }}
+          BACKFILL_MAX_PER_RUN: ${{ github.event.inputs.max_per_run }}
+          BACKFILL_MAX_WORKERS: ${{ github.event.inputs.max_workers }}
+          BACKFILL_SAVE_EVERY:  ${{ github.event.inputs.save_every }}
+        run: python backfill_global.py
+
+      - name: Commit & push results
+        run: |
+          git config user.email "goal-bot@users.noreply.github.com"
+          git config user.name  "Goal Bot Backfill"
+          git add docs/global_history.json docs/goal_events_cache.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica da committare."
+            exit 0
+          fi
+          git commit -m "backfill: aggiornata cache 1° goal globale + eventi"
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Push OK al tentativo $i"
+              exit 0
+            fi
+            echo "Push tentativo $i fallito, retry…"
+            sleep 5
+          done
+          echo "Push fallito dopo 3 tentativi"
+          exit 1
