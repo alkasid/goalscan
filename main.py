@@ -1831,7 +1831,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
 </div>
 <div class="wrap">
 <div class="g5">
-  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} alert &middot; oggi</div></div><div class="kpi-foot">alert \u2265{THRESHOLD_VAL} &middot; Bet365 &middot; campionati</div></div>
+  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} alert &middot; mese di aprile</div></div><div class="kpi-foot">alert \u2265{THRESHOLD_VAL} &middot; Bet365 &middot; campionati</div></div>
   <div class="panel kpi k2"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_first}'</div><div class="kpi-lbl">Media 1&deg; goal</div><div class="kpi-sub">range {min_first}' &ndash; {max_first}'</div></div><div class="kpi-foot">su {with_goal} partite con \u22651 goal</div></div>
   <div class="panel kpi k3"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{strike_rate}%</div><div class="kpi-lbl">Strike rate goal</div><div class="kpi-sub">{with_goal} con goal su {total_ft} FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
   <div class="panel kpi k4"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{zero_zero}</div><div class="kpi-lbl">Chiuse 0-0</div><div class="kpi-sub">{zz_pct}% degli FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
@@ -2268,12 +2268,15 @@ def analyze_fixture_global(fix):
 
 
 def generate_global_stats_html(matches, run_date, global_hist=None):
+    """Stats Globali Bet365 — replica i pannelli di Stats Avanzate sul dataset
+    storico globale. I pannelli minuto-based usano solo le entry con
+    first_min_cached: graceful degradation finché updater.py non riempie tutto."""
     from datetime import datetime, timezone, timedelta
-    all_matches  = [m for m in matches if m]
+
+    all_matches = [m for m in matches if m]
     if not all_matches:
         return None
 
-    # Usa global_history.json come storico se disponibile
     ft_matches = [m for m in all_matches if m.get("status") in ("FT","AET","PEN")]
     if global_hist and len(global_hist) > 0:
         stat_matches = list(global_hist.values())
@@ -2284,45 +2287,106 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
     else:
         stat_matches = []
         stat_label   = "NS"
-    has_ft   = len(stat_matches) > 0
-    n_stat   = len(stat_matches)
+
+    n_stat    = len(stat_matches)
     total_all = len(all_matches)
-    total_goals_list = []; results_count = {}; league_stats = {}
+
+    total_goals_list   = []
+    results_count      = {}
+    league_stats       = {}
+    first_goal_minutes = []
+    match_events       = []
+
     for m in stat_matches:
-        hg = m.get("goals_home") or 0; ag = m.get("goals_away") or 0; tot = hg + ag
+        hg  = m.get("goals_home") or 0
+        ag  = m.get("goals_away") or 0
+        tot = hg + ag
         total_goals_list.append(tot)
-        sc = str(hg) + "-" + str(ag); results_count[sc] = results_count.get(sc, 0) + 1
-        lg = m.get("league","?"); nat = m.get("country",""); key = lg + "|" + nat
+        sc = f"{hg}-{ag}"
+        results_count[sc] = results_count.get(sc, 0) + 1
+        lg  = m.get("league", "?")
+        nat = m.get("country", "")
+        key = f"{lg}|{nat}"
         if key not in league_stats:
-            league_stats[key] = {"n":0,"goals":0,"league":lg,"nation":nat}
-        league_stats[key]["n"] += 1; league_stats[key]["goals"] += tot
+            league_stats[key] = {"n": 0, "goals": 0, "league": lg, "nation": nat}
+        league_stats[key]["n"]     += 1
+        league_stats[key]["goals"] += tot
+        fmin = m.get("first_min_cached")
+        if fmin is not None:
+            first_goal_minutes.append(fmin)
+        match_events.append({
+            "home": m.get("home", "?"), "away": m.get("away", "?"),
+            "league": lg, "nation": nat,
+            "score": sc, "first_min": fmin, "total_goals": tot,
+        })
+
     with_goal   = sum(1 for x in total_goals_list if x > 0)
     zero_zero   = n_stat - with_goal
-    avg_goals   = round(sum(total_goals_list)/n_stat,1) if n_stat else 0
+    avg_goals   = round(sum(total_goals_list)/n_stat, 1) if n_stat else 0
     strike_rate = round(with_goal/n_stat*100) if n_stat else 0
     total_goals = sum(total_goals_list)
+    over15      = sum(1 for x in total_goals_list if x > 1)
     over25      = sum(1 for x in total_goals_list if x > 2)
-    gg          = sum(1 for m2 in stat_matches if (m2.get("goals_home") or 0)>0 and (m2.get("goals_away") or 0)>0)
+    under25     = n_stat - over25
+    gg          = sum(1 for m2 in stat_matches
+                      if (m2.get("goals_home") or 0) > 0 and (m2.get("goals_away") or 0) > 0)
+    over15_pct  = round(over15/n_stat*100) if n_stat else 0
     over25_pct  = round(over25/n_stat*100) if n_stat else 0
+    under25_pct = round(under25/n_stat*100) if n_stat else 0
     gg_pct      = round(gg/n_stat*100) if n_stat else 0
-    zz_pct      = round(zero_zero/n_stat*100,1) if n_stat else 0
-    all_leagues = sorted(league_stats.values(), key=lambda x: x["goals"], reverse=True)[:10]
-    max_lg_n    = max((l["goals"] for l in all_leagues), default=1) or 1
-    ris_data = [
-        {"label":"0-0",     "color":"#ff3a3a","n":0},
-        {"label":"1-0/0-1", "color":"#00e5a0","n":0},
-        {"label":"2-1/1-2", "color":"#1a6aff","n":0},
-        {"label":"2-0/0-2", "color":"#f5c542","n":0},
-        {"label":"3+ diff", "color":"#ff8c00","n":0},
-    ]
+    zz_pct      = round(zero_zero/n_stat*100, 1) if n_stat else 0
+
+    n_with_min   = len(first_goal_minutes)
+    avg_first    = round(sum(first_goal_minutes)/n_with_min, 1) if n_with_min else 0
+    min_first    = min(first_goal_minutes) if n_with_min else 0
+    max_first    = max(first_goal_minutes) if n_with_min else 0
+    coverage_pct = round(n_with_min/with_goal*100) if with_goal else 0
+
+    fasce = [(1,15),(16,30),(31,45),(46,60),(61,75),(76,999)]
+    fascia_data = []
+    for lo, hi in fasce:
+        n_in  = sum(1 for x in first_goal_minutes if lo <= x <= hi)
+        pct   = round(n_in/n_with_min*100, 1) if n_with_min else 0
+        ms_in = [x for x in first_goal_minutes if lo <= x <= hi]
+        avg_m = round(sum(ms_in)/len(ms_in), 1) if ms_in else 0
+        lbl   = f"{lo}–90+'" if hi == 999 else f"{lo}–{hi}'"
+        fascia_data.append({"lbl": lbl, "n": n_in, "pct": pct, "avg": avg_m})
+    max_fascia_n = max((f["n"] for f in fascia_data), default=1) or 1
+
+    hm_slots = []
+    for i in range(18):
+        lo2 = i*5 + 1
+        hi2 = (i+1)*5
+        hm_slots.append(sum(1 for x in first_goal_minutes if lo2 <= x <= hi2))
+    early_pct = round(sum(f["n"] for f in fascia_data[:2])/n_with_min*100) if n_with_min else 0
+
+    top_leagues = sorted(league_stats.values(), key=lambda x: x["n"], reverse=True)[:8]
+    max_lg_n    = max((l["n"] for l in top_leagues), default=1) or 1
+    quickest    = sorted([m2 for m2 in match_events if m2["first_min"] is not None],
+                          key=lambda x: x["first_min"])[:7]
+
+    ris_buckets = {
+        "1-0|0-1": {"label": "1-0 / 0-1", "sub": "vittoria scarto minimo", "color": "var(--accent)", "n": 0},
+        "2-1|1-2": {"label": "2-1 / 1-2", "sub": "3 goal · GG sì",         "color": "var(--blue)",   "n": 0},
+        "2-0|0-2": {"label": "2-0 / 0-2", "sub": "clean sheet",            "color": "var(--yellow)", "n": 0},
+        "3+":      {"label": "3+ diff",    "sub": "alta produttività",      "color": "var(--orange)", "n": 0},
+        "0-0":     {"label": "0 – 0",      "sub": "nessun goal segnato",    "color": "var(--red)",    "n": 0},
+    }
     for sc, cnt in results_count.items():
-        try: h2 = int(sc.split("-")[0]); a2 = int(sc.split("-")[1])
-        except: continue
-        if sc == "0-0": ris_data[0]["n"] += cnt
-        elif sc in ("1-0","0-1"): ris_data[1]["n"] += cnt
-        elif sc in ("2-1","1-2"): ris_data[2]["n"] += cnt
-        elif sc in ("2-0","0-2"): ris_data[3]["n"] += cnt
-        else: ris_data[4]["n"] += cnt
+        try:
+            h2 = int(sc.split("-")[0]); a2 = int(sc.split("-")[1])
+        except Exception:
+            continue
+        if sc == "0-0":
+            ris_buckets["0-0"]["n"] += cnt
+        elif sc in ("1-0", "0-1"):
+            ris_buckets["1-0|0-1"]["n"] += cnt
+        elif sc in ("2-1", "1-2"):
+            ris_buckets["2-1|1-2"]["n"] += cnt
+        elif sc in ("2-0", "0-2"):
+            ris_buckets["2-0|0-2"]["n"] += cnt
+        else:
+            ris_buckets["3+"]["n"] += cnt
     FLAGS = {"England":"\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f",
              "Germany":"\U0001f1e9\U0001f1ea","Italy":"\U0001f1ee\U0001f1f9",
              "Spain":"\U0001f1ea\U0001f1f8","France":"\U0001f1eb\U0001f1f7",
@@ -2361,25 +2425,75 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
              "Panama":"\U0001f1f5\U0001f1e6","Costa Rica":"\U0001f1e8\U0001f1f7",
              "Honduras":"\U0001f1ed\U0001f1f3","Nicaragua":"\U0001f1f3\U0001f1ee",
              "Guatemala":"\U0001f1ec\U0001f1f9","El Salvador":"\U0001f1f8\U0001f1fb"}
-    rhtml = "".join(
-        '<div class="ris-item">'
-        + '<div class="ris-dot" style="background:' + r["color"] + '"></div>'
-        + '<div class="ris-name">' + r["label"] + '</div>'
-        + '<div style="margin-left:auto">'
-        + '<div class="ris-val" style="color:' + r["color"] + '">' + str(r["n"]) + '</div>'
-        + '<div class="ris-pct">' + str(round(r["n"]/n_stat*100,1) if n_stat else 0) + '%</div>'
-        + '</div></div>'
-        for r in ris_data)
-    lhtml = "".join(
-        '<div class="lg-row">'
-        + '<div class="lg-flag">' + FLAGS.get(lg["nation"],"\U0001f310") + '</div>'
-        + '<div class="lg-name">' + lg["league"] + '</div>'
-        + '<div class="lg-bw"><div class="lg-bf" style="width:' + str(round(lg["n"]/max_lg_n*100)) + '%"></div></div>'
-        + '<div class="lg-n">' + str(lg["n"]) + '</div>'
-        + '<div class="lg-avg" style="color:' + ("var(--orange)" if lg["n"] and round(lg["goals"]/lg["n"],1)>=3 else "var(--muted)") + '">'
-        + str(round(lg["goals"]/lg["n"],1) if lg["n"] else 0) + '</div>'
-        + '</div>'
-        for lg in all_leagues)
+    bar_colors = [
+        "linear-gradient(90deg,#00e5a0,#00b87a)",
+        "linear-gradient(90deg,#1a6aff,#0d4acc)",
+        "linear-gradient(90deg,#f5c542,#d4a017)",
+        "linear-gradient(90deg,#ff8c00,#cc6e00)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+        "linear-gradient(90deg,#ff3a3a,#cc2020)",
+    ]
+    avg_colors = ["var(--accent)", "#6a9fff", "var(--yellow)", "var(--orange)", "var(--red)", "var(--red)"]
+
+    fascia_rows = ""
+    for i, f in enumerate(fascia_data):
+        w = round(f["n"]/max_fascia_n*100) if max_fascia_n else 0
+        inner_lbl = str(f["n"]) if w > 30 else ""
+        fascia_rows += (
+            f'<tr><td><span class="flbl">{f["lbl"]}</span></td>'
+            f'<td><div class="bwrap"><div class="bfill" style="width:{w}%;background:{bar_colors[i]}">{inner_lbl}</div></div></td>'
+            f'<td class="nr">{f["n"]}</td><td class="pr">{f["pct"]}%</td>'
+            f'<td class="ar" style="color:{avg_colors[i]}">{f["avg"]}\'</td></tr>'
+        )
+
+    rhtml = ""
+    ris_items = list(ris_buckets.values())
+    for idx, r in enumerate(ris_items):
+        pct  = round(r["n"]/n_stat*100, 1) if n_stat else 0
+        span = ' style="grid-column:span 2"' if (idx == len(ris_items)-1 and len(ris_items) % 2 == 1) else ""
+        ml   = ' style="margin-left:auto"' if span else ""
+        rhtml += (
+            f'<div class="ris-item"{span}>'
+            f'<div class="ris-dot" style="background:{r["color"]}"></div>'
+            f'<div><div class="ris-name">{r["label"]}</div><div class="ris-sub">{r["sub"]}</div></div>'
+            f'<div{ml}><div class="ris-val" style="color:{r["color"]}">{r["n"]}</div>'
+            f'<div class="ris-pct">{pct}%</div></div></div>'
+        )
+
+    lhtml = ""
+    for lg in top_leagues:
+        flag  = FLAGS.get(lg["nation"], "\U0001f30d")
+        avg_g = round(lg["goals"]/lg["n"], 1) if lg["n"] else 0
+        w     = round(lg["n"]/max_lg_n*100)
+        ac    = "var(--orange)" if avg_g >= 4 else "var(--yellow)" if avg_g >= 3 else "var(--muted)"
+        lhtml += (
+            f'<div class="lg-row">'
+            f'<div class="lg-flag">{flag}</div>'
+            f'<div class="lg-name">{lg["league"]}</div>'
+            f'<div class="lg-bw"><div class="lg-bf" style="width:{w}%"></div></div>'
+            f'<div class="lg-n">{lg["n"]}</div>'
+            f'<div class="lg-avg" style="color:{ac}">{avg_g}</div></div>'
+        )
+    best_lg     = max(top_leagues, key=lambda x: x["goals"]/x["n"] if x["n"] else 0) if top_leagues else None
+    best_lg_txt = f'{best_lg["league"]} {round(best_lg["goals"]/best_lg["n"],1)}' if best_lg else "—"
+
+    dot_colors = ["var(--accent)", "var(--blue)", "var(--yellow)", "var(--orange)",
+                  "var(--red)", "var(--purple)", "var(--muted)"]
+    tl_html = ""
+    for i, m2 in enumerate(quickest):
+        c      = dot_colors[i % len(dot_colors)]
+        shadow = f"box-shadow:0 0 5px {c}" if c != "var(--muted)" else ""
+        rec    = ' <span style="color:var(--muted);font-size:.5rem">record</span>' if i == 0 else ""
+        tl_html += (
+            f'<div class="tl-item">'
+            f'<div class="tl-dot" style="background:{c};{shadow}"></div>'
+            f'<div class="tl-min" style="color:{c}">{m2["first_min"]}\'{rec}</div>'
+            f'<div class="tl-match">{m2["home"]} vs {m2["away"]}</div>'
+            f'<div class="tl-detail">{m2["league"]} · {m2["nation"]} · {m2["score"]} · {m2["total_goals"]} goal</div>'
+            f'</div>'
+        )
+
+    hm_js = str(hm_slots)
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     d1_str    = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
     d2_str    = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d")
@@ -2586,49 +2700,157 @@ def generate_global_stats_html(matches, run_date, global_hist=None):
         "padding:1px 5px;border-radius:3px;border:1px solid rgba(255,58,58,.2);}"
         ".badge-ns{" + css_mono + ";font-size:.52rem;color:var(--muted);background:rgba(255,255,255,.04);"
         "padding:1px 5px;border-radius:3px;border:1px solid var(--border);}"
-        "@keyframes lbp{0%,100%{opacity:1}50%{opacity:.35}}")
-    return (
-        "<!DOCTYPE html><html lang=\"it\"><head><meta charset=\"UTF-8\">"
-        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-        "<title>GoalScan \u00b7 Stats Globali Bet365</title>"
-        "<link href=\"https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700"
-        "&family=DM+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">"
-        "<style>" + CSS + "</style></head><body>"
-        "<header><div><span class=\"logo-text\">GoalScan</span>"
-        "<span class=\"logo-sub\">LIVE INTELLIGENCE \u00b7 BET365</span></div>"
-        "<div class=\"hdiv\"></div>"
-        "<a href=\"index.html\" class=\"nav-link\">Dashboard</a>"
-        "<a href=\"storico.html\" class=\"nav-link\">Storico</a>"
-        "<a href=\"stats.html\" class=\"nav-link\">Stats Avanzate</a>"
-        "<a href=\"global_stats.html\" class=\"nav-link active\">Stats Globali</a>"
-        "<a href=\"betfair.html\" class=\"nav-link\" style=\"border-color:rgba(255,179,0,.3);color:#ffb300\">Betfair</a>"
-        "<a href=\"betfair_stats.html\" class=\"nav-link\" style=\"border-color:rgba(255,179,0,.3);color:#ffb300\">Stats BF</a>"
-        "<div class=\"hright\">\U0001f4c5 " + run_date + "</div></header>"
-        "<div class=\"scanbar\">"
-        "<div class=\"si\">partite Bet365 <b>" + str(total_all) + "</b></div>"
-        "<div class=\"si\">statistiche su <b>" + str(n_stat) + " " + stat_label + "</b></div>"
-        "<div class=\"si\">nessun filtro goal</div>"
-        "<div class=\"si\">strike rate <b>" + str(strike_rate) + "%</b></div>"
-        "<div class=\"si\">media goal <b>" + str(avg_goals) + "</b></div>"
-        "</div><div class=\"wrap\">"
-        "<div class=\"g5\">"
-        + "<div class=\"panel kpi k1\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(total_all) + "</div><div class=\"kpi-lbl\">Partite Bet365</div><div class=\"kpi-sub\">trovate oggi</div></div><div class=\"kpi-foot\">nessun filtro goal</div></div>"
-        + "<div class=\"panel kpi k2\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(strike_rate) + "%</div><div class=\"kpi-lbl\">Strike rate</div><div class=\"kpi-sub\">" + str(with_goal) + " con goal su " + str(n_stat) + "</div></div><div class=\"kpi-foot\">partite " + stat_label + "</div></div>"
-        + "<div class=\"panel kpi k3\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(avg_goals) + "</div><div class=\"kpi-lbl\">Media goal</div><div class=\"kpi-sub\">" + str(total_goals) + " goal totali</div></div><div class=\"kpi-foot\">" + str(n_stat) + " " + stat_label + "</div></div>"
-        + "<div class=\"panel kpi k4\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(zero_zero) + "</div><div class=\"kpi-lbl\">Chiuse 0-0</div><div class=\"kpi-sub\">" + str(zz_pct) + "%</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
-        + "<div class=\"panel kpi k5\"><div class=\"kpi-bar\"></div><div class=\"kpi-inner\"><div class=\"kpi-val\">" + str(over25_pct) + "%</div><div class=\"kpi-lbl\">Over 2.5</div><div class=\"kpi-sub\">" + str(over25) + " su " + str(n_stat) + "</div></div><div class=\"kpi-foot\">Bet365 \u00b7 tutte le leghe</div></div>"
-        + "</div>"
-                + "<div class=\"panel\"><div class=\"ptitle\">\U0001f4cb Partite Bet365 \u00b7 per giorno e fascia oraria</div>"
-        + days_html
-        + "</div>"
-        + "<div class=\"panel\"><div class=\"ptitle\">\U0001f30d Top 10 leghe Bet365 per goal \u00b7 ordine discendente</div>"
-        + "<div style=\"display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)\"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>"
-        + lhtml + "</div>"
-        + "</div>"
-        + "<script>function toggleSlot(el){var b=el.nextElementSibling;var a=el.querySelector('.sl-arrow');"
-        + "if(b.style.display==='none'){b.style.display='block';if(a)a.textContent='\u25b4'}"
-        + "else{b.style.display='none';if(a)a.textContent='\u25be'}}</script>"
-        + "</div></body></html>")
+        "@keyframes lbp{0%,100%{opacity:1}50%{opacity:.35}}"
+        ".g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:11px;}"
+        "@media(max-width:1100px){.g3{grid-template-columns:1fr;}.g5{grid-template-columns:repeat(2,1fr);}}"
+        ".scope{" + css_mono + ";font-size:.5rem;color:var(--muted);margin-bottom:9px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}"
+        ".stag{padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.5);font-size:.49rem;}"
+        ".stag.g{border-color:rgba(0,229,160,.2);color:rgba(0,229,160,.7);background:rgba(0,229,160,.04);}"
+        ".stag.b{border-color:rgba(26,106,255,.2);color:rgba(100,160,255,.7);background:rgba(26,106,255,.04);}"
+        ".stag.y{border-color:rgba(245,197,66,.2);color:rgba(245,197,66,.7);background:rgba(245,197,66,.04);}"
+        ".ft{width:100%;border-collapse:collapse;}"
+        ".ft th{" + css_mono + ";font-size:.49rem;color:var(--muted);text-align:left;padding:0 5px 5px;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}"
+        ".ft th.r{text-align:right;}"
+        ".ft td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle;}"
+        ".ft tr:last-child td{border:none;}"
+        ".flbl{" + css_mono + ";font-size:.63rem;white-space:nowrap;}"
+        ".bwrap{background:rgba(255,255,255,.04);border-radius:2px;height:16px;overflow:hidden;}"
+        ".bfill{height:100%;border-radius:2px;display:flex;align-items:center;padding:0 5px;" + css_mono + ";font-size:.55rem;color:rgba(255,255,255,.9);font-weight:600;white-space:nowrap;}"
+        ".nr{" + css_mono + ";font-size:.63rem;text-align:right;}"
+        ".pr{" + css_mono + ";font-size:.59rem;text-align:right;color:var(--muted);}"
+        ".ar{" + css_mono + ";font-size:.59rem;text-align:right;}"
+        ".insight{margin-top:8px;padding-top:7px;border-top:1px solid var(--border);" + css_mono + ";font-size:.55rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;}"
+        ".insight b{color:var(--accent);}"
+        ".hm-wrap{margin-top:9px;padding-top:8px;border-top:1px solid var(--border);}"
+        ".hm-title{" + css_mono + ";font-size:.5rem;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;}"
+        ".hm-row{display:flex;gap:2px;}"
+        ".hm-cell{flex:1;height:20px;border-radius:2px;cursor:default;transition:transform .1s;}"
+        ".hm-cell:hover{transform:scaleY(1.25);}"
+        ".hm-labels{display:flex;justify-content:space-between;" + css_mono + ";font-size:.46rem;color:var(--muted);margin-top:3px;}"
+        ".hm-legend{display:flex;align-items:center;gap:5px;margin-top:4px;" + css_mono + ";font-size:.48rem;color:var(--muted);}"
+        ".hm-legend-bar{flex:1;height:5px;border-radius:2px;background:linear-gradient(90deg,rgba(0,229,160,.1),var(--accent));}"
+        ".ris-sub{font-size:.54rem;color:var(--muted);}"
+        ".tl{position:relative;padding-left:16px;margin-top:4px;}"
+        ".tl::before{content:\'\';position:absolute;left:4px;top:0;bottom:0;width:1px;background:var(--border);}"
+        ".tl-item{position:relative;margin-bottom:8px;}"
+        ".tl-dot{position:absolute;left:-14px;top:4px;width:6px;height:6px;border-radius:50%;}"
+        ".tl-min{" + css_mono + ";font-size:.57rem;margin-bottom:1px;}"
+        ".tl-match{font-size:.68rem;font-weight:600;}"
+        ".tl-detail{font-size:.57rem;color:var(--muted);}"
+        ":root{--purple:#b06aff;}")
+    coverage_label = (f"1\u00b0 goal cachato {n_with_min}/{with_goal} "
+                      f"({coverage_pct}%)") if with_goal else "1\u00b0 goal n/d"
+
+    tl_block = tl_html if tl_html else (
+        '<div style="color:var(--muted);font-size:.6rem;font-style:italic">'
+        'Backfill in corso \u2014 i minuti dei goal vengono riempiti progressivamente da updater.py'
+        '</div>'
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoalScan \u00b7 Stats Globali Bet365</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>
+<header>
+  <div><span class="logo-text">GoalScan</span><span class="logo-sub">LIVE INTELLIGENCE \u00b7 BET365</span></div>
+  <div class="hdiv"></div>
+  <a href="index.html" class="nav-link">Dashboard</a>
+  <a href="storico.html" class="nav-link">Storico</a>
+  <a href="stats.html" class="nav-link">Stats Avanzate</a>
+  <a href="global_stats.html" class="nav-link active">Stats Globali</a>
+  <a href="betfair.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Betfair</a>
+  <a href="betfair_stats.html" class="nav-link" style="border-color:rgba(255,179,0,.3);color:#ffb300">Stats BF</a>
+  <div class="hright">\U0001f4c5 {run_date}</div>
+</header>
+<div class="scanbar">
+  <div class="si">partite Bet365 oggi <b>{total_all}</b></div>
+  <div class="si">storico FT <b>{n_stat}</b></div>
+  <div class="si">nessun filtro goal</div>
+  <div class="si">strike rate <b>{strike_rate}%</b></div>
+  <div class="si">media goal <b>{avg_goals}</b></div>
+  <div class="si">{coverage_label}</div>
+</div>
+<div class="wrap">
+<div class="g5">
+  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{n_stat}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">{stat_label}</div></div><div class="kpi-foot">Bet365 \u00b7 tutte le leghe</div></div>
+  <div class="panel kpi k2"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_first}'</div><div class="kpi-lbl">Media 1\u00b0 goal</div><div class="kpi-sub">range {min_first}' \u2013 {max_first}'</div></div><div class="kpi-foot">su {n_with_min} partite con minuto rilevato</div></div>
+  <div class="panel kpi k3"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{strike_rate}%</div><div class="kpi-lbl">Strike rate goal</div><div class="kpi-sub">{with_goal} con goal su {n_stat} FT</div></div><div class="kpi-foot">Bet365 \u00b7 tutte le leghe</div></div>
+  <div class="panel kpi k4"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{zero_zero}</div><div class="kpi-lbl">Chiuse 0-0</div><div class="kpi-sub">{zz_pct}% degli FT</div></div><div class="kpi-foot">Bet365 \u00b7 tutte le leghe</div></div>
+  <div class="panel kpi k5"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_goals}</div><div class="kpi-lbl">Media goal/partita</div><div class="kpi-sub">{total_goals} goal totali</div></div><div class="kpi-foot">{n_stat} partite FT \u00b7 Bet365</div></div>
+</div>
+<div class="g3">
+  <div class="panel">
+    <div class="ptitle">\u23f1 Distribuzione 1\u00b0 goal</div>
+    <div class="scope"><span class="stag g">storico</span><span class="stag">{n_with_min} partite con minuto rilevato</span><span class="stag b">Bet365 \u00b7 tutte le leghe</span></div>
+    <table class="ft"><thead><tr><th style="width:48px">FASCIA</th><th>BARRA <span style="opacity:.4;font-size:.43rem">n\u00b0 partite col 1\u00b0 goal in quel range</span></th><th class="r">N</th><th class="r">%</th><th class="r">AVG</th></tr></thead><tbody>{fascia_rows}</tbody></table>
+    <div class="hm-wrap">
+      <div class="hm-title">INTENSIT\u00c0 GOAL PER MINUTO (slot 5') \u2014 gradiente temperatura</div>
+      <div class="hm-row" id="hm"></div>
+      <div class="hm-labels"><span>1'</span><span>15'</span><span>30'</span><span>45'</span><span>60'</span><span>75'</span><span>90'</span></div>
+      <div class="hm-legend"><span>meno</span><div class="hm-legend-bar"></div><span>pi\u00f9</span></div>
+    </div>
+    <div class="insight">\U0001f4a1 <b>{early_pct}%</b> dei 1\u00b0 goal entro il 30' \u00b7 <b>{zero_zero}</b> partite rimaste 0-0 \u00b7 cache <b>{coverage_pct}%</b></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">\U0001f4ca Risultati finali &amp; mercati</div>
+    <div class="scope"><span class="stag g">storico</span><span class="stag">{n_stat} partite FT</span><span class="stag b">Bet365 \u00b7 tutte le leghe</span></div>
+    <div class="ris-grid">{rhtml}</div>
+    <div style="margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.5rem;color:var(--muted);letter-spacing:.08em;margin-bottom:6px">SPLIT MERCATI \u00b7 {n_stat} FT</div>
+    <div class="cross-row">
+      <div class="cbox" style="border-color:rgba(176,106,255,.3);background:rgba(176,106,255,.05)"><div class="cval" style="color:#b06aff">{over15_pct}%</div><div class="clbl">OVER 1.5<br>{over15}/{n_stat}</div></div>
+      <div class="cbox" style="border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.05)"><div class="cval" style="color:var(--accent)">{over25_pct}%</div><div class="clbl">OVER 2.5<br>{over25}/{n_stat}</div></div>
+      <div class="cbox" style="border-color:rgba(255,58,58,.3);background:rgba(255,58,58,.05)"><div class="cval" style="color:var(--red)">{under25_pct}%</div><div class="clbl">UNDER 2.5<br>{under25}/{n_stat}</div></div>
+      <div class="cbox" style="border-color:rgba(26,106,255,.3);background:rgba(26,106,255,.05)"><div class="cval" style="color:var(--blue)">{gg_pct}%</div><div class="clbl">GG S\u00cc<br>{gg}/{n_stat}</div></div>
+      <div class="cbox" style="border-color:rgba(245,197,66,.3);background:rgba(245,197,66,.05)"><div class="cval" style="color:var(--yellow)">{avg_goals}</div><div class="clbl">AVG GOAL<br>{total_goals} tot</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">\U0001f30d Top leghe \u00b7 FT</div>
+    <div class="scope"><span class="stag g">storico</span><span class="stag">{n_stat} FT</span><span class="stag y">per n\u00b0 partite</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.49rem;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)"><span>LEGA</span><span>N \u00b7 AVG GOAL</span></div>
+    {lhtml}
+    <div style="margin-top:6px;font-size:.5rem;color:var(--muted)">\U0001f4a1 avg goal pi\u00f9 alto: <span style="color:var(--orange)">{best_lg_txt}</span></div>
+    <div class="ptitle" style="margin-top:14px">\u26a1 Primi goal pi\u00f9 veloci</div>
+    <div class="scope"><span class="stag g">storico</span><span class="stag">{n_with_min} partite</span><span class="stag b">1\u00b0 goal pi\u00f9 precoce</span></div>
+    <div class="tl">{tl_block}</div>
+  </div>
+</div>
+<div class="panel"><div class="ptitle">\U0001f4cb Partite Bet365 \u00b7 per giorno e fascia oraria</div>
+{days_html}
+</div>
+</div>
+<script>
+function toggleSlot(el){{var b=el.nextElementSibling;var a=el.querySelector('.sl-arrow');
+if(b.style.display==='none'){{b.style.display='block';if(a)a.textContent='\u25b4'}}
+else{{b.style.display='none';if(a)a.textContent='\u25be'}}}}
+(function(){{
+  var slots = {hm_js};
+  var max = Math.max.apply(null, slots) || 1;
+  var hm = document.getElementById('hm');
+  if(!hm) return;
+  for(var i=0;i<slots.length;i++){{
+    var v = slots[i];
+    var t = max ? v/max : 0;
+    var hue, sat, light;
+    if(t < .25){{ hue=185; sat=30; light=18; }}
+    else if(t < .5){{ hue=145; sat=45; light=28; }}
+    else if(t < .75){{ hue=85; sat=55; light=38; }}
+    else {{ hue=5; sat=75; light=46; }}
+    var c = document.createElement('div');
+    c.className = 'hm-cell';
+    c.style.background = 'hsl('+hue+','+sat+'%,'+light+'%)';
+    c.title = (i*5+1)+\"'-\"+((i+1)*5)+\"': \"+v+' goal';
+    hm.appendChild(c);
+  }}
+}})();
+</script>
+</body></html>"""
 
 
 # ── BETFAIR EXCHANGE — Dashboard (stessi colori/stile della dashboard principale) ──
@@ -3682,11 +3904,31 @@ def main():
             key = str(m["fixture_id"])
             if key not in global_hist:
                 global_hist[key] = m
+
+    # Bootstrap first_min_cached da ft_history.json (intersezione fixture_id)
+    # Riempie gratis ~20% delle entry senza chiamate API extra.
+    ft_hist_file = docs / "ft_history.json"
+    if ft_hist_file.exists():
+        try:
+            ft_hist = json.loads(ft_hist_file.read_text(encoding="utf-8", errors="replace"))
+            bootstrapped = 0
+            for fid, gentry in global_hist.items():
+                if gentry.get("first_min_cached") is None and fid in ft_hist:
+                    fmin = ft_hist[fid].get("first_min_cached")
+                    if fmin is not None:
+                        gentry["first_min_cached"] = fmin
+                        bootstrapped += 1
+            if bootstrapped:
+                print(f"  bootstrap first_min da ft_history: +{bootstrapped} entry")
+        except Exception as e:
+            print(f"  bootstrap first_min fallito: {e}")
+
     global_hist_file.write_text(
         json.dumps(global_hist, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
         encoding="utf-8"
     )
-    print(f"  global_history.json: {len(global_hist)} partite FT accumulate")
+    cached_n = sum(1 for v in global_hist.values() if v.get("first_min_cached") is not None)
+    print(f"  global_history.json: {len(global_hist)} partite FT accumulate · {cached_n} con 1° goal cachato")
 
     global_html = generate_global_stats_html(global_bet365, run_date, global_hist)
     if global_html:

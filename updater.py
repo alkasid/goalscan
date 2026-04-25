@@ -16,6 +16,11 @@ FT_ST   = {"FT", "AET", "PEN"}
 DOCS         = Path("docs")
 IDS_FILE     = DOCS / "alert_ids.json"
 HISTORY_FILE = DOCS / "ft_history.json"
+GLOBAL_HISTORY_FILE = DOCS / "global_history.json"
+
+# Quante entry di global_history.json riempire per run (lazy backfill 1° goal).
+# A 5 min/run con 30 fixture/run = 360 fixture/h → 5655 mancanti coperti in ~16h.
+GLOBAL_BACKFILL_PER_RUN = int(os.environ.get("GLOBAL_BACKFILL_PER_RUN", "30"))
 
 def api_get(endpoint, params):
     try:
@@ -110,6 +115,53 @@ def main():
 
     HISTORY_FILE.write_text(json.dumps(history, ensure_ascii=False, indent=2))
     print(f"[updater] +{updated} aggiornamenti · totale: {len(history)} FT")
+
+    backfill_global_first_min()
+
+def backfill_global_first_min():
+    """Lazy backfill di first_min_cached su global_history.json.
+    Ogni run prende fino a GLOBAL_BACKFILL_PER_RUN fixture senza minuto cachato
+    (priorità: partite più recenti) e chiama fixtures/events per estrarre il
+    1° goal. Le partite 0-0 non vengono toccate (first_min_cached resta None
+    per design)."""
+    if not GLOBAL_HISTORY_FILE.exists():
+        return
+    try:
+        gl = json.loads(GLOBAL_HISTORY_FILE.read_text(encoding="utf-8", errors="replace"))
+    except Exception as e:
+        print(f"[backfill] global_history non leggibile: {e}")
+        return
+
+    candidates = [
+        (fid, v) for fid, v in gl.items()
+        if v.get("first_min_cached") is None
+        and ((v.get("goals_home") or 0) + (v.get("goals_away") or 0)) > 0
+    ]
+    candidates.sort(key=lambda kv: kv[1].get("date", ""), reverse=True)
+    todo = candidates[:GLOBAL_BACKFILL_PER_RUN]
+    if not todo:
+        cached = sum(1 for v in gl.values() if v.get("first_min_cached") is not None)
+        print(f"[backfill] global_history complete · {cached}/{len(gl)} cachate")
+        return
+
+    print(f"[backfill] {len(todo)} fixture da riempire (su {len(candidates)} totali)")
+    filled = 0
+    for fid, _ in todo:
+        try:
+            fm = get_first_goal_min(int(fid))
+        except Exception as e:
+            print(f"  err {fid}: {e}")
+            continue
+        if fm is not None:
+            gl[fid]["first_min_cached"] = fm
+            filled += 1
+
+    GLOBAL_HISTORY_FILE.write_text(
+        json.dumps(gl, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
+        encoding="utf-8"
+    )
+    cached = sum(1 for v in gl.values() if v.get("first_min_cached") is not None)
+    print(f"[backfill] +{filled}/{len(todo)} riempite · totale {cached}/{len(gl)} cachate")
 
 if __name__ == "__main__":
     main()
