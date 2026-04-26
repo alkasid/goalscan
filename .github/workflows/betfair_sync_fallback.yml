@@ -1,89 +1,35 @@
-name: Betfair sync (fallback)
-
-# Fallback per quando il cron sul Raspberry Pi è giù.
-# Trigger:
-#   - workflow_dispatch (manuale, on-demand dalla UI)
-#   - schedule (commentato per default — abilita solo se vuoi sostituire il Pi)
+# Workflow disabilitato: il fallback su GitHub Actions non e' praticabile per
+# endpoint=it perche' Betfair Italy fa geo-blocking degli IP datacenter Azure
+# (HTTP 403 + response HTML). Funzionerebbe solo per endpoint=com (account
+# Betfair internazionale) ma il nostro setup e' .it.
 #
-# Richiede i secret BETFAIR_APP_KEY / BETFAIR_USERNAME / BETFAIR_PASSWORD
-# nei Repository Settings → Secrets and variables → Actions.
+# In caso il Pi vada giu', l'unica via percorribile e' un runner self-hosted
+# con IP residenziale italiano (es. il Pi stesso registrato come runner GH
+# Actions). Vedi docs.github.com/en/actions/hosting-your-own-runners.
+#
+# Storico: workflow funzionante creato il 2026-04-26 con stash+reset+amend
+# resilient logic. Si trova nel git history al commit 24f3c55.
+
+name: Betfair sync (fallback) [DISABLED]
 
 on:
+  # Trigger rimossi -- nessun run automatico ne' manuale.
   workflow_dispatch:
-  # schedule:
-  #   - cron: "*/15 * * * *"   # decommentare per sostituire del tutto il Pi
+    inputs:
+      acknowledge_disabled:
+        description: 'Confermo che voglio runnare comunque (sara HTTP 403 per endpoint=it)'
+        required: true
+        default: 'no'
 
 permissions:
-  contents: write
-
-concurrency:
-  group: goalscan-push
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  betfair-sync:
+  disabled:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.acknowledge_disabled == 'yes-i-know' }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install deps
-        run: pip install -r requirements.txt
-
-      - name: Run betfair_sync.py
-        env:
-          BETFAIR_APP_KEY:  ${{ secrets.BETFAIR_APP_KEY }}
-          BETFAIR_USERNAME: ${{ secrets.BETFAIR_USERNAME }}
-          BETFAIR_PASSWORD: ${{ secrets.BETFAIR_PASSWORD }}
-          BETFAIR_ENDPOINT: ${{ secrets.BETFAIR_ENDPOINT }}
-        run: python betfair_sync.py
-
-      - name: Commit & push results
-        run: |
-          set -e
-          git config user.email "goal-bot@users.noreply.github.com"
-          git config user.name  "Goal Bot Betfair"
-
-          git add docs/betfair_markets.json
-          if git diff --cached --quiet; then
-            echo "Nessuna modifica."
-            exit 0
-          fi
-
-          # Stash → reset hard → restore (pattern resiliente alle race)
-          git stash push -m "betfair-sync" -- docs/betfair_markets.json
-          git fetch origin main
-          git reset --hard origin/main
-          git checkout 'stash@{0}' -- docs/betfair_markets.json
-          git stash drop || true
-
-          git add docs/betfair_markets.json
-          if git diff --cached --quiet; then
-            echo "Nessuna modifica oltre quelle remote."
-            exit 0
-          fi
-
-          TOTAL=$(jq '.total_markets' docs/betfair_markets.json)
-          git commit -m "chore: betfair_markets.json — $TOTAL mercati [github-fallback]"
-
-          for i in 1 2 3 4 5; do
-            if git push origin main; then
-              echo "Push OK al tentativo $i"
-              exit 0
-            fi
-            echo "Push tentativo $i fallito; rifetch + amend"
-            git fetch origin main
-            git reset --soft origin/main
-            git add docs/betfair_markets.json
-            git commit --amend -C HEAD --no-edit || true
-            sleep $((i * 3))
-          done
-          echo "Push fallito dopo 5 tentativi"
+      - run: |
+          echo "Workflow disabilitato. Vedi commento all'inizio del file."
+          echo "Per endpoint=it usa il cron sul Raspberry Pi."
           exit 1
