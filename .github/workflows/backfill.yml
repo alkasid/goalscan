@@ -4,22 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       max_per_run:
-        description: 'Max fixture da processare (default 20000)'
+        description: 'Max fixture (default 20000)'
         required: false
         default: '20000'
       max_workers:
-        description: 'Worker paralleli (default 8)'
+        description: 'Worker paralleli (default 4)'
         required: false
-        default: '8'
+        default: '4'
       save_every:
-        description: 'Save incrementale ogni N fixture (default 200)'
+        description: 'Save ogni N fixture (default 200)'
         required: false
         default: '200'
+      rps:
+        description: 'Req/sec globali — alza con piani Mega+ (default 20)'
+        required: false
+        default: '20'
+      max_retries:
+        description: 'Max retries su 429/5xx (default 5)'
+        required: false
+        default: '5'
 
 permissions:
   contents: write
 
-# Stesso group degli altri workflow per evitare push concorrenti
 concurrency:
   group: goalscan-push
   cancel-in-progress: false
@@ -48,6 +55,8 @@ jobs:
           BACKFILL_MAX_PER_RUN: ${{ github.event.inputs.max_per_run }}
           BACKFILL_MAX_WORKERS: ${{ github.event.inputs.max_workers }}
           BACKFILL_SAVE_EVERY:  ${{ github.event.inputs.save_every }}
+          BACKFILL_RPS:         ${{ github.event.inputs.rps }}
+          BACKFILL_MAX_RETRIES: ${{ github.event.inputs.max_retries }}
         run: python backfill_global.py
 
       - name: Commit & push results
