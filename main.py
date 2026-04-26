@@ -3342,18 +3342,27 @@ updateLive();setInterval(updateLive,30000);
 
 # ── BETFAIR EXCHANGE — Stats Avanzate ───────────────────────────────────────
 
-def generate_betfair_stats_html(bf_matches, run_date):
-    """Genera betfair_stats.html — stessa struttura identica di stats.html ma dati Betfair."""
+def generate_betfair_stats_html(bf_matches, run_date, bf_hist=None):
+    """Genera betfair_stats.html.
+    Se bf_hist (dict fixture_id -> entry) e' fornito, lo usa come dataset
+    storico per i pannelli (come global_stats fa con global_history).
+    Altrimenti fallback ai soli match FT odierni in bf_matches."""
     from datetime import datetime, timezone
 
     all_m = [m for m in bf_matches if m]
-    if not all_m:
+    total_all = len(all_m) if all_m else 0
+
+    # Selezione dataset stat: storico (se disponibile) o solo FT oggi
+    if bf_hist and len(bf_hist) > 0:
+        ft_matches = list(bf_hist.values())
+        stat_label = f"storico ({len(ft_matches)} FT BF Exchange)"
+    elif all_m:
+        ft_matches = [m for m in all_m if m.get("status") in ("FT","AET","PEN")]
+        stat_label = "FT oggi"
+    else:
         return None
 
-    ft_matches = [m for m in all_m if m.get("status") in ("FT","AET","PEN")]
-    total_all = len(all_m)
-
-    if len(ft_matches) == 0:
+    if not ft_matches:
         return None
 
     first_goal_minutes = []
@@ -3362,18 +3371,25 @@ def generate_betfair_stats_html(bf_matches, run_date):
     league_stats       = {}
     match_events       = []
 
+    # In modalita' storico (bf_hist): mai chiamare API. La cache viene
+    # popolata da updater.py + backfill_global.py + bootstrap inline.
+    # Le fixture senza first_min_cached vengono escluse dai pannelli
+    # minuto-based (graceful degradation).
+    skip_api = bf_hist is not None and len(bf_hist) > 0
+
     for m in ft_matches:
         fid       = m.get("fixture_id")
         hg        = m.get("goals_home") or 0
         ag        = m.get("goals_away") or 0
         cached_min = m.get("first_min_cached")
-        evs = [] if cached_min is not None else (
-            get_fixture_events(fid) if (fid and (hg + ag) > 0) else [])
         tot_g = hg + ag
 
         if cached_min is not None:
             first_min = cached_min
+        elif skip_api:
+            first_min = None
         else:
+            evs = get_fixture_events(fid) if (fid and (hg + ag) > 0) else []
             mins = []
             for e in evs:
                 if e.get("type") == "Goal" and e.get("detail") != "Missed Penalty":
@@ -3953,7 +3969,82 @@ def main():
         )
         print(f"  betfair.html generato ({len(bf_matched)} partite)")
 
-        bf_stats_html = generate_betfair_stats_html(bf_matched, run_date)
+        # Accumula storico FT Bet365+BF in docs/betfair_history.json
+        bf_hist_file = docs / "betfair_history.json"
+        bf_hist = {}
+        if bf_hist_file.exists():
+            try:
+                bf_hist = json.loads(bf_hist_file.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                bf_hist = {}
+        added = 0
+        for m in bf_matched:
+            if not m or m.get("status") not in ("FT","AET","PEN"):
+                continue
+            fid = m.get("fixture_id")
+            if not fid:
+                continue
+            key = str(fid)
+            if key in bf_hist:
+                continue
+            bf_hist[key] = {
+                "fixture_id":      int(fid),
+                "home":             m.get("home", ""),
+                "away":             m.get("away", ""),
+                "league":           m.get("league", ""),
+                "country":          m.get("country", ""),
+                "date":             m.get("date", ""),
+                "kickoff":          m.get("kickoff", ""),
+                "status":           m.get("status", ""),
+                "goals_home":       m.get("goals_home"),
+                "goals_away":       m.get("goals_away"),
+                "score":            f"{m.get('goals_home') or 0}-{m.get('goals_away') or 0}",
+                "first_min_cached": None,
+                "bf_market_id":     m.get("bf_market_id"),
+                "bf_back_price":    m.get("bf_back_price"),
+                "bf_back_size":     m.get("bf_back_size"),
+                "saved_at":         datetime.now(timezone.utc).isoformat(),
+            }
+            added += 1
+
+        # Bootstrap first_min_cached: prima da global_history (87% pieno),
+        # poi da ft_history come fallback per residui.
+        bs_global = 0
+        bs_ft     = 0
+        gh_file = docs / "global_history.json"
+        if gh_file.exists():
+            try:
+                gh = json.loads(gh_file.read_text(encoding="utf-8", errors="replace"))
+                for k, e in bf_hist.items():
+                    if e.get("first_min_cached") is None and k in gh:
+                        fmin = gh[k].get("first_min_cached")
+                        if fmin is not None:
+                            e["first_min_cached"] = fmin
+                            bs_global += 1
+            except Exception as exc:
+                print(f"  betfair_history bootstrap (global): errore {exc}")
+        ft_file = docs / "ft_history.json"
+        if ft_file.exists():
+            try:
+                fh = json.loads(ft_file.read_text(encoding="utf-8", errors="replace"))
+                for k, e in bf_hist.items():
+                    if e.get("first_min_cached") is None and k in fh:
+                        fmin = fh[k].get("first_min_cached")
+                        if fmin is not None:
+                            e["first_min_cached"] = fmin
+                            bs_ft += 1
+            except Exception as exc:
+                print(f"  betfair_history bootstrap (ft): errore {exc}")
+
+        bf_hist_file.write_text(
+            json.dumps(bf_hist, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
+            encoding="utf-8"
+        )
+        cached_n = sum(1 for v in bf_hist.values() if v.get("first_min_cached") is not None)
+        print(f"  betfair_history.json: {len(bf_hist)} FT BF accumulati (+{added} nuovi) · "
+              f"{cached_n} con 1° goal cachato (+{bs_global} da global, +{bs_ft} da ft)")
+
+        bf_stats_html = generate_betfair_stats_html(bf_matched, run_date, bf_hist=bf_hist)
         if bf_stats_html:
             (docs / "betfair_stats.html").write_text(
                 bf_stats_html.encode("utf-8", errors="replace").decode("utf-8"),
