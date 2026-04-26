@@ -16,7 +16,7 @@ on:
         required: false
         default: '200'
       rps:
-        description: 'Req/sec globali — alza con piani Mega+ (default 20)'
+        description: 'Req/sec globali (default 20)'
         required: false
         default: '20'
       max_retries:
@@ -61,21 +61,53 @@ jobs:
 
       - name: Commit & push results
         run: |
+          set -e
           git config user.email "goal-bot@users.noreply.github.com"
           git config user.name  "Goal Bot Backfill"
+
+          # Stash i risultati del backfill prima del pull (resilient a race)
           git add docs/global_history.json docs/goal_events_cache.json
           if git diff --cached --quiet; then
             echo "Nessuna modifica da committare."
             exit 0
           fi
-          git commit -m "backfill: aggiornata cache 1° goal globale + eventi"
-          for i in 1 2 3; do
-            if git pull --rebase origin main && git push origin main; then
+          git stash push -m "backfill-results" -- docs/global_history.json docs/goal_events_cache.json
+
+          # Sincronizza con remoto
+          git fetch origin main
+          git reset --hard origin/main
+
+          # Riporta i due file dal stash (sovrascrivendo eventuali modifiche remote)
+          git checkout stash@{0} -- docs/global_history.json docs/goal_events_cache.json
+          git stash drop || true
+
+          git add docs/global_history.json docs/goal_events_cache.json
+          if git diff --cached --quiet; then
+            echo "Backfill non ha modifiche oltre quelle remote."
+            exit 0
+          fi
+
+          # Riporta info di copertura nel commit message
+          CACHED=$(python3 -c "
+import json
+d = json.load(open('docs/global_history.json'))
+n = sum(1 for v in d.values() if v.get('first_min_cached') is not None)
+print(f'{n}/{len(d)} ({n/len(d)*100:.1f}%)')
+")
+          git commit -m "backfill: cache 1° goal globale aggiornata · $CACHED"
+
+          # Push con retry (lock-free perché abbiamo già fast-forwardato)
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
               echo "Push OK al tentativo $i"
               exit 0
             fi
-            echo "Push tentativo $i fallito, retry…"
-            sleep 5
+            echo "Push tentativo $i fallito; rifetch + restamp"
+            git fetch origin main
+            git reset --soft origin/main
+            git add docs/global_history.json docs/goal_events_cache.json
+            git commit --amend -C HEAD --no-edit || true
+            sleep $((i * 3))
           done
-          echo "Push fallito dopo 3 tentativi"
+          echo "Push fallito dopo 5 tentativi"
           exit 1
