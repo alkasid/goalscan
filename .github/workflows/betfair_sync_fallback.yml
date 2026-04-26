@@ -1,0 +1,89 @@
+name: Betfair sync (fallback)
+
+# Fallback per quando il cron sul Raspberry Pi è giù.
+# Trigger:
+#   - workflow_dispatch (manuale, on-demand dalla UI)
+#   - schedule (commentato per default — abilita solo se vuoi sostituire il Pi)
+#
+# Richiede i secret BETFAIR_APP_KEY / BETFAIR_USERNAME / BETFAIR_PASSWORD
+# nei Repository Settings → Secrets and variables → Actions.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "*/15 * * * *"   # decommentare per sostituire del tutto il Pi
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goalscan-push
+  cancel-in-progress: false
+
+jobs:
+  betfair-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run betfair_sync.py
+        env:
+          BETFAIR_APP_KEY:  ${{ secrets.BETFAIR_APP_KEY }}
+          BETFAIR_USERNAME: ${{ secrets.BETFAIR_USERNAME }}
+          BETFAIR_PASSWORD: ${{ secrets.BETFAIR_PASSWORD }}
+          BETFAIR_ENDPOINT: ${{ secrets.BETFAIR_ENDPOINT }}
+        run: python betfair_sync.py
+
+      - name: Commit & push results
+        run: |
+          set -e
+          git config user.email "goal-bot@users.noreply.github.com"
+          git config user.name  "Goal Bot Betfair"
+
+          git add docs/betfair_markets.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica."
+            exit 0
+          fi
+
+          # Stash → reset hard → restore (pattern resiliente alle race)
+          git stash push -m "betfair-sync" -- docs/betfair_markets.json
+          git fetch origin main
+          git reset --hard origin/main
+          git checkout 'stash@{0}' -- docs/betfair_markets.json
+          git stash drop || true
+
+          git add docs/betfair_markets.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica oltre quelle remote."
+            exit 0
+          fi
+
+          TOTAL=$(jq '.total_markets' docs/betfair_markets.json)
+          git commit -m "chore: betfair_markets.json — $TOTAL mercati [github-fallback]"
+
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push OK al tentativo $i"
+              exit 0
+            fi
+            echo "Push tentativo $i fallito; rifetch + amend"
+            git fetch origin main
+            git reset --soft origin/main
+            git add docs/betfair_markets.json
+            git commit --amend -C HEAD --no-edit || true
+            sleep $((i * 3))
+          done
+          echo "Push fallito dopo 5 tentativi"
+          exit 1
