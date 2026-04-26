@@ -1,0 +1,16 @@
+﻿# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets / local config
+.env
+.env.local
+*.key
+*.pem
+
+# Output locali temporanei
+*.tmp
+*.bak
+.DS_Store
