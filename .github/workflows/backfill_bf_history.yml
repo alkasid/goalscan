@@ -1,0 +1,88 @@
+name: Backfill betfair history
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Giorni indietro nel git log (default 30)'
+        required: false
+        default: '30'
+      sample_per_day:
+        description: 'Commit campionati per giorno (default 4)'
+        required: false
+        default: '4'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goalscan-push
+  cancel-in-progress: false
+
+jobs:
+  backfill-bf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # serve l'intero git history
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run backfill
+        env:
+          BF_BACKFILL_DAYS:           ${{ github.event.inputs.days_back }}
+          BF_BACKFILL_SAMPLE_PER_DAY: ${{ github.event.inputs.sample_per_day }}
+        run: python backfill_betfair_history.py
+
+      - name: Commit & push
+        run: |
+          set -e
+          git config user.email "goal-bot@users.noreply.github.com"
+          git config user.name  "Goal Bot BF Backfill"
+
+          git add docs/betfair_history.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica."
+            exit 0
+          fi
+
+          git stash push -m "bf-backfill" -- docs/betfair_history.json
+          git fetch origin main
+          git reset --hard origin/main
+          git checkout 'stash@{0}' -- docs/betfair_history.json
+          git stash drop || true
+
+          git add docs/betfair_history.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica oltre quelle remote."
+            exit 0
+          fi
+
+          TOTAL=$(jq 'length' docs/betfair_history.json)
+          CACHED=$(jq '[.[] | select(.first_min_cached != null)] | length' docs/betfair_history.json)
+          PCT=$(awk "BEGIN {printf \"%.1f\", $CACHED/$TOTAL*100}")
+
+          git commit -m "backfill: betfair_history.json · $TOTAL FT BF Exchange (cache 1°goal $CACHED/$TOTAL = $PCT%)"
+
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push OK al tentativo $i"
+              exit 0
+            fi
+            git fetch origin main
+            git reset --soft origin/main
+            git add docs/betfair_history.json
+            git commit --amend -C HEAD --no-edit || true
+            sleep $((i * 3))
+          done
+          echo "Push fallito dopo 5 tentativi"
+          exit 1
