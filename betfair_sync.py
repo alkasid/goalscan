@@ -102,14 +102,23 @@ def _require_secrets():
         sys.exit(1)
 
 
+_BROWSER_UA = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+)
+
+
 def login():
-    """Interactive Login -> ritorna sessionToken."""
+    """Interactive Login -> ritorna sessionToken.
+    Manda un User-Agent realistico: Betfair WAF blocca client `python-requests/*`
+    con HTTP 403 e response HTML (visto su GitHub Actions runner Azure)."""
     r = requests.post(
         LOGIN_URL,
         headers={
-            "X-Application": APP_KEY,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept": "application/json",
+            "X-Application":  APP_KEY,
+            "Content-Type":   "application/x-www-form-urlencoded",
+            "Accept":         "application/json",
+            "User-Agent":     _BROWSER_UA,
         },
         data={"username": USERNAME, "password": PASSWORD},
         timeout=20,
@@ -131,9 +140,11 @@ def login():
 def _api(session_token, method, payload, retries=2):
     url = f"{EXCHANGE_URL}/{method}/"
     headers = {
-        "X-Application": APP_KEY,
+        "X-Application":    APP_KEY,
         "X-Authentication": session_token,
-        "Content-Type": "application/json",
+        "Content-Type":     "application/json",
+        "Accept":           "application/json",
+        "User-Agent":       _BROWSER_UA,
     }
     for attempt in range(retries + 1):
         try:
