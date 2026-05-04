@@ -36,26 +36,21 @@ jobs:
           git config user.name "goal-bot"
           git config user.email "bot@goalscan"
 
-          git add docs/ft_history.json docs/global_history.json
-          if git diff --staged --quiet; then
-            echo "Nothing to commit"
-            exit 0
-          fi
+          # Salva i file aggiornati in /tmp (bypassa git stash quirks)
+          cp docs/ft_history.json     /tmp/ft_history.json
+          cp docs/global_history.json /tmp/global_history.json 2>/dev/null || true
 
-          # Stash dei due file aggiornati prima di sincronizzare col remoto.
-          # Bypassa "unstaged changes" al pull --rebase quando python ha
-          # appena toccato i file (race mtime/index).
-          git stash push -m "updater-results" -- docs/ft_history.json docs/global_history.json
-
+          # Sync hard col remoto
           git fetch origin main
           git reset --hard origin/main
 
-          git checkout 'stash@{0}' -- docs/ft_history.json docs/global_history.json
-          git stash drop || true
+          # Ripristina i file aggiornati
+          cp /tmp/ft_history.json     docs/ft_history.json
+          [ -f /tmp/global_history.json ] && cp /tmp/global_history.json docs/global_history.json || true
 
           git add docs/ft_history.json docs/global_history.json
           if git diff --staged --quiet; then
-            echo "Nothing to commit dopo sync col remoto"
+            echo "Nothing to commit"
             exit 0
           fi
 
