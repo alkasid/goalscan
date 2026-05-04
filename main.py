@@ -1801,6 +1801,12 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
     THRESHOLD_VAL = THRESHOLD
     LAST_N_VAL    = LAST_N
 
+    # Mese corrente in italiano (per il KPI 1 dinamico)
+    _MESI_IT = ["gennaio","febbraio","marzo","aprile","maggio","giugno",
+                "luglio","agosto","settembre","ottobre","novembre","dicembre"]
+    _now = datetime.now(timezone.utc)
+    month_label = _MESI_IT[_now.month - 1]
+
     return f"""<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -1831,7 +1837,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,8,15,0.93);backdrop-fi
 </div>
 <div class="wrap">
 <div class="g5">
-  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} alert &middot; mese di aprile</div></div><div class="kpi-foot">alert \u2265{THRESHOLD_VAL} &middot; Bet365 &middot; campionati</div></div>
+  <div class="panel kpi k1"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{total_ft}</div><div class="kpi-lbl">Partite finite (FT)</div><div class="kpi-sub">di {total_all} alert &middot; mese di {month_label}</div></div><div class="kpi-foot">alert \u2265{THRESHOLD_VAL} &middot; Bet365 &middot; campionati</div></div>
   <div class="panel kpi k2"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{avg_first}'</div><div class="kpi-lbl">Media 1&deg; goal</div><div class="kpi-sub">range {min_first}' &ndash; {max_first}'</div></div><div class="kpi-foot">su {with_goal} partite con \u22651 goal</div></div>
   <div class="panel kpi k3"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{strike_rate}%</div><div class="kpi-lbl">Strike rate goal</div><div class="kpi-sub">{with_goal} con goal su {total_ft} FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
   <div class="panel kpi k4"><div class="kpi-bar"></div><div class="kpi-inner"><div class="kpi-val">{zero_zero}</div><div class="kpi-lbl">Chiuse 0-0</div><div class="kpi-sub">{zz_pct}% degli FT</div></div><div class="kpi-foot">alert bot &middot; tutte le leghe</div></div>
