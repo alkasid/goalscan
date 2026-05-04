@@ -1,0 +1,72 @@
+name: Backfill ft_history (alerted FT retro)
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Data minima YYYY-MM-DD (default 2026-04-26 = quando updater era rotto)'
+        required: false
+        default: '2026-04-26'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goalscan-push
+  cancel-in-progress: false
+
+jobs:
+  backfill-ft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run backfill ft_history
+        env:
+          BACKFILL_FT_START_DATE: ${{ github.event.inputs.start_date }}
+        run: python backfill_ft_history.py
+
+      - name: Commit & push
+        run: |
+          set -e
+          git config user.email "goal-bot@users.noreply.github.com"
+          git config user.name  "Goal Bot FT Backfill"
+
+          # Snapshot fisico del file aggiornato (no git stash)
+          cp docs/ft_history.json /tmp/ft_history.json
+
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/ft_history.json docs/ft_history.json
+
+          git add docs/ft_history.json
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+
+          TOTAL=$(jq 'length' docs/ft_history.json)
+          git commit -m "backfill: ft_history aggiornata · $TOTAL entries (alert retro)"
+
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push OK al tentativo $i"
+              exit 0
+            fi
+            git fetch origin main
+            git reset --soft origin/main
+            git add docs/ft_history.json
+            git commit --amend -C HEAD --no-edit || true
+            sleep $((i * 3))
+          done
+          echo "Push fallito"
+          exit 1
