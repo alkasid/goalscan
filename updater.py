@@ -156,12 +156,15 @@ def backfill_global_first_min():
             gl[fid]["first_min_cached"] = fm
             filled += 1
 
-    GLOBAL_HISTORY_FILE.write_text(
-        json.dumps(gl, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
-        encoding="utf-8"
-    )
     cached = sum(1 for v in gl.values() if v.get("first_min_cached") is not None)
-    print(f"[backfill] +{filled}/{len(todo)} riempite · totale {cached}/{len(gl)} cachate")
+    if filled > 0:
+        GLOBAL_HISTORY_FILE.write_text(
+            json.dumps(gl, ensure_ascii=False).encode("utf-8", errors="replace").decode("utf-8"),
+            encoding="utf-8"
+        )
+        print(f"[backfill] +{filled}/{len(todo)} riempite · totale {cached}/{len(gl)} cachate · saved")
+    else:
+        print(f"[backfill] +0/{len(todo)} riempite · totale {cached}/{len(gl)} cachate · skip save")
 
 if __name__ == "__main__":
     main()

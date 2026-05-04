@@ -30,18 +30,21 @@ jobs:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python updater.py
 
-      - name: Commit & push ft_history
+      - name: Commit & push ft_history (+ backfill global_history)
         run: |
           git config user.name "goal-bot"
           git config user.email "bot@goalscan"
-          git add docs/ft_history.json
+          # Stage ENTRAMBI i file modificati da updater.py: ft_history (nuove FT)
+          # e global_history (backfill first_min_cached). Senza global_history qui,
+          # il pull --rebase falliva con "uncommitted changes" bloccando tutto.
+          git add docs/ft_history.json docs/global_history.json
           git diff --staged --quiet && echo "Nothing to commit" && exit 0
           git commit -m "chore: ft_history $(date -u +'%Y-%m-%d %H:%M UTC')"
-          # Retry push con rebase fino a 3 volte
-          for i in 1 2 3; do
+          # Retry push con rebase x5 (repo molto attivo: bot.yml + Pi cron + updater)
+          for i in 1 2 3 4 5; do
             git pull --rebase -X theirs origin main && git push && exit 0
-            echo "Push attempt $i failed, retrying in 5s..."
-            sleep 5
+            echo "Push attempt $i failed, retrying in $((i * 3))s..."
+            sleep $((i * 3))
           done
           echo "All push attempts failed"
           exit 1
