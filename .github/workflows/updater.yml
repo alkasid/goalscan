@@ -32,19 +32,47 @@ jobs:
 
       - name: Commit & push ft_history (+ backfill global_history)
         run: |
+          set -e
           git config user.name "goal-bot"
           git config user.email "bot@goalscan"
-          # Stage ENTRAMBI i file modificati da updater.py: ft_history (nuove FT)
-          # e global_history (backfill first_min_cached). Senza global_history qui,
-          # il pull --rebase falliva con "uncommitted changes" bloccando tutto.
+
           git add docs/ft_history.json docs/global_history.json
-          git diff --staged --quiet && echo "Nothing to commit" && exit 0
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+
+          # Stash dei due file aggiornati prima di sincronizzare col remoto.
+          # Bypassa "unstaged changes" al pull --rebase quando python ha
+          # appena toccato i file (race mtime/index).
+          git stash push -m "updater-results" -- docs/ft_history.json docs/global_history.json
+
+          git fetch origin main
+          git reset --hard origin/main
+
+          git checkout 'stash@{0}' -- docs/ft_history.json docs/global_history.json
+          git stash drop || true
+
+          git add docs/ft_history.json docs/global_history.json
+          if git diff --staged --quiet; then
+            echo "Nothing to commit dopo sync col remoto"
+            exit 0
+          fi
+
           git commit -m "chore: ft_history $(date -u +'%Y-%m-%d %H:%M UTC')"
-          # Retry push con rebase x5 (repo molto attivo: bot.yml + Pi cron + updater)
+
+          # Push retry x5 con amend automatico se arrivano commit nuovi
           for i in 1 2 3 4 5; do
-            git pull --rebase -X theirs origin main && git push && exit 0
-            echo "Push attempt $i failed, retrying in $((i * 3))s..."
+            if git push origin main; then
+              echo "Push OK al tentativo $i"
+              exit 0
+            fi
+            echo "Push tentativo $i fallito, rifetch + amend"
+            git fetch origin main
+            git reset --soft origin/main
+            git add docs/ft_history.json docs/global_history.json
+            git commit --amend -C HEAD --no-edit || true
             sleep $((i * 3))
           done
-          echo "All push attempts failed"
+          echo "Push fallito dopo 5 tentativi"
           exit 1
