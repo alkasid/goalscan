@@ -1400,6 +1400,45 @@ updateLive();setInterval(updateLive,15000);
 
 </script>'''
 
+    # ── INJECT matches JSON for Tamagotchi (Pi 3B+ announcer) ──
+    # Esponiamo i match qualificati come <script id="matches-data" type="application/json">
+    # cosi' il fetcher del Pi puo' leggere senza parsare HTML.
+    import json as _json
+    try:
+        from zoneinfo import ZoneInfo as _ZI
+        _ROME_TZ = _ZI("Europe/Rome")
+    except ImportError:
+        _ROME_TZ = timezone.utc
+    _td_data = []
+    for _m in matches:
+        _d = _m.get("date")
+        _k = _m.get("kickoff")
+        if not _d or not _k:
+            continue
+        try:
+            _hh, _mm = str(_k).split(":")[:2]
+            _dt = datetime.strptime(_d, "%Y-%m-%d").replace(
+                hour=int(_hh), minute=int(_mm), tzinfo=_ROME_TZ
+            )
+        except Exception:
+            continue
+        _comp = _m.get("league", "")
+        _country = _m.get("country", "")
+        if _country and _country != "World":
+            _comp = f"{_comp} \u00b7 {_country}"
+        _td_data.append({
+            "datetime_iso": _dt.isoformat(),
+            "home": _m.get("home", ""),
+            "away": _m.get("away", ""),
+            "competition": _comp,
+            "fixture_id": _m.get("fixture_id", ""),
+        })
+    _matches_data_script = (
+        '<script id="matches-data" type="application/json">'
+        + _json.dumps(_td_data, ensure_ascii=False, separators=(",", ":"))
+        + '</script>'
+    )
+
     return (
         f'<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -1438,7 +1477,7 @@ updateLive();setInterval(updateLive,15000);
         f'<div class="scanbar-item">copertura <span>{date_range}</span></div>'
         f'</div>'
         f'<div class="wrap">{body}</div>'
-        f'{live_script}</body></html>'
+        f'{live_script}{_matches_data_script}</body></html>'
     )
 
 
