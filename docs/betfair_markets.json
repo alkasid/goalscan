@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-29T00:15:05.566014+00:00",
+  "generated_at": "2026-06-29T00:30:04.286306+00:00",
   "total_markets": 66,
   "markets": [
     {
@@ -8,7 +8,7 @@
       "start_time": "2026-06-29T00:00:00.000Z",
       "runner_id": 5684078,
       "best_back_price": 2.26,
-      "best_back_size": 200.5
+      "best_back_size": 80.78
     },
     {
       "market_id": "1.259557505",
@@ -23,8 +23,8 @@
       "event_name": "Italy U19 v Serbia U19",
       "start_time": "2026-06-29T15:00:00.000Z",
       "runner_id": 459516,
-      "best_back_price": 1.55,
-      "best_back_size": 42.0
+      "best_back_price": 1.56,
+      "best_back_size": 41.5
     },
     {
       "market_id": "1.259443255",
@@ -91,20 +91,36 @@
       "best_back_size": 15.0
     },
     {
-      "market_id": "1.259559116",
-      "event_name": "Al-Qadsia v Kuwait SC",
-      "start_time": "2026-06-29T16:05:00.000Z",
-      "runner_id": 21918247,
-      "best_back_price": 2.96,
-      "best_back_size": 34.5
-    },
-    {
       "market_id": "1.259478136",
       "event_name": "Brazil v Japan",
       "start_time": "2026-06-29T17:00:00.000Z",
       "runner_id": 1408,
       "best_back_price": 1.77,
-      "best_back_size": 307.17
+      "best_back_size": 259.17
+    },
+    {
+      "market_id": "1.259559116",
+      "event_name": "Al-Qadsia v Kuwait SC",
+      "start_time": "2026-06-29T17:45:00.000Z",
+      "runner_id": 21918247,
+      "best_back_price": 2.96,
+      "best_back_size": 34.5
+    },
+    {
+      "market_id": "1.259559250",
+      "event_name": "Al Arabi Kuwait v Al Fahaheel FC",
+      "start_time": "2026-06-29T17:45:00.000Z",
+      "runner_id": 6310992,
+      "best_back_price": 1.25,
+      "best_back_size": 93.0
+    },
+    {
+      "market_id": "1.259559229",
+      "event_name": "Kazma SC v Al Salmiyah",
+      "start_time": "2026-06-29T17:45:00.000Z",
+      "runner_id": 14874303,
+      "best_back_price": 2.46,
+      "best_back_size": 55.0
     },
     {
       "market_id": "1.259571816",
@@ -123,22 +139,6 @@
       "best_back_size": 25.0
     },
     {
-      "market_id": "1.259559250",
-      "event_name": "Al Arabi Kuwait v Al Fahaheel FC",
-      "start_time": "2026-06-29T19:15:00.000Z",
-      "runner_id": 6310992,
-      "best_back_price": 1.25,
-      "best_back_size": 93.02
-    },
-    {
-      "market_id": "1.259559229",
-      "event_name": "Kazma SC v Al Salmiyah",
-      "start_time": "2026-06-29T19:15:00.000Z",
-      "runner_id": 14874303,
-      "best_back_price": 2.46,
-      "best_back_size": 55.0
-    },
-    {
       "market_id": "1.259567994",
       "event_name": "Afturelding v Aegir",
       "start_time": "2026-06-29T19:15:00.000Z",
@@ -152,7 +152,7 @@
       "start_time": "2026-06-29T20:30:00.000Z",
       "runner_id": 18,
       "best_back_price": 1.36,
-      "best_back_size": 818.92
+      "best_back_size": 803.04
     },
     {
       "market_id": "1.259567990",
@@ -216,7 +216,7 @@
       "start_time": "2026-06-30T21:00:00.000Z",
       "runner_id": 24,
       "best_back_price": 1.29,
-      "best_back_size": 4881.29
+      "best_back_size": 3619.79
     },
     {
       "market_id": "1.259570670",
@@ -264,7 +264,7 @@
       "start_time": "2026-07-01T16:00:00.000Z",
       "runner_id": 27,
       "best_back_price": 1.28,
-      "best_back_size": 8182.05
+      "best_back_size": 8162.64
     },
     {
       "market_id": "1.259565712",
@@ -351,8 +351,8 @@
       "event_name": "LDU v Orense Sporting Club",
       "start_time": "2026-07-01T22:00:00.000Z",
       "runner_id": 474678,
-      "best_back_price": 1.49,
-      "best_back_size": 133.0
+      "best_back_price": 1.4,
+      "best_back_size": 613.5
     },
     {
       "market_id": "1.259573657",
@@ -511,16 +511,16 @@
       "event_name": "IFK Goteborg v AIK",
       "start_time": "2026-07-05T12:00:00.000Z",
       "runner_id": 30689,
-      "best_back_price": 1.01,
-      "best_back_size": 8.0
+      "best_back_price": 2.08,
+      "best_back_size": 214.5
     },
     {
       "market_id": "1.259573917",
       "event_name": "Elfsborg v Hammarby",
       "start_time": "2026-07-05T14:30:00.000Z",
       "runner_id": 30684,
-      "best_back_price": 1.01,
-      "best_back_size": 8.0
+      "best_back_price": 3.35,
+      "best_back_size": 98.5
     },
     {
       "market_id": "1.259573854",
