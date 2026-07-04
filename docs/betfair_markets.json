@@ -1,110 +1,54 @@
 {
-  "generated_at": "2026-07-04T12:15:05.083992+00:00",
-  "total_markets": 180,
+  "generated_at": "2026-07-04T12:30:04.273157+00:00",
+  "total_markets": 174,
   "markets": [
-    {
-      "market_id": "1.259648388",
-      "event_name": "Cheongju FC v Daegu Fc",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 23787194,
-      "best_back_price": 1.01,
-      "best_back_size": 12.4
-    },
-    {
-      "market_id": "1.259648452",
-      "event_name": "Paju Citizen v Yongin FC",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 24211528,
-      "best_back_price": 7.6,
-      "best_back_size": 13.0
-    },
-    {
-      "market_id": "1.259648430",
-      "event_name": "Ansan Greeners FC v Suwon FC",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 12765833,
-      "best_back_price": 5.5,
-      "best_back_size": 12.62
-    },
-    {
-      "market_id": "1.259563247",
-      "event_name": "FC Anyang v Pohang Steelers",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 7564870,
-      "best_back_price": 9.2,
-      "best_back_size": 61.52
-    },
-    {
-      "market_id": "1.259563289",
-      "event_name": "Jeonbuk Motors v Gangwon",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 2224159,
-      "best_back_price": 4.9,
-      "best_back_size": 33.19
-    },
-    {
-      "market_id": "1.259563268",
-      "event_name": "Daejeon Citizen v Bucheon FC 1995",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 5352230,
-      "best_back_price": 4.6,
-      "best_back_size": 22.39
-    },
-    {
-      "market_id": "1.259648409",
-      "event_name": "Suwon Bluewings v Seongnam FC",
-      "start_time": "2026-07-04T10:30:00.000Z",
-      "runner_id": 5339134,
-      "best_back_price": 1.19,
-      "best_back_size": 68.73
-    },
     {
       "market_id": "1.259716755",
       "event_name": "Sparta Prague v SFC Opava",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 110475,
-      "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_price": null,
+      "best_back_size": null
     },
     {
       "market_id": "1.259563311",
       "event_name": "Qingdao Youth Island v Shanghai Port FC",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 40285964,
-      "best_back_price": 2.34,
-      "best_back_size": 829.42
+      "best_back_price": 2.44,
+      "best_back_size": 33.56
     },
     {
       "market_id": "1.259716860",
       "event_name": "AC Horsens v Hobro",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 195583,
-      "best_back_price": 1.24,
-      "best_back_size": 63.0
+      "best_back_price": 1.01,
+      "best_back_size": 70.0
     },
     {
       "market_id": "1.259648552",
       "event_name": "Liaoning Tieren FC v Chongqing Tonglianglong",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 84958475,
-      "best_back_price": 1.64,
-      "best_back_size": 54.97
+      "best_back_price": 1.94,
+      "best_back_size": 67.0
     },
     {
       "market_id": "1.259716797",
       "event_name": "Excelsior v Cambuur Leeuwarden",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 67164,
-      "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_price": null,
+      "best_back_size": null
     },
     {
       "market_id": "1.259729467",
       "event_name": "FC Wil v Grasshoppers Zurich",
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 179085,
-      "best_back_price": 1.2,
-      "best_back_size": 123.32
+      "best_back_price": 1.09,
+      "best_back_size": 1376.03
     },
     {
       "market_id": "1.259712510",
@@ -112,7 +56,7 @@
       "start_time": "2026-07-04T11:00:00.000Z",
       "runner_id": 28220,
       "best_back_price": 1.09,
-      "best_back_size": 2754.56
+      "best_back_size": 159.0
     },
     {
       "market_id": "1.259729530",
@@ -135,72 +79,72 @@
       "event_name": "Beijing Guoan v Shandong Taishan",
       "start_time": "2026-07-04T11:35:00.000Z",
       "runner_id": 2955487,
-      "best_back_price": 1.26,
-      "best_back_size": 1324.0
+      "best_back_price": 1.29,
+      "best_back_size": 324.72
     },
     {
       "market_id": "1.259648609",
       "event_name": "Dalian Yingbo v Wuhan Three Towns",
       "start_time": "2026-07-04T11:35:00.000Z",
       "runner_id": 67154937,
-      "best_back_price": 2.5,
-      "best_back_size": 59.0
+      "best_back_price": 3.0,
+      "best_back_size": 791.89
     },
     {
       "market_id": "1.259721020",
       "event_name": "Linfield v Kilmarnock",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 44330,
-      "best_back_price": 3.8,
-      "best_back_size": 49.97
+      "best_back_price": 8.6,
+      "best_back_size": 20.0
     },
     {
       "market_id": "1.259718874",
       "event_name": "Ingolstadt v Eichstatt",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 1229688,
-      "best_back_price": 1.12,
-      "best_back_size": 77.02
+      "best_back_price": 1.02,
+      "best_back_size": 76.89
     },
     {
       "market_id": "1.259584313",
       "event_name": "Lahti v Gnistan",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 139506,
-      "best_back_price": 2.36,
-      "best_back_size": 25.0
+      "best_back_price": 2.38,
+      "best_back_size": 788.81
     },
     {
       "market_id": "1.259705631",
       "event_name": "Ayr v Airdrieonians",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 48005,
-      "best_back_price": 1.63,
-      "best_back_size": 14.0
+      "best_back_price": 1.65,
+      "best_back_size": 13.6
     },
     {
       "market_id": "1.259648771",
       "event_name": "Tianjin Jinmen Tiger FC v Shenzhen Peng City",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 50443178,
-      "best_back_price": 2.68,
-      "best_back_size": 12.0
+      "best_back_price": 1.05,
+      "best_back_size": 274.76
     },
     {
       "market_id": "1.259707475",
       "event_name": "Club Brugge v Kortrijk",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 10762,
-      "best_back_price": 1.93,
-      "best_back_size": 26.0
+      "best_back_price": 3.55,
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.259707343",
       "event_name": "FC Twente v Aberdeen",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 7928242,
-      "best_back_price": 1.57,
-      "best_back_size": 43.39
+      "best_back_price": 1.72,
+      "best_back_size": 44.54
     },
     {
       "market_id": "1.259707364",
@@ -215,56 +159,56 @@
       "event_name": "Valerenga v Fredrikstad",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 132563,
-      "best_back_price": 1.45,
-      "best_back_size": 58.0
+      "best_back_price": 1.01,
+      "best_back_size": 5.0
     },
     {
       "market_id": "1.259706162",
       "event_name": "FC Tallinn v FC Nõmme United U21",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 28659758,
-      "best_back_price": 2.8,
-      "best_back_size": 13.0
+      "best_back_price": 1.73,
+      "best_back_size": 19.0
     },
     {
       "market_id": "1.259648750",
       "event_name": "Egersund v Moss",
       "start_time": "2026-07-04T12:00:00.000Z",
       "runner_id": 3876624,
-      "best_back_price": 1.88,
-      "best_back_size": 28.0
+      "best_back_price": 1.36,
+      "best_back_size": 119.33
     },
     {
       "market_id": "1.259726977",
       "event_name": "PAOK v Westerlo",
       "start_time": "2026-07-04T12:30:00.000Z",
       "runner_id": 232095,
-      "best_back_price": 2.06,
-      "best_back_size": 18.0
+      "best_back_price": 2.12,
+      "best_back_size": 23.0
     },
     {
       "market_id": "1.259707496",
       "event_name": "FC Dordrecht v Feyenoord",
       "start_time": "2026-07-04T12:30:00.000Z",
       "runner_id": 11434104,
-      "best_back_price": 7.6,
-      "best_back_size": 39.5
+      "best_back_price": 7.8,
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.259706186",
       "event_name": "Inverness CT v Ross Co",
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 56285,
-      "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_price": 2.66,
+      "best_back_size": 27.0
     },
     {
       "market_id": "1.259703152",
       "event_name": "Salpa v VJS",
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 13438504,
-      "best_back_price": 2.32,
-      "best_back_size": 52.0
+      "best_back_price": 2.26,
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.259717021",
@@ -280,7 +224,7 @@
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 8367606,
       "best_back_price": 3.15,
-      "best_back_size": 28.0
+      "best_back_size": 30.0
     },
     {
       "market_id": "1.259716818",
@@ -288,15 +232,15 @@
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 28204,
       "best_back_price": 1.72,
-      "best_back_size": 42.5
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.259693020",
       "event_name": "Spain U19 v Germany U19",
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 183063,
-      "best_back_price": 1.67,
-      "best_back_size": 21.63
+      "best_back_price": 1.64,
+      "best_back_size": 14.68
     },
     {
       "market_id": "1.259553836",
@@ -304,7 +248,7 @@
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 10765,
       "best_back_price": 3.0,
-      "best_back_size": 29.0
+      "best_back_size": 18.0
     },
     {
       "market_id": "1.259663314",
@@ -312,15 +256,15 @@
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 23130963,
       "best_back_price": 2.14,
-      "best_back_size": 18.0
+      "best_back_size": 107.41
     },
     {
       "market_id": "1.259553857",
       "event_name": "Degerfors v Malmo FF",
       "start_time": "2026-07-04T13:00:00.000Z",
       "runner_id": 784612,
-      "best_back_price": 3.45,
-      "best_back_size": 16.83
+      "best_back_price": 3.2,
+      "best_back_size": 513.02
     },
     {
       "market_id": "1.259731055",
@@ -360,7 +304,7 @@
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 4231683,
       "best_back_price": 6.0,
-      "best_back_size": 39.5
+      "best_back_size": 14.0
     },
     {
       "market_id": "1.259731219",
@@ -375,16 +319,16 @@
       "event_name": "Az Alkmaar v Gent",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 9220660,
-      "best_back_price": 1.77,
-      "best_back_size": 34.41
+      "best_back_price": 1.78,
+      "best_back_size": 29.74
     },
     {
       "market_id": "1.259706552",
       "event_name": "Grindavik v IF Vestri",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 399802,
-      "best_back_price": 2.52,
-      "best_back_size": 94.0
+      "best_back_price": 2.5,
+      "best_back_size": 24.0
     },
     {
       "market_id": "1.259587290",
@@ -392,7 +336,7 @@
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 139508,
       "best_back_price": 3.85,
-      "best_back_size": 218.5
+      "best_back_size": 243.16
     },
     {
       "market_id": "1.259712558",
@@ -407,7 +351,7 @@
       "event_name": "Morton v Stranraer",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 46283,
-      "best_back_price": 1.7,
+      "best_back_price": 1.69,
       "best_back_size": 13.0
     },
     {
@@ -432,22 +376,22 @@
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 5418845,
       "best_back_price": 1.82,
-      "best_back_size": 934.34
+      "best_back_size": 952.74
     },
     {
       "market_id": "1.259709032",
       "event_name": "Helmond Sport v AEK Larnaca",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 419129,
-      "best_back_price": 7.2,
-      "best_back_size": 19.5
+      "best_back_price": 7.6,
+      "best_back_size": 25.0
     },
     {
       "market_id": "1.259713398",
       "event_name": "Carshalton Athletic FC v Bromley",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 7642538,
-      "best_back_price": 6.4,
+      "best_back_price": 6.6,
       "best_back_size": 14.0
     },
     {
@@ -463,8 +407,8 @@
       "event_name": "KuPS Akatemia v Tampere Utd",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 46147144,
-      "best_back_price": 5.2,
-      "best_back_size": 55.06
+      "best_back_price": 5.3,
+      "best_back_size": 43.0
     },
     {
       "market_id": "1.259651193",
@@ -487,16 +431,16 @@
       "event_name": "Alfreton Town v Notts Co",
       "start_time": "2026-07-04T14:00:00.000Z",
       "runner_id": 990646,
-      "best_back_price": 9.8,
-      "best_back_size": 26.5
+      "best_back_price": 9.4,
+      "best_back_size": 26.0
     },
     {
       "market_id": "1.259693194",
       "event_name": "Iceland U19 (W) v Switzerland U19 (W)",
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 4044104,
-      "best_back_price": 2.84,
-      "best_back_size": 19.5
+      "best_back_price": 2.94,
+      "best_back_size": 39.26
     },
     {
       "market_id": "1.259718895",
@@ -511,8 +455,8 @@
       "event_name": "Puskas Akademia v Slovan Bratislava",
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 8526875,
-      "best_back_price": 4.3,
-      "best_back_size": 25.0
+      "best_back_price": 4.7,
+      "best_back_size": 16.0
     },
     {
       "market_id": "1.259718081",
@@ -520,15 +464,15 @@
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 1533861,
       "best_back_price": 2.22,
-      "best_back_size": 18.0
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.259652581",
       "event_name": "Rigas Futbola Skola v FK Auda",
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 6456470,
-      "best_back_price": 1.36,
-      "best_back_size": 666.37
+      "best_back_price": 1.37,
+      "best_back_size": 341.5
     },
     {
       "market_id": "1.259652603",
@@ -536,7 +480,7 @@
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 4728902,
       "best_back_price": 1.27,
-      "best_back_size": 150.14
+      "best_back_size": 163.41
     },
     {
       "market_id": "1.259718039",
@@ -567,8 +511,8 @@
       "event_name": "Lokomotiv Plovdiv v Arda",
       "start_time": "2026-07-04T15:00:00.000Z",
       "runner_id": 878125,
-      "best_back_price": 3.8,
-      "best_back_size": 21.0
+      "best_back_price": 3.75,
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.259655714",
@@ -608,15 +552,15 @@
       "start_time": "2026-07-04T16:00:00.000Z",
       "runner_id": 46983,
       "best_back_price": 14.0,
-      "best_back_size": 28.0
+      "best_back_size": 37.0
     },
     {
       "market_id": "1.259732821",
       "event_name": "Slaven Belupo v Zalaegerszeg",
       "start_time": "2026-07-04T16:30:00.000Z",
       "runner_id": 170923,
-      "best_back_price": 2.54,
-      "best_back_size": 28.0
+      "best_back_price": 2.5,
+      "best_back_size": 50.0
     },
     {
       "market_id": "1.259732976",
@@ -639,8 +583,8 @@
       "event_name": "Canada v Morocco",
       "start_time": "2026-07-04T17:00:00.000Z",
       "runner_id": 39112,
-      "best_back_price": 5.7,
-      "best_back_size": 2921.59
+      "best_back_price": 5.8,
+      "best_back_size": 253.5
     },
     {
       "market_id": "1.259662755",
@@ -672,7 +616,7 @@
       "start_time": "2026-07-04T17:45:00.000Z",
       "runner_id": 11730391,
       "best_back_price": 1.89,
-      "best_back_size": 39.57
+      "best_back_size": 48.57
     },
     {
       "market_id": "1.259719508",
@@ -735,8 +679,8 @@
       "event_name": "Longford v UCD",
       "start_time": "2026-07-04T18:30:00.000Z",
       "runner_id": 184330,
-      "best_back_price": 3.8,
-      "best_back_size": 25.0
+      "best_back_price": 3.95,
+      "best_back_size": 29.5
     },
     {
       "market_id": "1.259658788",
@@ -751,8 +695,8 @@
       "event_name": "Nueva Chicago v CA Guemes",
       "start_time": "2026-07-04T18:30:00.000Z",
       "runner_id": 194504,
-      "best_back_price": 2.12,
-      "best_back_size": 17.0
+      "best_back_price": 2.1,
+      "best_back_size": 31.0
     },
     {
       "market_id": "1.259658732",
@@ -760,7 +704,7 @@
       "start_time": "2026-07-04T18:30:00.000Z",
       "runner_id": 5499132,
       "best_back_price": 2.28,
-      "best_back_size": 25.0
+      "best_back_size": 38.04
     },
     {
       "market_id": "1.259658802",
@@ -800,7 +744,7 @@
       "start_time": "2026-07-04T19:00:00.000Z",
       "runner_id": 4525642,
       "best_back_price": 2.82,
-      "best_back_size": 15.0
+      "best_back_size": 20.0
     },
     {
       "market_id": "1.259689737",
@@ -840,7 +784,7 @@
       "start_time": "2026-07-04T21:00:00.000Z",
       "runner_id": 55211,
       "best_back_price": 22.0,
-      "best_back_size": 27.0
+      "best_back_size": 89.0
     },
     {
       "market_id": "1.259661584",
@@ -855,8 +799,8 @@
       "event_name": "Deportes Iquique v Coquimbo Unido",
       "start_time": "2026-07-04T22:00:00.000Z",
       "runner_id": 5271441,
-      "best_back_price": 3.65,
-      "best_back_size": 98.0
+      "best_back_price": 3.85,
+      "best_back_size": 92.0
     },
     {
       "market_id": "1.259691022",
@@ -872,7 +816,7 @@
       "start_time": "2026-07-05T00:00:00.000Z",
       "runner_id": 35917994,
       "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_size": 15.0
     },
     {
       "market_id": "1.259689881",
@@ -880,15 +824,23 @@
       "start_time": "2026-07-05T00:00:00.000Z",
       "runner_id": 13749040,
       "best_back_price": 1.6,
-      "best_back_size": 14.0
+      "best_back_size": 24.0
     },
     {
       "market_id": "1.259665442",
       "event_name": "Univ Catolica (Chile) v Deportes Copiapo",
       "start_time": "2026-07-05T00:30:00.000Z",
       "runner_id": 7029037,
-      "best_back_price": 1.33,
-      "best_back_size": 73.93
+      "best_back_price": 1.35,
+      "best_back_size": 12.12
+    },
+    {
+      "market_id": "1.259735084",
+      "event_name": "Club Atletico Morelia v Cruz Azul",
+      "start_time": "2026-07-05T01:30:00.000Z",
+      "runner_id": 35619598,
+      "best_back_price": 1.01,
+      "best_back_size": 8.0
     },
     {
       "market_id": "1.259721806",
@@ -976,7 +928,7 @@
       "start_time": "2026-07-05T11:00:00.000Z",
       "runner_id": 9654927,
       "best_back_price": 5.4,
-      "best_back_size": 20.83
+      "best_back_size": 20.56
     },
     {
       "market_id": "1.259673334",
@@ -1111,8 +1063,8 @@
       "event_name": "Santiago Wanderers v Universidad de Chile",
       "start_time": "2026-07-05T16:30:00.000Z",
       "runner_id": 913363,
-      "best_back_price": 4.1,
-      "best_back_size": 14.5
+      "best_back_price": 3.7,
+      "best_back_size": 19.0
     },
     {
       "market_id": "1.259733398",
@@ -1128,7 +1080,7 @@
       "start_time": "2026-07-05T17:00:00.000Z",
       "runner_id": 6666958,
       "best_back_price": 5.4,
-      "best_back_size": 13.0
+      "best_back_size": 17.0
     },
     {
       "market_id": "1.259733357",
@@ -1255,8 +1207,8 @@
       "event_name": "Univ de Concepcion v CSD Rangers",
       "start_time": "2026-07-05T19:00:00.000Z",
       "runner_id": 5129867,
-      "best_back_price": 1.93,
-      "best_back_size": 59.5
+      "best_back_price": 2.02,
+      "best_back_size": 12.5
     },
     {
       "market_id": "1.259688464",
@@ -1271,8 +1223,8 @@
       "event_name": "Puerto Montt v Huachipato",
       "start_time": "2026-07-05T19:00:00.000Z",
       "runner_id": 5684078,
-      "best_back_price": 2.48,
-      "best_back_size": 108.0
+      "best_back_price": 2.46,
+      "best_back_size": 16.0
     },
     {
       "market_id": "1.259688436",
@@ -1311,8 +1263,8 @@
       "event_name": "Brazil v Norway",
       "start_time": "2026-07-05T20:00:00.000Z",
       "runner_id": 1408,
-      "best_back_price": 1.87,
-      "best_back_size": 252.17
+      "best_back_price": 1.88,
+      "best_back_size": 17.85
     },
     {
       "market_id": "1.259708222",
