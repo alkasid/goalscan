@@ -1190,14 +1190,23 @@ async function updateLive(){
       ids=all.map(function(c){return c.getAttribute('data-fid');}).filter(Boolean);
     }
     if(!ids.length)return;
-    var fixtures=[];
+    // PARALLELO: tutti i chunk insieme con timeout 8s ciascuno
+    // (prima erano sequenziali: 8 chunk x 800ms = 6-7s di lag)
+    var chunkPromises=[];
     for(var i=0;i<ids.length;i+=20){
       var chunk=ids.slice(i,i+20).join('-');
-      var r=await fetch(PROXY+'?endpoint=fixtures&ids='+chunk);
-      if(!r.ok)continue;
-      var data=await r.json();
-      fixtures=fixtures.concat(data.response||[]);
+      chunkPromises.push((function(url){
+        var ctrl=new AbortController();
+        var timer=setTimeout(function(){ctrl.abort();},8000);
+        return fetch(url,{signal:ctrl.signal})
+          .then(function(r){clearTimeout(timer);return r.ok?r.json():null;})
+          .then(function(d){return (d&&d.response)||[];})
+          .catch(function(){clearTimeout(timer);return [];});
+      })(PROXY+'?endpoint=fixtures&ids='+chunk));
     }
+    var chunkResults=await Promise.all(chunkPromises);
+    var fixtures=[];
+    chunkResults.forEach(function(arr){fixtures=fixtures.concat(arr);});
     var fmap={};
     fixtures.forEach(function(f){fmap[String(f.fixture.id)]=f;});
 
@@ -1312,7 +1321,19 @@ async function updateLive(){
     if(ts)ts.textContent=REFRESH+' '+new Date().toLocaleTimeString();
   }catch(e){console.log('live',e);}
 }
-updateLive();setInterval(updateLive,15000);
+// Guardia anti-overlap: skip se un update e' ancora in corso
+var _updating=false;
+async function updateLiveSafe(){
+  if(_updating)return;
+  _updating=true;
+  try{await updateLive();}finally{_updating=false;}
+}
+// Refresh adattivo: 10s se ci sono live visibili, 45s altrimenti
+function scheduleNext(){
+  var hasLive=document.querySelectorAll('#live-section .card[data-fid]').length>0;
+  setTimeout(function(){updateLiveSafe().then(scheduleNext);},hasLive?10000:45000);
+}
+updateLiveSafe().then(scheduleNext);
 
 // ── RADAR + LOGO VARIATIO INITIALIS con onda RGB ──
 (function(){
