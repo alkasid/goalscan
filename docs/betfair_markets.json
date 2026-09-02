@@ -1,86 +1,22 @@
 {
-  "generated_at": "2026-09-02T16:45:04.433128+00:00",
-  "total_markets": 596,
+  "generated_at": "2026-09-02T17:00:05.798404+00:00",
+  "total_markets": 589,
   "markets": [
-    {
-      "market_id": "1.261863184",
-      "event_name": "Mladost Zdralovi v NK Sesvete",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 4135166,
-      "best_back_price": 1.07,
-      "best_back_size": 106.18
-    },
-    {
-      "market_id": "1.261859237",
-      "event_name": "Slovan Liberec (W) v SFA 2000 Sarajevo (W)",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 8975388,
-      "best_back_price": 8.4,
-      "best_back_size": 13.0
-    },
-    {
-      "market_id": "1.261863202",
-      "event_name": "Segesta v Kustosija",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 4189473,
-      "best_back_price": 8.6,
-      "best_back_size": 17.44
-    },
-    {
-      "market_id": "1.261736706",
-      "event_name": "CS Gloria 2018 Bistrita-Nasaud v Csikszereda",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 40674969,
-      "best_back_price": 48.0,
-      "best_back_size": 12.0
-    },
-    {
-      "market_id": "1.261863138",
-      "event_name": "Jadran Luka Ploce v NK Dubrava Zagreb",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 11770745,
-      "best_back_price": 1.01,
-      "best_back_size": 3.0
-    },
-    {
-      "market_id": "1.261863220",
-      "event_name": "NK Croatia Zmijavci v BSK Bijelo Brdo",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 8751049,
-      "best_back_price": 1.09,
-      "best_back_size": 75.78
-    },
-    {
-      "market_id": "1.261846858",
-      "event_name": "Gornik Leczna v Stal Mielec",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 502299,
-      "best_back_price": null,
-      "best_back_size": null
-    },
-    {
-      "market_id": "1.261863156",
-      "event_name": "NK Dugopolje v Karlovac",
-      "start_time": "2026-09-02T15:00:00.000Z",
-      "runner_id": 7154508,
-      "best_back_price": null,
-      "best_back_size": null
-    },
     {
       "market_id": "1.261863170",
       "event_name": "Opatija v Hrvace",
       "start_time": "2026-09-02T15:30:00.000Z",
       "runner_id": 4940514,
-      "best_back_price": 1.32,
-      "best_back_size": 287.16
+      "best_back_price": 1.24,
+      "best_back_size": 295.76
     },
     {
       "market_id": "1.261852455",
       "event_name": "Znicz Pruszkow v Cracovia Krakow",
       "start_time": "2026-09-02T15:30:00.000Z",
       "runner_id": 3199858,
-      "best_back_price": 9.2,
-      "best_back_size": 13.61
+      "best_back_price": 10.5,
+      "best_back_size": 30.55
     },
     {
       "market_id": "1.261859972",
@@ -95,16 +31,16 @@
       "event_name": "Gubbio v Pesaro",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 4893592,
-      "best_back_price": 1.09,
-      "best_back_size": 128.5
+      "best_back_price": 1.08,
+      "best_back_size": 1679.72
     },
     {
       "market_id": "1.261922977",
       "event_name": "East Riffa v Sitra",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 5992610,
-      "best_back_price": 1.01,
-      "best_back_size": 3.0
+      "best_back_price": 3.6,
+      "best_back_size": 293.97
     },
     {
       "market_id": "1.261822337",
@@ -112,39 +48,39 @@
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 10748720,
       "best_back_price": 1.35,
-      "best_back_size": 12.0
+      "best_back_size": 122.86
     },
     {
       "market_id": "1.261754823",
       "event_name": "Udinese v Venezia",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 215821,
-      "best_back_price": 2.22,
-      "best_back_size": 893.59
+      "best_back_price": 2.34,
+      "best_back_size": 595.94
     },
     {
       "market_id": "1.261844643",
       "event_name": "Lechia Zielona Gora v Ruch Chorzow",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 7583061,
-      "best_back_price": 23.0,
-      "best_back_size": 14.66
+      "best_back_price": 32.0,
+      "best_back_size": 20.21
     },
     {
       "market_id": "1.261793289",
       "event_name": "FC Zbrojovka Brno v Hradec Kralove",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 9833553,
-      "best_back_price": 3.35,
-      "best_back_size": 42.0
+      "best_back_price": 3.55,
+      "best_back_size": 26.5
     },
     {
       "market_id": "1.261870980",
       "event_name": "Malkiya v Al Najma (BRN)",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 10565729,
-      "best_back_price": 3.8,
-      "best_back_size": 38.0
+      "best_back_price": 3.9,
+      "best_back_size": 40.0
     },
     {
       "market_id": "1.261737397",
@@ -152,103 +88,103 @@
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 7760373,
       "best_back_price": 1.01,
-      "best_back_size": 12.5
+      "best_back_size": 10.11
     },
     {
       "market_id": "1.261859942",
       "event_name": "Hafnarfjordur (W) v Apollon Limassol Women",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 5586260,
-      "best_back_price": 3.95,
-      "best_back_size": 17.53
+      "best_back_price": 4.2,
+      "best_back_size": 18.75
     },
     {
       "market_id": "1.261860009",
       "event_name": "Fortuna Hjorring (W) v ZNK Hajduk Split (W)",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 5862298,
-      "best_back_price": 1.56,
-      "best_back_size": 29.99
+      "best_back_price": 1.62,
+      "best_back_size": 24.1
     },
     {
       "market_id": "1.261859676",
       "event_name": "Rosenborg BK (W) v SeaSters Odesa (W)",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 28747449,
-      "best_back_price": 1.23,
-      "best_back_size": 147.3
+      "best_back_price": 1.28,
+      "best_back_size": 62.7
     },
     {
       "market_id": "1.261871418",
       "event_name": "Csikszereda Miercurea Ciuc (W) v Breidablik (W)",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 102344675,
-      "best_back_price": 15.0,
-      "best_back_size": 16.38
+      "best_back_price": 21.0,
+      "best_back_size": 15.23
     },
     {
       "market_id": "1.261873258",
       "event_name": "Union Brescia v Giana Erminio",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 87451686,
-      "best_back_price": 1.04,
-      "best_back_size": 72.57
+      "best_back_price": null,
+      "best_back_size": null
     },
     {
       "market_id": "1.261861185",
       "event_name": "Brodd v Viking",
       "start_time": "2026-09-02T16:00:00.000Z",
       "runner_id": 4698749,
-      "best_back_price": 3.9,
-      "best_back_size": 16.35
+      "best_back_price": 3.95,
+      "best_back_size": 16.0
     },
     {
       "market_id": "1.261870196",
       "event_name": "Inter Milan (W) v Wolfsburg (W)",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 26472516,
-      "best_back_price": 2.86,
-      "best_back_size": 12.0
+      "best_back_price": 2.76,
+      "best_back_size": 14.51
     },
     {
       "market_id": "1.261857041",
       "event_name": "Carpi v Pro Vercelli",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 4893598,
-      "best_back_price": 2.46,
-      "best_back_size": 58.55
+      "best_back_price": 2.54,
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.261647219",
       "event_name": "Austria Wien v WSG Wattens",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 181248,
-      "best_back_price": 1.9,
-      "best_back_size": 16.82
+      "best_back_price": 1.94,
+      "best_back_size": 1101.43
     },
     {
       "market_id": "1.261856932",
       "event_name": "Sorrento v Cosenza",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 2519555,
-      "best_back_price": 2.14,
-      "best_back_size": 35.14
+      "best_back_price": 2.22,
+      "best_back_size": 35.32
     },
     {
       "market_id": "1.261856673",
       "event_name": "Arzignanochiampo v SSD Dolomiti Bellunesi",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 15304043,
-      "best_back_price": 4.2,
-      "best_back_size": 11.8
+      "best_back_price": 4.4,
+      "best_back_size": 17.0
     },
     {
       "market_id": "1.261869973",
       "event_name": "Paris St-G (W) v Eintracht Frankfurt (W)",
       "start_time": "2026-09-02T16:30:00.000Z",
       "runner_id": 5847706,
-      "best_back_price": 2.02,
-      "best_back_size": 47.21
+      "best_back_price": 2.04,
+      "best_back_size": 64.83
     },
     {
       "market_id": "1.261859699",
@@ -256,15 +192,15 @@
       "start_time": "2026-09-02T16:45:00.000Z",
       "runner_id": 6415473,
       "best_back_price": 1.02,
-      "best_back_size": 35.0
+      "best_back_size": 2672.05
     },
     {
       "market_id": "1.261869881",
       "event_name": "Servette FC (W) v Sparta Prague (W)",
       "start_time": "2026-09-02T16:45:00.000Z",
       "runner_id": 37425934,
-      "best_back_price": 1.72,
-      "best_back_size": 124.0
+      "best_back_price": 1.62,
+      "best_back_size": 29.55
     },
     {
       "market_id": "1.261851857",
@@ -272,31 +208,31 @@
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 508773,
       "best_back_price": 2.22,
-      "best_back_size": 12.0
+      "best_back_size": 21.0
     },
     {
       "market_id": "1.261752358",
       "event_name": "Athlitiki Enosi Larissa v Olympiakos",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 10647533,
-      "best_back_price": 14.5,
-      "best_back_size": 38.51
+      "best_back_price": 15.0,
+      "best_back_size": 38.74
     },
     {
       "market_id": "1.261869927",
       "event_name": "Koge (W) v PSV Eindhoven (W)",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 26612874,
-      "best_back_price": 2.12,
-      "best_back_size": 18.0
+      "best_back_price": 2.0,
+      "best_back_size": 52.75
     },
     {
       "market_id": "1.261860867",
       "event_name": "Sokol Ostroda v Sokol Kleczew",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 6551163,
-      "best_back_price": 5.0,
-      "best_back_size": 12.0
+      "best_back_price": 4.6,
+      "best_back_size": 17.0
     },
     {
       "market_id": "1.261875115",
@@ -304,15 +240,15 @@
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 102137986,
       "best_back_price": 1.45,
-      "best_back_size": 25.0
+      "best_back_size": 60.35
     },
     {
       "market_id": "1.261757410",
       "event_name": "Ceramica Cleopatra v Modern Sport FC",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 37456793,
-      "best_back_price": 2.1,
-      "best_back_size": 41.71
+      "best_back_price": 2.04,
+      "best_back_size": 23.0
     },
     {
       "market_id": "1.261757281",
@@ -320,15 +256,15 @@
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 10472882,
       "best_back_price": 2.68,
-      "best_back_size": 108.0
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.261859653",
       "event_name": "Feyenoord (W) v Anderlecht (W)",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 40744009,
-      "best_back_price": 2.08,
-      "best_back_size": 21.0
+      "best_back_price": 1.99,
+      "best_back_size": 14.0
     },
     {
       "market_id": "1.261855704",
@@ -336,23 +272,23 @@
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 4935893,
       "best_back_price": 1.9,
-      "best_back_size": 262.0
+      "best_back_size": 20.0
     },
     {
       "market_id": "1.261853195",
       "event_name": "Abo Qair Semads v Al Ittihad (EGY)",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 15036107,
-      "best_back_price": 4.2,
-      "best_back_size": 17.0
+      "best_back_price": 3.9,
+      "best_back_size": 64.6
     },
     {
       "market_id": "1.261870173",
       "event_name": "Real Sociedad (W) v Chelsea (W)",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 6794562,
-      "best_back_price": 7.4,
-      "best_back_size": 47.5
+      "best_back_price": 7.6,
+      "best_back_size": 22.89
     },
     {
       "market_id": "1.261704941",
@@ -360,31 +296,31 @@
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 1255221,
       "best_back_price": 10.5,
-      "best_back_size": 23.0
+      "best_back_size": 21.0
     },
     {
       "market_id": "1.261822589",
       "event_name": "Panserraikos v Atromitos",
       "start_time": "2026-09-02T17:00:00.000Z",
       "runner_id": 1210411,
-      "best_back_price": 4.4,
-      "best_back_size": 127.5
+      "best_back_price": 4.6,
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.261847303",
       "event_name": "Resovia Rzeszow v Arka Gdynia",
       "start_time": "2026-09-02T17:05:00.000Z",
       "runner_id": 5767794,
-      "best_back_price": 4.7,
-      "best_back_size": 22.0
+      "best_back_price": 5.0,
+      "best_back_size": 64.99
     },
     {
       "market_id": "1.261869950",
       "event_name": "Oud-Heverlee Leuven (W) v Czarni Sosnowiec (W)",
       "start_time": "2026-09-02T18:00:00.000Z",
       "runner_id": 10840806,
-      "best_back_price": 1.45,
-      "best_back_size": 14.0
+      "best_back_price": 1.43,
+      "best_back_size": 26.0
     },
     {
       "market_id": "1.261829189",
@@ -400,7 +336,7 @@
       "start_time": "2026-09-02T18:00:00.000Z",
       "runner_id": 2467701,
       "best_back_price": 2.54,
-      "best_back_size": 32.18
+      "best_back_size": 56.23
     },
     {
       "market_id": "1.261869904",
@@ -408,23 +344,23 @@
       "start_time": "2026-09-02T18:00:00.000Z",
       "runner_id": 36683270,
       "best_back_price": 1.15,
-      "best_back_size": 18.0
+      "best_back_size": 197.98
     },
     {
       "market_id": "1.261597678",
       "event_name": "AGF v Midtjylland",
       "start_time": "2026-09-02T18:00:00.000Z",
       "runner_id": 28214,
-      "best_back_price": 3.5,
-      "best_back_size": 12.0
+      "best_back_price": 3.15,
+      "best_back_size": 115.14
     },
     {
       "market_id": "1.261737762",
       "event_name": "Arges Pitesti v FCSB",
       "start_time": "2026-09-02T18:30:00.000Z",
       "runner_id": 1557297,
-      "best_back_price": 2.68,
-      "best_back_size": 29.0
+      "best_back_price": 2.62,
+      "best_back_size": 25.0
     },
     {
       "market_id": "1.261846875",
@@ -432,7 +368,7 @@
       "start_time": "2026-09-02T18:30:00.000Z",
       "runner_id": 502304,
       "best_back_price": 2.66,
-      "best_back_size": 12.0
+      "best_back_size": 147.49
     },
     {
       "market_id": "1.261752093",
@@ -448,15 +384,15 @@
       "start_time": "2026-09-02T18:30:00.000Z",
       "runner_id": 22099611,
       "best_back_price": 1.11,
-      "best_back_size": 17.0
+      "best_back_size": 157.99
     },
     {
       "market_id": "1.261757216",
       "event_name": "Sint Truiden v Union St Gilloise",
       "start_time": "2026-09-02T18:30:00.000Z",
       "runner_id": 189832,
-      "best_back_price": 3.7,
-      "best_back_size": 175.82
+      "best_back_price": 3.75,
+      "best_back_size": 106.49
     },
     {
       "market_id": "1.261752238",
@@ -464,7 +400,7 @@
       "start_time": "2026-09-02T18:30:00.000Z",
       "runner_id": 176184,
       "best_back_price": 2.12,
-      "best_back_size": 24.0
+      "best_back_size": 13.0
     },
     {
       "market_id": "1.261650033",
@@ -488,15 +424,15 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 1703,
       "best_back_price": 1.72,
-      "best_back_size": 31.5
+      "best_back_size": 476.46
     },
     {
       "market_id": "1.261713837",
       "event_name": "Luton v Stockport",
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 223467,
-      "best_back_price": 3.05,
-      "best_back_size": 115.79
+      "best_back_price": 2.82,
+      "best_back_size": 31.76
     },
     {
       "market_id": "1.261712411",
@@ -512,23 +448,23 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 1117,
       "best_back_price": 2.22,
-      "best_back_size": 89.0
+      "best_back_size": 176.98
     },
     {
       "market_id": "1.261733160",
       "event_name": "Kilmarnock v St Mirren",
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 56086,
-      "best_back_price": 2.8,
-      "best_back_size": 18.0
+      "best_back_price": 2.78,
+      "best_back_size": 22.0
     },
     {
       "market_id": "1.261733223",
       "event_name": "Celtic v Aberdeen",
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 52495022,
-      "best_back_price": 1.26,
-      "best_back_size": 76.15
+      "best_back_price": 1.25,
+      "best_back_size": 610.06
     },
     {
       "market_id": "1.261694368",
@@ -536,7 +472,7 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 56036,
       "best_back_price": 2.38,
-      "best_back_size": 388.83
+      "best_back_size": 213.98
     },
     {
       "market_id": "1.261861645",
@@ -552,7 +488,7 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 10707,
       "best_back_price": 2.18,
-      "best_back_size": 126.91
+      "best_back_size": 141.4
     },
     {
       "market_id": "1.261693700",
@@ -560,7 +496,7 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 62684,
       "best_back_price": 1.88,
-      "best_back_size": 12.5
+      "best_back_size": 18.0
     },
     {
       "market_id": "1.261733181",
@@ -568,7 +504,7 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 13133,
       "best_back_price": 2.84,
-      "best_back_size": 107.28
+      "best_back_size": 90.32
     },
     {
       "market_id": "1.261713881",
@@ -576,7 +512,7 @@
       "start_time": "2026-09-02T18:45:00.000Z",
       "runner_id": 69746,
       "best_back_price": 2.5,
-      "best_back_size": 20.0
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.261877833",
@@ -584,7 +520,7 @@
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 1370433,
       "best_back_price": 3.05,
-      "best_back_size": 60.0
+      "best_back_size": 73.49
     },
     {
       "market_id": "1.261733202",
@@ -592,7 +528,7 @@
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 328049,
       "best_back_price": 5.8,
-      "best_back_size": 40.5
+      "best_back_size": 39.5
     },
     {
       "market_id": "1.261856911",
@@ -600,7 +536,7 @@
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 522041,
       "best_back_price": 1.56,
-      "best_back_size": 163.0
+      "best_back_size": 162.99
     },
     {
       "market_id": "1.261693991",
@@ -608,7 +544,7 @@
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 56299,
       "best_back_price": 3.0,
-      "best_back_size": 348.92
+      "best_back_size": 12.15
     },
     {
       "market_id": "1.261856631",
@@ -623,16 +559,16 @@
       "event_name": "Reading v Mansfield",
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 103122,
-      "best_back_price": 2.12,
-      "best_back_size": 145.81
+      "best_back_price": 2.14,
+      "best_back_size": 17.0
     },
     {
       "market_id": "1.261877812",
       "event_name": "Club Sportivo Ameliano v Sportivo Trinidense",
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 39325793,
-      "best_back_price": 2.74,
-      "best_back_size": 20.5
+      "best_back_price": 2.78,
+      "best_back_size": 17.0
     },
     {
       "market_id": "1.261766331",
@@ -640,7 +576,7 @@
       "start_time": "2026-09-02T19:00:00.000Z",
       "runner_id": 6161547,
       "best_back_price": 1.53,
-      "best_back_size": 175.57
+      "best_back_size": 170.06
     },
     {
       "market_id": "1.261752383",
@@ -663,8 +599,8 @@
       "event_name": "Club Sport Sebaco v CD Walter Ferreti",
       "start_time": "2026-09-02T21:00:00.000Z",
       "runner_id": 48461207,
-      "best_back_price": 2.22,
-      "best_back_size": 202.0
+      "best_back_price": 2.38,
+      "best_back_size": 178.98
     },
     {
       "market_id": "1.261912077",
@@ -672,15 +608,15 @@
       "start_time": "2026-09-02T21:30:00.000Z",
       "runner_id": 328699,
       "best_back_price": 1.65,
-      "best_back_size": 201.0
+      "best_back_size": 200.98
     },
     {
       "market_id": "1.261766906",
       "event_name": "Deportivo Cuenca v Guayaquil City",
       "start_time": "2026-09-02T21:30:00.000Z",
       "runner_id": 1067928,
-      "best_back_price": 1.67,
-      "best_back_size": 16.14
+      "best_back_price": 1.68,
+      "best_back_size": 11.86
     },
     {
       "market_id": "1.261914018",
@@ -695,8 +631,8 @@
       "event_name": "Quindio v Llaneros FC",
       "start_time": "2026-09-02T22:30:00.000Z",
       "runner_id": 5141456,
-      "best_back_price": 2.76,
-      "best_back_size": 19.0
+      "best_back_price": 2.78,
+      "best_back_size": 18.0
     },
     {
       "market_id": "1.261597657",
@@ -728,15 +664,15 @@
       "start_time": "2026-09-03T00:00:00.000Z",
       "runner_id": 13749040,
       "best_back_price": 3.6,
-      "best_back_size": 67.17
+      "best_back_size": 67.16
     },
     {
       "market_id": "1.261936129",
       "event_name": "Salcedo FC v Mount Pleasant FC",
       "start_time": "2026-09-03T00:00:00.000Z",
       "runner_id": 87069144,
-      "best_back_price": 1.01,
-      "best_back_size": 15.0
+      "best_back_price": 3.1,
+      "best_back_size": 20.5
     },
     {
       "market_id": "1.261772185",
@@ -744,7 +680,7 @@
       "start_time": "2026-09-03T00:15:00.000Z",
       "runner_id": 192085,
       "best_back_price": 4.9,
-      "best_back_size": 14.31
+      "best_back_size": 19.31
     },
     {
       "market_id": "1.261651861",
@@ -759,8 +695,8 @@
       "event_name": "EC Vitoria Salvador v Vasco Da Gama",
       "start_time": "2026-09-03T00:30:00.000Z",
       "runner_id": 5336581,
-      "best_back_price": 2.86,
-      "best_back_size": 55.0
+      "best_back_price": 2.88,
+      "best_back_size": 13.0
     },
     {
       "market_id": "1.261938852",
@@ -776,7 +712,7 @@
       "start_time": "2026-09-03T01:25:00.000Z",
       "runner_id": 4908158,
       "best_back_price": 3.25,
-      "best_back_size": 23.0
+      "best_back_size": 126.49
     },
     {
       "market_id": "1.261926092",
@@ -784,7 +720,7 @@
       "start_time": "2026-09-03T12:30:00.000Z",
       "runner_id": 11058344,
       "best_back_price": 4.6,
-      "best_back_size": 74.48
+      "best_back_size": 74.47
     },
     {
       "market_id": "1.261919304",
@@ -800,7 +736,7 @@
       "start_time": "2026-09-03T13:00:00.000Z",
       "runner_id": 102368635,
       "best_back_price": 1.01,
-      "best_back_size": 3.0
+      "best_back_size": 13.0
     },
     {
       "market_id": "1.261914558",
@@ -816,7 +752,7 @@
       "start_time": "2026-09-03T14:00:00.000Z",
       "runner_id": 5671996,
       "best_back_price": 2.08,
-      "best_back_size": 361.91
+      "best_back_size": 361.88
     },
     {
       "market_id": "1.261814949",
@@ -824,15 +760,15 @@
       "start_time": "2026-09-03T14:00:00.000Z",
       "runner_id": 41144710,
       "best_back_price": 2.06,
-      "best_back_size": 219.5
+      "best_back_size": 229.48
     },
     {
       "market_id": "1.261816801",
       "event_name": "ACS Fotbal Club Bacau v Universitatea Craiova",
       "start_time": "2026-09-03T14:30:00.000Z",
       "runner_id": 59392231,
-      "best_back_price": 4.4,
-      "best_back_size": 47.5
+      "best_back_price": 1.01,
+      "best_back_size": 13.0
     },
     {
       "market_id": "1.261928934",
@@ -856,7 +792,7 @@
       "start_time": "2026-09-03T15:55:00.000Z",
       "runner_id": 13886091,
       "best_back_price": 2.68,
-      "best_back_size": 148.5
+      "best_back_size": 148.49
     },
     {
       "market_id": "1.261755834",
@@ -864,7 +800,7 @@
       "start_time": "2026-09-03T16:00:00.000Z",
       "runner_id": 5876552,
       "best_back_price": 2.2,
-      "best_back_size": 154.0
+      "best_back_size": 153.99
     },
     {
       "market_id": "1.261844621",
@@ -879,8 +815,8 @@
       "event_name": "Alashkert v FC Van Yerevan",
       "start_time": "2026-09-03T16:00:00.000Z",
       "runner_id": 9686394,
-      "best_back_price": 1.21,
-      "best_back_size": 517.5
+      "best_back_price": 1.16,
+      "best_back_size": 1011.91
     },
     {
       "market_id": "1.261651882",
@@ -888,7 +824,7 @@
       "start_time": "2026-09-03T16:00:00.000Z",
       "runner_id": 43402601,
       "best_back_price": 1.81,
-      "best_back_size": 96.0
+      "best_back_size": 95.99
     },
     {
       "market_id": "1.261936680",
@@ -903,8 +839,8 @@
       "event_name": "Palermo v Mantova",
       "start_time": "2026-09-03T16:00:00.000Z",
       "runner_id": 60307,
-      "best_back_price": 1.71,
-      "best_back_size": 126.42
+      "best_back_price": 1.75,
+      "best_back_size": 15.0
     },
     {
       "market_id": "1.261824513",
@@ -920,7 +856,7 @@
       "start_time": "2026-09-03T16:30:00.000Z",
       "runner_id": 66051083,
       "best_back_price": 1.84,
-      "best_back_size": 85.0
+      "best_back_size": 84.99
     },
     {
       "market_id": "1.261828597",
@@ -928,15 +864,15 @@
       "start_time": "2026-09-03T17:00:00.000Z",
       "runner_id": 4768314,
       "best_back_price": 1.4,
-      "best_back_size": 247.94
+      "best_back_size": 247.91
     },
     {
       "market_id": "1.261827868",
       "event_name": "Bursaspor v Istanbulspor",
       "start_time": "2026-09-03T17:00:00.000Z",
       "runner_id": 113183,
-      "best_back_price": 1.45,
-      "best_back_size": 281.5
+      "best_back_price": 1.38,
+      "best_back_size": 732.44
     },
     {
       "market_id": "1.261801418",
@@ -952,7 +888,7 @@
       "start_time": "2026-09-03T17:00:00.000Z",
       "runner_id": 10408670,
       "best_back_price": 2.54,
-      "best_back_size": 151.5
+      "best_back_size": 151.49
     },
     {
       "market_id": "1.261750190",
@@ -960,7 +896,7 @@
       "start_time": "2026-09-03T17:30:00.000Z",
       "runner_id": 5964785,
       "best_back_price": 1.47,
-      "best_back_size": 14.0
+      "best_back_size": 13.5
     },
     {
       "market_id": "1.261829021",
@@ -968,15 +904,15 @@
       "start_time": "2026-09-03T17:30:00.000Z",
       "runner_id": 121248,
       "best_back_price": 2.38,
-      "best_back_size": 296.0
+      "best_back_size": 295.97
     },
     {
       "market_id": "1.261828862",
       "event_name": "Gyori v Ferencvaros",
       "start_time": "2026-09-03T17:30:00.000Z",
       "runner_id": 2017883,
-      "best_back_price": 3.95,
-      "best_back_size": 66.5
+      "best_back_price": 3.5,
+      "best_back_size": 92.99
     },
     {
       "market_id": "1.261651840",
@@ -984,7 +920,7 @@
       "start_time": "2026-09-03T18:00:00.000Z",
       "runner_id": 52533356,
       "best_back_price": 2.14,
-      "best_back_size": 76.0
+      "best_back_size": 75.99
     },
     {
       "market_id": "1.261850996",
@@ -992,7 +928,7 @@
       "start_time": "2026-09-03T18:00:00.000Z",
       "runner_id": 50334,
       "best_back_price": 1.14,
-      "best_back_size": 306.5
+      "best_back_size": 306.47
     },
     {
       "market_id": "1.261875140",
@@ -1000,7 +936,7 @@
       "start_time": "2026-09-03T18:00:00.000Z",
       "runner_id": 522045,
       "best_back_price": 1.01,
-      "best_back_size": 15.0
+      "best_back_size": 14.99
     },
     {
       "market_id": "1.261851164",
@@ -1015,8 +951,8 @@
       "event_name": "Al Draih v Al-Quadisiya (KSA)",
       "start_time": "2026-09-03T18:00:00.000Z",
       "runner_id": 7857465,
-      "best_back_price": 5.7,
-      "best_back_size": 49.5
+      "best_back_price": 5.6,
+      "best_back_size": 50.5
     },
     {
       "market_id": "1.261801528",
@@ -1024,7 +960,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 58163,
       "best_back_price": 1.5,
-      "best_back_size": 77.0
+      "best_back_size": 76.99
     },
     {
       "market_id": "1.261923948",
@@ -1032,7 +968,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 3143307,
       "best_back_price": 2.42,
-      "best_back_size": 139.5
+      "best_back_size": 139.49
     },
     {
       "market_id": "1.261763361",
@@ -1040,7 +976,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 502303,
       "best_back_price": 1.65,
-      "best_back_size": 244.5
+      "best_back_size": 248.98
     },
     {
       "market_id": "1.261737375",
@@ -1048,7 +984,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 65780,
       "best_back_price": 1.95,
-      "best_back_size": 245.0
+      "best_back_size": 243.98
     },
     {
       "market_id": "1.261737806",
@@ -1056,7 +992,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 2939090,
       "best_back_price": 2.4,
-      "best_back_size": 166.5
+      "best_back_size": 166.49
     },
     {
       "market_id": "1.261773485",
@@ -1064,7 +1000,7 @@
       "start_time": "2026-09-03T18:30:00.000Z",
       "runner_id": 350594,
       "best_back_price": 1.63,
-      "best_back_size": 180.5
+      "best_back_size": 180.48
     },
     {
       "market_id": "1.261733265",
@@ -1080,7 +1016,7 @@
       "start_time": "2026-09-03T18:45:00.000Z",
       "runner_id": 305969,
       "best_back_price": 3.55,
-      "best_back_size": 497.45
+      "best_back_size": 317.24
     },
     {
       "market_id": "1.261831328",
@@ -1088,7 +1024,7 @@
       "start_time": "2026-09-03T19:00:00.000Z",
       "runner_id": 7005170,
       "best_back_price": 1.72,
-      "best_back_size": 570.35
+      "best_back_size": 570.3
     },
     {
       "market_id": "1.261763340",
@@ -1096,7 +1032,7 @@
       "start_time": "2026-09-03T19:00:00.000Z",
       "runner_id": 60297,
       "best_back_price": 1.94,
-      "best_back_size": 288.58
+      "best_back_size": 288.56
     },
     {
       "market_id": "1.261707919",
@@ -1104,7 +1040,7 @@
       "start_time": "2026-09-03T19:00:00.000Z",
       "runner_id": 18573,
       "best_back_price": 2.02,
-      "best_back_size": 98.04
+      "best_back_size": 60.03
     },
     {
       "market_id": "1.261927533",
@@ -1135,8 +1071,8 @@
       "event_name": "Academia Anzoategui FC v Monagas",
       "start_time": "2026-09-03T20:00:00.000Z",
       "runner_id": 48712776,
-      "best_back_price": 1.01,
-      "best_back_size": 13.0
+      "best_back_price": 2.12,
+      "best_back_size": 117.99
     },
     {
       "market_id": "1.261770368",
@@ -1144,7 +1080,7 @@
       "start_time": "2026-09-03T21:00:00.000Z",
       "runner_id": 26076470,
       "best_back_price": 1.37,
-      "best_back_size": 147.1
+      "best_back_size": 147.09
     },
     {
       "market_id": "1.261769783",
@@ -1152,7 +1088,7 @@
       "start_time": "2026-09-03T21:30:00.000Z",
       "runner_id": 67023925,
       "best_back_price": 1.98,
-      "best_back_size": 261.5
+      "best_back_size": 261.48
     },
     {
       "market_id": "1.261932386",
@@ -1168,7 +1104,7 @@
       "start_time": "2026-09-03T23:00:00.000Z",
       "runner_id": 8761113,
       "best_back_price": 1.01,
-      "best_back_size": 13.0
+      "best_back_size": 3.0
     },
     {
       "market_id": "1.261654124",
@@ -1176,7 +1112,7 @@
       "start_time": "2026-09-03T23:00:00.000Z",
       "runner_id": 198134,
       "best_back_price": 2.48,
-      "best_back_size": 157.5
+      "best_back_size": 157.49
     },
     {
       "market_id": "1.261913204",
@@ -1184,7 +1120,7 @@
       "start_time": "2026-09-03T23:00:00.000Z",
       "runner_id": 7210009,
       "best_back_price": 1.98,
-      "best_back_size": 143.46
+      "best_back_size": 141.99
     },
     {
       "market_id": "1.261932358",
@@ -1200,7 +1136,7 @@
       "start_time": "2026-09-04T00:00:00.000Z",
       "runner_id": 44232344,
       "best_back_price": 2.18,
-      "best_back_size": 447.42
+      "best_back_size": 447.38
     },
     {
       "market_id": "1.261938296",
@@ -1216,7 +1152,7 @@
       "start_time": "2026-09-04T01:00:00.000Z",
       "runner_id": 5284708,
       "best_back_price": 4.4,
-      "best_back_size": 321.92
+      "best_back_size": 321.89
     },
     {
       "market_id": "1.261859282",
@@ -1231,8 +1167,8 @@
       "event_name": "Paju Citizen v Daegu Fc",
       "start_time": "2026-09-04T10:30:00.000Z",
       "runner_id": 24211528,
-      "best_back_price": 5.1,
-      "best_back_size": 57.0
+      "best_back_price": 4.6,
+      "best_back_size": 234.98
     },
     {
       "market_id": "1.261804365",
@@ -1240,7 +1176,7 @@
       "start_time": "2026-09-04T10:30:00.000Z",
       "runner_id": 23787194,
       "best_back_price": 3.7,
-      "best_back_size": 261.68
+      "best_back_size": 261.66
     },
     {
       "market_id": "1.261938429",
@@ -1280,7 +1216,7 @@
       "start_time": "2026-09-04T14:00:00.000Z",
       "runner_id": 6533265,
       "best_back_price": 1.7,
-      "best_back_size": 421.5
+      "best_back_size": 421.46
     },
     {
       "market_id": "1.261914291",
@@ -1304,7 +1240,7 @@
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 44103,
       "best_back_price": 1.55,
-      "best_back_size": 97.45
+      "best_back_size": 97.44
     },
     {
       "market_id": "1.261928979",
@@ -1312,7 +1248,7 @@
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 12249065,
       "best_back_price": 2.06,
-      "best_back_size": 91.5
+      "best_back_size": 91.49
     },
     {
       "market_id": "1.261856366",
@@ -1328,7 +1264,7 @@
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 1212772,
       "best_back_price": 2.5,
-      "best_back_size": 339.0
+      "best_back_size": 338.97
     },
     {
       "market_id": "1.261824251",
@@ -1344,23 +1280,23 @@
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 11801202,
       "best_back_price": 2.62,
-      "best_back_size": 94.5
+      "best_back_size": 94.49
     },
     {
       "market_id": "1.261856165",
       "event_name": "Vysocina Jihlava v Arsenal Ceska Lipa",
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 770021,
-      "best_back_price": 1.59,
-      "best_back_size": 97.0
+      "best_back_price": 1.72,
+      "best_back_size": 32.5
     },
     {
       "market_id": "1.261856652",
       "event_name": "MFK Karvina v SK Kladno",
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 3358864,
-      "best_back_price": 1.38,
-      "best_back_size": 61.5
+      "best_back_price": 1.35,
+      "best_back_size": 63.99
     },
     {
       "market_id": "1.261856387",
@@ -1376,15 +1312,15 @@
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 10732580,
       "best_back_price": 3.0,
-      "best_back_size": 80.0
+      "best_back_size": 79.99
     },
     {
       "market_id": "1.261940078",
       "event_name": "FC Noah v FC Gandzasar",
       "start_time": "2026-09-04T16:00:00.000Z",
       "runner_id": 25068897,
-      "best_back_price": 1.01,
-      "best_back_size": 8.0
+      "best_back_price": 1.09,
+      "best_back_size": 428.46
     },
     {
       "market_id": "1.261856345",
@@ -1408,7 +1344,7 @@
       "start_time": "2026-09-04T16:30:00.000Z",
       "runner_id": 886340,
       "best_back_price": 2.08,
-      "best_back_size": 386.0
+      "best_back_size": 385.97
     },
     {
       "market_id": "1.261794327",
@@ -1416,15 +1352,15 @@
       "start_time": "2026-09-04T16:30:00.000Z",
       "runner_id": 197307,
       "best_back_price": 1.67,
-      "best_back_size": 241.17
+      "best_back_size": 241.14
     },
     {
       "market_id": "1.261796396",
       "event_name": "Arminia Bielefeld v St Pauli",
       "start_time": "2026-09-04T16:30:00.000Z",
       "runner_id": 347829,
-      "best_back_price": 2.22,
-      "best_back_size": 191.0
+      "best_back_price": 2.04,
+      "best_back_size": 1038.41
     },
     {
       "market_id": "1.261919442",
@@ -1439,8 +1375,8 @@
       "event_name": "Ingolstadt v Alemannia Aachen",
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 1229688,
-      "best_back_price": 2.36,
-      "best_back_size": 110.5
+      "best_back_price": 2.22,
+      "best_back_size": 190.98
     },
     {
       "market_id": "1.261779162",
@@ -1448,7 +1384,7 @@
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 10780,
       "best_back_price": 1.82,
-      "best_back_size": 138.46
+      "best_back_size": 138.49
     },
     {
       "market_id": "1.261877590",
@@ -1464,7 +1400,7 @@
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 55271,
       "best_back_price": 1.55,
-      "best_back_size": 477.17
+      "best_back_size": 477.13
     },
     {
       "market_id": "1.261796372",
@@ -1472,7 +1408,7 @@
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 10071088,
       "best_back_price": 4.6,
-      "best_back_size": 64.99
+      "best_back_size": 64.98
     },
     {
       "market_id": "1.261875293",
@@ -1480,7 +1416,7 @@
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 3981030,
       "best_back_price": 2.5,
-      "best_back_size": 410.5
+      "best_back_size": 410.46
     },
     {
       "market_id": "1.261793268",
@@ -1488,7 +1424,7 @@
       "start_time": "2026-09-04T17:00:00.000Z",
       "runner_id": 30683,
       "best_back_price": 1.56,
-      "best_back_size": 79.48
+      "best_back_size": 79.47
     },
     {
       "market_id": "1.261876629",
@@ -1496,7 +1432,7 @@
       "start_time": "2026-09-04T17:30:00.000Z",
       "runner_id": 65777,
       "best_back_price": 1.53,
-      "best_back_size": 273.19
+      "best_back_size": 273.16
     },
     {
       "market_id": "1.261716045",
@@ -1504,7 +1440,7 @@
       "start_time": "2026-09-04T17:30:00.000Z",
       "runner_id": 1193695,
       "best_back_price": 1.9,
-      "best_back_size": 125.59
+      "best_back_size": 125.58
     },
     {
       "market_id": "1.261876650",
@@ -1512,7 +1448,7 @@
       "start_time": "2026-09-04T17:30:00.000Z",
       "runner_id": 328828,
       "best_back_price": 2.82,
-      "best_back_size": 87.98
+      "best_back_size": 87.97
     },
     {
       "market_id": "1.261876055",
@@ -1528,7 +1464,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 2250259,
       "best_back_price": 1.63,
-      "best_back_size": 373.5
+      "best_back_size": 373.47
     },
     {
       "market_id": "1.261737216",
@@ -1536,7 +1472,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 111703,
       "best_back_price": 1.81,
-      "best_back_size": 192.0
+      "best_back_size": 191.98
     },
     {
       "market_id": "1.261829755",
@@ -1544,7 +1480,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 269792,
       "best_back_price": 2.94,
-      "best_back_size": 119.97
+      "best_back_size": 119.96
     },
     {
       "market_id": "1.261877218",
@@ -1552,7 +1488,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 419132,
       "best_back_price": 1.36,
-      "best_back_size": 563.65
+      "best_back_size": 563.6
     },
     {
       "market_id": "1.261877366",
@@ -1560,7 +1496,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 56363,
       "best_back_price": 1.63,
-      "best_back_size": 204.55
+      "best_back_size": 204.54
     },
     {
       "market_id": "1.261829776",
@@ -1568,23 +1504,23 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 5611653,
       "best_back_price": 1.68,
-      "best_back_size": 338.73
+      "best_back_size": 338.7
     },
     {
       "market_id": "1.261877239",
       "event_name": "RKC Waalwijk v NAC Breda",
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 3954225,
-      "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_price": 2.8,
+      "best_back_size": 126.49
     },
     {
       "market_id": "1.261829713",
       "event_name": "Pau v Sochaux",
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 4364244,
-      "best_back_price": 2.02,
-      "best_back_size": 228.5
+      "best_back_price": 2.16,
+      "best_back_size": 200.98
     },
     {
       "market_id": "1.261877176",
@@ -1592,7 +1528,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 13734279,
       "best_back_price": 1.65,
-      "best_back_size": 235.94
+      "best_back_size": 235.92
     },
     {
       "market_id": "1.261877324",
@@ -1600,7 +1536,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 4835124,
       "best_back_price": 1.5,
-      "best_back_size": 208.73
+      "best_back_size": 208.71
     },
     {
       "market_id": "1.261829734",
@@ -1608,7 +1544,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 77585,
       "best_back_price": 2.68,
-      "best_back_size": 482.5
+      "best_back_size": 482.46
     },
     {
       "market_id": "1.261877197",
@@ -1616,7 +1552,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 419126,
       "best_back_price": 2.1,
-      "best_back_size": 412.29
+      "best_back_size": 412.25
     },
     {
       "market_id": "1.261872026",
@@ -1624,7 +1560,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 1252792,
       "best_back_price": 1.35,
-      "best_back_size": 171.62
+      "best_back_size": 171.6
     },
     {
       "market_id": "1.261877345",
@@ -1632,7 +1568,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 1308816,
       "best_back_price": 1.61,
-      "best_back_size": 113.94
+      "best_back_size": 113.93
     },
     {
       "market_id": "1.261877408",
@@ -1640,7 +1576,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 419129,
       "best_back_price": 2.56,
-      "best_back_size": 147.1
+      "best_back_size": 147.09
     },
     {
       "market_id": "1.261872291",
@@ -1648,7 +1584,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 5344868,
       "best_back_price": 7.2,
-      "best_back_size": 188.13
+      "best_back_size": 188.11
     },
     {
       "market_id": "1.261829677",
@@ -1656,7 +1592,7 @@
       "start_time": "2026-09-04T18:00:00.000Z",
       "runner_id": 669346,
       "best_back_price": 2.74,
-      "best_back_size": 102.0
+      "best_back_size": 101.99
     },
     {
       "market_id": "1.261877458",
@@ -1664,15 +1600,15 @@
       "start_time": "2026-09-04T18:15:00.000Z",
       "runner_id": 458019,
       "best_back_price": 1.92,
-      "best_back_size": 431.0
+      "best_back_size": 430.96
     },
     {
       "market_id": "1.261684610",
       "event_name": "Arda v Botev Plovdiv",
       "start_time": "2026-09-04T18:15:00.000Z",
       "runner_id": 20731976,
-      "best_back_price": 1.92,
-      "best_back_size": 302.92
+      "best_back_price": 1.93,
+      "best_back_size": 308.97
     },
     {
       "market_id": "1.261877479",
@@ -1680,7 +1616,7 @@
       "start_time": "2026-09-04T18:15:00.000Z",
       "runner_id": 544529,
       "best_back_price": 1.59,
-      "best_back_size": 644.83
+      "best_back_size": 644.78
     },
     {
       "market_id": "1.261684673",
@@ -1695,8 +1631,8 @@
       "event_name": "Defensores de Belgrano v Club Atletico Racing de ",
       "start_time": "2026-09-04T18:30:00.000Z",
       "runner_id": 5643646,
-      "best_back_price": 2.08,
-      "best_back_size": 215.5
+      "best_back_price": 1.98,
+      "best_back_size": 237.48
     },
     {
       "market_id": "1.261793312",
@@ -1704,7 +1640,7 @@
       "start_time": "2026-09-04T18:30:00.000Z",
       "runner_id": 9163,
       "best_back_price": 1.85,
-      "best_back_size": 274.69
+      "best_back_size": 274.67
     },
     {
       "market_id": "1.261829797",
@@ -1712,7 +1648,7 @@
       "start_time": "2026-09-04T18:30:00.000Z",
       "runner_id": 3157365,
       "best_back_price": 2.22,
-      "best_back_size": 454.5
+      "best_back_size": 454.46
     },
     {
       "market_id": "1.261829818",
@@ -1720,7 +1656,7 @@
       "start_time": "2026-09-04T18:30:00.000Z",
       "runner_id": 57423,
       "best_back_price": 1.36,
-      "best_back_size": 590.5
+      "best_back_size": 590.45
     },
     {
       "market_id": "1.261928650",
@@ -1736,7 +1672,7 @@
       "start_time": "2026-09-04T18:45:00.000Z",
       "runner_id": 60310,
       "best_back_price": 5.6,
-      "best_back_size": 188.0
+      "best_back_size": 192.28
     },
     {
       "market_id": "1.261929008",
@@ -1752,15 +1688,15 @@
       "start_time": "2026-09-04T18:45:00.000Z",
       "runner_id": 62505,
       "best_back_price": 2.06,
-      "best_back_size": 102.32
+      "best_back_size": 102.31
     },
     {
       "market_id": "1.261877854",
       "event_name": "Shamrock Rovers v Shelbourne",
       "start_time": "2026-09-04T19:00:00.000Z",
       "runner_id": 184325,
-      "best_back_price": 1.01,
-      "best_back_size": 3.0
+      "best_back_price": 1.78,
+      "best_back_size": 652.94
     },
     {
       "market_id": "1.261686902",
@@ -1768,7 +1704,7 @@
       "start_time": "2026-09-04T19:00:00.000Z",
       "runner_id": 44507,
       "best_back_price": 7.8,
-      "best_back_size": 85.0
+      "best_back_size": 84.99
     },
     {
       "market_id": "1.261877875",
@@ -1776,15 +1712,15 @@
       "start_time": "2026-09-04T19:00:00.000Z",
       "runner_id": 4871645,
       "best_back_price": 1.84,
-      "best_back_size": 57.04
+      "best_back_size": 57.03
     },
     {
       "market_id": "1.261684631",
       "event_name": "Ipswich v Liverpool",
       "start_time": "2026-09-04T19:00:00.000Z",
       "runner_id": 48324,
-      "best_back_price": 5.9,
-      "best_back_size": 12.0
+      "best_back_price": 5.8,
+      "best_back_size": 17.86
     },
     {
       "market_id": "1.261749944",
@@ -1792,7 +1728,7 @@
       "start_time": "2026-09-04T19:05:00.000Z",
       "runner_id": 489720,
       "best_back_price": 1.44,
-      "best_back_size": 560.0
+      "best_back_size": 559.95
     },
     {
       "market_id": "1.261835484",
@@ -1800,7 +1736,7 @@
       "start_time": "2026-09-04T19:15:00.000Z",
       "runner_id": 48785,
       "best_back_price": 1.19,
-      "best_back_size": 154.28
+      "best_back_size": 148.03
     },
     {
       "market_id": "1.261878430",
@@ -1808,7 +1744,7 @@
       "start_time": "2026-09-04T19:45:00.000Z",
       "runner_id": 10891028,
       "best_back_price": 2.8,
-      "best_back_size": 97.45
+      "best_back_size": 97.44
     },
     {
       "market_id": "1.261878362",
@@ -1832,7 +1768,7 @@
       "start_time": "2026-09-04T22:00:00.000Z",
       "runner_id": 10305879,
       "best_back_price": 2.5,
-      "best_back_size": 59.5
+      "best_back_size": 59.49
     },
     {
       "market_id": "1.261912435",
@@ -1840,15 +1776,15 @@
       "start_time": "2026-09-04T22:00:00.000Z",
       "runner_id": 9459683,
       "best_back_price": 1.53,
-      "best_back_size": 501.0
+      "best_back_size": 500.96
     },
     {
       "market_id": "1.261878475",
       "event_name": "Belgrano v CA Huracan",
       "start_time": "2026-09-04T22:00:00.000Z",
       "runner_id": 1496989,
-      "best_back_price": 1.86,
-      "best_back_size": 1219.5
+      "best_back_price": 1.99,
+      "best_back_size": 169.0
     },
     {
       "market_id": "1.261684652",
@@ -1856,7 +1792,7 @@
       "start_time": "2026-09-04T23:30:00.000Z",
       "runner_id": 9280784,
       "best_back_price": 2.62,
-      "best_back_size": 70.67
+      "best_back_size": 70.66
     },
     {
       "market_id": "1.261934230",
@@ -1872,7 +1808,7 @@
       "start_time": "2026-09-05T00:30:00.000Z",
       "runner_id": 6290900,
       "best_back_price": 3.45,
-      "best_back_size": 161.54
+      "best_back_size": 161.53
     },
     {
       "market_id": "1.261773464",
@@ -1887,16 +1823,16 @@
       "event_name": "FC Juarez v Pachuca",
       "start_time": "2026-09-05T03:00:00.000Z",
       "runner_id": 10002706,
-      "best_back_price": 3.25,
-      "best_back_size": 59.0
+      "best_back_price": 3.45,
+      "best_back_size": 83.49
     },
     {
       "market_id": "1.261923232",
       "event_name": "Fujieda Myfc v Vanraure Hachinohe",
       "start_time": "2026-09-05T09:30:00.000Z",
       "runner_id": 14196415,
-      "best_back_price": 2.06,
-      "best_back_size": 337.0
+      "best_back_price": 2.24,
+      "best_back_size": 93.99
     },
     {
       "market_id": "1.261925305",
@@ -1904,7 +1840,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 1405180,
       "best_back_price": 1.87,
-      "best_back_size": 681.5
+      "best_back_size": 681.44
     },
     {
       "market_id": "1.261804386",
@@ -1912,7 +1848,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 13494268,
       "best_back_price": 2.5,
-      "best_back_size": 215.0
+      "best_back_size": 214.98
     },
     {
       "market_id": "1.261924002",
@@ -1920,7 +1856,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 4546954,
       "best_back_price": 2.54,
-      "best_back_size": 234.5
+      "best_back_size": 234.48
     },
     {
       "market_id": "1.261804326",
@@ -1928,7 +1864,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 95966766,
       "best_back_price": 3.35,
-      "best_back_size": 301.42
+      "best_back_size": 301.4
     },
     {
       "market_id": "1.261923964",
@@ -1936,7 +1872,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 3718961,
       "best_back_price": 1.77,
-      "best_back_size": 262.95
+      "best_back_size": 262.93
     },
     {
       "market_id": "1.261798948",
@@ -1944,7 +1880,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 7345624,
       "best_back_price": 3.8,
-      "best_back_size": 17.51
+      "best_back_size": 17.5
     },
     {
       "market_id": "1.261799645",
@@ -1960,7 +1896,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 14164093,
       "best_back_price": 3.1,
-      "best_back_size": 245.0
+      "best_back_size": 244.98
     },
     {
       "market_id": "1.261799582",
@@ -1984,7 +1920,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 5026012,
       "best_back_price": 2.1,
-      "best_back_size": 182.5
+      "best_back_size": 182.48
     },
     {
       "market_id": "1.261923925",
@@ -1992,7 +1928,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 3455676,
       "best_back_price": 2.08,
-      "best_back_size": 290.2
+      "best_back_size": 290.17
     },
     {
       "market_id": "1.261804177",
@@ -2000,7 +1936,7 @@
       "start_time": "2026-09-05T10:00:00.000Z",
       "runner_id": 16224040,
       "best_back_price": 1.42,
-      "best_back_size": 424.29
+      "best_back_size": 424.26
     },
     {
       "market_id": "1.261799603",
@@ -2016,7 +1952,7 @@
       "start_time": "2026-09-05T11:00:00.000Z",
       "runner_id": 44521,
       "best_back_price": 1.3,
-      "best_back_size": 757.0
+      "best_back_size": 756.93
     },
     {
       "market_id": "1.261785108",
@@ -2024,7 +1960,7 @@
       "start_time": "2026-09-05T11:00:00.000Z",
       "runner_id": 14075,
       "best_back_price": 2.04,
-      "best_back_size": 850.35
+      "best_back_size": 850.28
     },
     {
       "market_id": "1.261926069",
@@ -2032,7 +1968,7 @@
       "start_time": "2026-09-05T11:00:00.000Z",
       "runner_id": 23228754,
       "best_back_price": 1.74,
-      "best_back_size": 730.0
+      "best_back_size": 729.94
     },
     {
       "market_id": "1.261779204",
@@ -2040,7 +1976,7 @@
       "start_time": "2026-09-05T11:00:00.000Z",
       "runner_id": 384107,
       "best_back_price": 2.08,
-      "best_back_size": 411.43
+      "best_back_size": 411.39
     },
     {
       "market_id": "1.261794285",
@@ -2048,7 +1984,7 @@
       "start_time": "2026-09-05T11:00:00.000Z",
       "runner_id": 247830,
       "best_back_price": 2.36,
-      "best_back_size": 171.5
+      "best_back_size": 171.49
     },
     {
       "market_id": "1.261725418",
@@ -2056,7 +1992,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 4236580,
       "best_back_price": 1.81,
-      "best_back_size": 234.06
+      "best_back_size": 234.04
     },
     {
       "market_id": "1.261831808",
@@ -2064,7 +2000,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 69720,
       "best_back_price": 1.95,
-      "best_back_size": 414.39
+      "best_back_size": 414.36
     },
     {
       "market_id": "1.261725164",
@@ -2072,7 +2008,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 3396710,
       "best_back_price": 1.74,
-      "best_back_size": 975.0
+      "best_back_size": 974.92
     },
     {
       "market_id": "1.261928726",
@@ -2088,7 +2024,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 62504,
       "best_back_price": 2.0,
-      "best_back_size": 414.0
+      "best_back_size": 413.96
     },
     {
       "market_id": "1.261724419",
@@ -2096,7 +2032,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 18563,
       "best_back_price": 3.0,
-      "best_back_size": 126.0
+      "best_back_size": 125.99
     },
     {
       "market_id": "1.261831703",
@@ -2104,7 +2040,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 148737,
       "best_back_price": 4.1,
-      "best_back_size": 129.64
+      "best_back_size": 129.63
     },
     {
       "market_id": "1.261926160",
@@ -2120,7 +2056,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 56295,
       "best_back_price": 2.52,
-      "best_back_size": 67.97
+      "best_back_size": 67.96
     },
     {
       "market_id": "1.261725397",
@@ -2128,7 +2064,7 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 69746,
       "best_back_price": 2.84,
-      "best_back_size": 98.57
+      "best_back_size": 98.56
     },
     {
       "market_id": "1.261724230",
@@ -2136,15 +2072,15 @@
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 25422,
       "best_back_price": 2.22,
-      "best_back_size": 56.11
+      "best_back_size": 56.1
     },
     {
       "market_id": "1.261805540",
       "event_name": "Southend v Yeovil",
       "start_time": "2026-09-05T11:30:00.000Z",
       "runner_id": 69719,
-      "best_back_price": 1.58,
-      "best_back_size": 24.5
+      "best_back_price": 1.59,
+      "best_back_size": 148.99
     },
     {
       "market_id": "1.261926202",
@@ -2152,7 +2088,7 @@
       "start_time": "2026-09-05T11:35:00.000Z",
       "runner_id": 51006167,
       "best_back_price": 2.12,
-      "best_back_size": 496.37
+      "best_back_size": 496.33
     },
     {
       "market_id": "1.261926181",
@@ -2160,7 +2096,7 @@
       "start_time": "2026-09-05T11:35:00.000Z",
       "runner_id": 67154937,
       "best_back_price": 1.37,
-      "best_back_size": 1025.26
+      "best_back_size": 1025.18
     },
     {
       "market_id": "1.261815436",
@@ -2176,7 +2112,7 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 3465177,
       "best_back_price": 2.24,
-      "best_back_size": 106.57
+      "best_back_size": 106.56
     },
     {
       "market_id": "1.261926458",
@@ -2184,15 +2120,15 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 44524,
       "best_back_price": 1.57,
-      "best_back_size": 241.46
+      "best_back_size": 241.44
     },
     {
       "market_id": "1.261926599",
       "event_name": "SV Meppen v Saarbrucken",
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 5945855,
-      "best_back_price": 2.56,
-      "best_back_size": 149.5
+      "best_back_price": 2.8,
+      "best_back_size": 124.99
     },
     {
       "market_id": "1.261926621",
@@ -2200,7 +2136,7 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 4855758,
       "best_back_price": 3.55,
-      "best_back_size": 65.0
+      "best_back_size": 64.99
     },
     {
       "market_id": "1.261861143",
@@ -2208,7 +2144,7 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 44795,
       "best_back_price": 1.82,
-      "best_back_size": 496.0
+      "best_back_size": 495.96
     },
     {
       "market_id": "1.261926751",
@@ -2216,7 +2152,7 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 28213,
       "best_back_price": 2.02,
-      "best_back_size": 316.08
+      "best_back_size": 316.05
     },
     {
       "market_id": "1.261926480",
@@ -2224,7 +2160,7 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 346909,
       "best_back_price": 2.0,
-      "best_back_size": 269.5
+      "best_back_size": 269.48
     },
     {
       "market_id": "1.261824272",
@@ -2248,15 +2184,15 @@
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 151003,
       "best_back_price": 1.43,
-      "best_back_size": 532.86
+      "best_back_size": 532.82
     },
     {
       "market_id": "1.261926437",
       "event_name": "Shandong Taishan v Shenzhen Peng City",
       "start_time": "2026-09-05T12:00:00.000Z",
       "runner_id": 50443279,
-      "best_back_price": 1.56,
-      "best_back_size": 995.0
+      "best_back_price": 1.55,
+      "best_back_size": 379.97
     },
     {
       "market_id": "1.261928892",
@@ -2272,7 +2208,7 @@
       "start_time": "2026-09-05T12:45:00.000Z",
       "runner_id": 502304,
       "best_back_price": 1.78,
-      "best_back_size": 112.5
+      "best_back_size": 112.49
     },
     {
       "market_id": "1.261785087",
@@ -2280,7 +2216,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 784612,
       "best_back_price": 1.78,
-      "best_back_size": 1097.25
+      "best_back_size": 1097.16
     },
     {
       "market_id": "1.261929051",
@@ -2288,7 +2224,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 4893599,
       "best_back_price": 2.14,
-      "best_back_size": 806.55
+      "best_back_size": 806.48
     },
     {
       "market_id": "1.261724335",
@@ -2296,7 +2232,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 676467,
       "best_back_price": 1.96,
-      "best_back_size": 164.0
+      "best_back_size": 163.99
     },
     {
       "market_id": "1.261929072",
@@ -2311,8 +2247,8 @@
       "event_name": "Oddevold v Falkenbergs",
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 778918,
-      "best_back_price": 2.24,
-      "best_back_size": 187.45
+      "best_back_price": 2.06,
+      "best_back_size": 219.98
     },
     {
       "market_id": "1.261779246",
@@ -2320,7 +2256,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 778921,
       "best_back_price": 2.42,
-      "best_back_size": 309.5
+      "best_back_size": 309.47
     },
     {
       "market_id": "1.261781042",
@@ -2336,7 +2272,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 10777,
       "best_back_price": 1.28,
-      "best_back_size": 83.0
+      "best_back_size": 82.99
     },
     {
       "market_id": "1.261781327",
@@ -2344,7 +2280,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 1533861,
       "best_back_price": 2.2,
-      "best_back_size": 401.5
+      "best_back_size": 401.47
     },
     {
       "market_id": "1.261814402",
@@ -2352,7 +2288,7 @@
       "start_time": "2026-09-05T13:00:00.000Z",
       "runner_id": 384083,
       "best_back_price": 2.36,
-      "best_back_size": 145.08
+      "best_back_size": 145.07
     },
     {
       "market_id": "1.261725143",
@@ -2360,7 +2296,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 44787,
       "best_back_price": 1.48,
-      "best_back_size": 245.24
+      "best_back_size": 245.22
     },
     {
       "market_id": "1.261930752",
@@ -2368,7 +2304,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 5817456,
       "best_back_price": 2.9,
-      "best_back_size": 162.0
+      "best_back_size": 161.99
     },
     {
       "market_id": "1.261724272",
@@ -2376,7 +2312,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 84649,
       "best_back_price": 1.9,
-      "best_back_size": 76.0
+      "best_back_size": 75.99
     },
     {
       "market_id": "1.261930702",
@@ -2384,7 +2320,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 10133739,
       "best_back_price": 1.98,
-      "best_back_size": 186.5
+      "best_back_size": 186.48
     },
     {
       "market_id": "1.261930724",
@@ -2392,7 +2328,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 4935893,
       "best_back_price": 1.68,
-      "best_back_size": 205.55
+      "best_back_size": 205.54
     },
     {
       "market_id": "1.261724585",
@@ -2416,7 +2352,7 @@
       "start_time": "2026-09-05T13:30:00.000Z",
       "runner_id": 6555433,
       "best_back_price": 4.2,
-      "best_back_size": 424.25
+      "best_back_size": 424.21
     },
     {
       "market_id": "1.261831875",
@@ -2424,7 +2360,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 56299,
       "best_back_price": 1.74,
-      "best_back_size": 687.0
+      "best_back_size": 686.94
     },
     {
       "market_id": "1.261724669",
@@ -2439,8 +2375,8 @@
       "event_name": "Barnsley v Stevenage",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 1117,
-      "best_back_price": 2.0,
-      "best_back_size": 56.49
+      "best_back_price": 1.01,
+      "best_back_size": 5.0
     },
     {
       "market_id": "1.261931104",
@@ -2456,7 +2392,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 54004,
       "best_back_price": 2.92,
-      "best_back_size": 431.0
+      "best_back_size": 359.47
     },
     {
       "market_id": "1.261724398",
@@ -2464,7 +2400,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 47991,
       "best_back_price": 2.88,
-      "best_back_size": 124.0
+      "best_back_size": 123.99
     },
     {
       "market_id": "1.261724803",
@@ -2480,7 +2416,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 49584,
       "best_back_price": 2.02,
-      "best_back_size": 56.49
+      "best_back_size": 56.48
     },
     {
       "market_id": "1.261870959",
@@ -2496,7 +2432,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 48303,
       "best_back_price": 2.04,
-      "best_back_size": 384.4
+      "best_back_size": 384.37
     },
     {
       "market_id": "1.261814971",
@@ -2504,7 +2440,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 18571,
       "best_back_price": 2.26,
-      "best_back_size": 245.44
+      "best_back_size": 245.42
     },
     {
       "market_id": "1.261831745",
@@ -2527,16 +2463,16 @@
       "event_name": "Exeter v Walsall",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 66243,
-      "best_back_price": 2.22,
-      "best_back_size": 191.0
+      "best_back_price": 2.48,
+      "best_back_size": 64.49
     },
     {
       "market_id": "1.261797644",
       "event_name": "Erzurum BB v Konyaspor",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 7692068,
-      "best_back_price": 2.32,
-      "best_back_size": 62.98
+      "best_back_price": 2.3,
+      "best_back_size": 63.49
     },
     {
       "market_id": "1.261725355",
@@ -2544,7 +2480,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 5034,
       "best_back_price": 1.72,
-      "best_back_size": 109.5
+      "best_back_size": 109.49
     },
     {
       "market_id": "1.261802078",
@@ -2552,7 +2488,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 1146634,
       "best_back_price": 2.96,
-      "best_back_size": 314.0
+      "best_back_size": 313.97
     },
     {
       "market_id": "1.261871022",
@@ -2568,15 +2504,15 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 256383,
       "best_back_price": 2.06,
-      "best_back_size": 219.5
+      "best_back_size": 219.48
     },
     {
       "market_id": "1.261801883",
       "event_name": "Haugesund v Sogndal",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 152566,
-      "best_back_price": 1.32,
-      "best_back_size": 728.0
+      "best_back_price": 1.33,
+      "best_back_size": 961.42
     },
     {
       "market_id": "1.261724824",
@@ -2600,7 +2536,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 56285,
       "best_back_price": 1.95,
-      "best_back_size": 391.0
+      "best_back_size": 390.97
     },
     {
       "market_id": "1.261806860",
@@ -2616,15 +2552,15 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 778909,
       "best_back_price": 2.08,
-      "best_back_size": 227.0
+      "best_back_size": 226.98
     },
     {
       "market_id": "1.261724627",
       "event_name": "Chesterfield v Barnet",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 219596,
-      "best_back_price": 1.95,
-      "best_back_size": 652.5
+      "best_back_price": 1.01,
+      "best_back_size": 5.0
     },
     {
       "market_id": "1.261725376",
@@ -2632,7 +2568,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 18559,
       "best_back_price": 3.65,
-      "best_back_size": 88.0
+      "best_back_size": 87.99
     },
     {
       "market_id": "1.261871043",
@@ -2640,7 +2576,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 306045,
       "best_back_price": 2.42,
-      "best_back_size": 270.57
+      "best_back_size": 270.55
     },
     {
       "market_id": "1.261724356",
@@ -2656,15 +2592,15 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 12395256,
       "best_back_price": 1.01,
-      "best_back_size": 18.0
+      "best_back_size": 17.99
     },
     {
       "market_id": "1.261831829",
       "event_name": "West Brom v Watford",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 1703,
-      "best_back_price": 1.79,
-      "best_back_size": 577.0
+      "best_back_price": 1.8,
+      "best_back_size": 324.47
     },
     {
       "market_id": "1.261725101",
@@ -2672,7 +2608,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 78984,
       "best_back_price": 1.68,
-      "best_back_size": 183.0
+      "best_back_size": 182.98
     },
     {
       "market_id": "1.261724704",
@@ -2680,7 +2616,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 78864,
       "best_back_price": 1.64,
-      "best_back_size": 128.0
+      "best_back_size": 127.99
     },
     {
       "market_id": "1.261814928",
@@ -2688,7 +2624,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 2608900,
       "best_back_price": 2.06,
-      "best_back_size": 297.42
+      "best_back_size": 297.4
     },
     {
       "market_id": "1.261931544",
@@ -2696,15 +2632,15 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 35589714,
       "best_back_price": 2.72,
-      "best_back_size": 177.95
+      "best_back_size": 177.94
     },
     {
       "market_id": "1.261870917",
       "event_name": "Partick v Ayr",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 191567,
-      "best_back_price": 1.58,
-      "best_back_size": 332.91
+      "best_back_price": 1.57,
+      "best_back_size": 363.47
     },
     {
       "market_id": "1.261814861",
@@ -2712,7 +2648,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 18566,
       "best_back_price": 2.14,
-      "best_back_size": 204.45
+      "best_back_size": 204.43
     },
     {
       "market_id": "1.261802515",
@@ -2720,7 +2656,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 774892,
       "best_back_price": 1.2,
-      "best_back_size": 944.24
+      "best_back_size": 944.16
     },
     {
       "market_id": "1.261725313",
@@ -2728,7 +2664,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 103122,
       "best_back_price": 1.85,
-      "best_back_size": 62.0
+      "best_back_size": 61.99
     },
     {
       "market_id": "1.261724767",
@@ -2752,7 +2688,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 49205,
       "best_back_price": 2.16,
-      "best_back_size": 500.87
+      "best_back_size": 500.83
     },
     {
       "market_id": "1.261831850",
@@ -2760,7 +2696,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 48756,
       "best_back_price": 1.39,
-      "best_back_size": 164.21
+      "best_back_size": 164.2
     },
     {
       "market_id": "1.261831917",
@@ -2768,7 +2704,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 48470,
       "best_back_price": 2.6,
-      "best_back_size": 193.66
+      "best_back_size": 193.64
     },
     {
       "market_id": "1.261870854",
@@ -2792,7 +2728,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 18570,
       "best_back_price": 2.48,
-      "best_back_size": 99.0
+      "best_back_size": 98.99
     },
     {
       "market_id": "1.261725460",
@@ -2808,7 +2744,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 152573,
       "best_back_price": 2.22,
-      "best_back_size": 297.08
+      "best_back_size": 296.97
     },
     {
       "market_id": "1.261815013",
@@ -2816,7 +2752,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 21944374,
       "best_back_price": 1.95,
-      "best_back_size": 404.5
+      "best_back_size": 404.47
     },
     {
       "market_id": "1.261873661",
@@ -2848,7 +2784,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 62684,
       "best_back_price": 2.96,
-      "best_back_size": 259.93
+      "best_back_size": 259.91
     },
     {
       "market_id": "1.261802668",
@@ -2864,23 +2800,23 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 48461,
       "best_back_price": 1.66,
-      "best_back_size": 123.47
+      "best_back_size": 123.49
     },
     {
       "market_id": "1.261725207",
       "event_name": "Accrington v Crawley Town",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 422179,
-      "best_back_price": 1.01,
-      "best_back_size": 5.0
+      "best_back_price": 1.82,
+      "best_back_size": 881.42
     },
     {
       "market_id": "1.261870875",
       "event_name": "Queens Park v Morton",
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 729809,
-      "best_back_price": 2.22,
-      "best_back_size": 346.5
+      "best_back_price": 2.2,
+      "best_back_size": 193.98
     },
     {
       "market_id": "1.261806904",
@@ -2896,7 +2832,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 69821,
       "best_back_price": 1.71,
-      "best_back_size": 284.5
+      "best_back_size": 284.48
     },
     {
       "market_id": "1.261725271",
@@ -2904,7 +2840,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 47999,
       "best_back_price": 1.19,
-      "best_back_size": 658.55
+      "best_back_size": 657.7
     },
     {
       "market_id": "1.261724725",
@@ -2912,7 +2848,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 18567,
       "best_back_price": 1.96,
-      "best_back_size": 36.27
+      "best_back_size": 36.26
     },
     {
       "market_id": "1.261870938",
@@ -2928,7 +2864,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 62647,
       "best_back_price": 2.02,
-      "best_back_size": 251.44
+      "best_back_size": 251.41
     },
     {
       "market_id": "1.261831724",
@@ -2936,7 +2872,7 @@
       "start_time": "2026-09-05T14:00:00.000Z",
       "runner_id": 56036,
       "best_back_price": 1.59,
-      "best_back_size": 517.87
+      "best_back_size": 517.96
     },
     {
       "market_id": "1.261730088",
@@ -2952,15 +2888,15 @@
       "start_time": "2026-09-05T14:15:00.000Z",
       "runner_id": 68246,
       "best_back_price": 2.58,
-      "best_back_size": 596.65
+      "best_back_size": 596.6
     },
     {
       "market_id": "1.261750316",
       "event_name": "Uta Arad v Csikszereda",
       "start_time": "2026-09-05T14:30:00.000Z",
       "runner_id": 2311174,
-      "best_back_price": 1.66,
-      "best_back_size": 133.97
+      "best_back_price": 1.65,
+      "best_back_size": 135.49
     },
     {
       "market_id": "1.261933237",
@@ -2968,7 +2904,7 @@
       "start_time": "2026-09-05T14:30:00.000Z",
       "runner_id": 11434104,
       "best_back_price": 1.96,
-      "best_back_size": 172.46
+      "best_back_size": 172.44
     },
     {
       "market_id": "1.261933102",
@@ -2976,7 +2912,7 @@
       "start_time": "2026-09-05T14:30:00.000Z",
       "runner_id": 886332,
       "best_back_price": 1.65,
-      "best_back_size": 211.5
+      "best_back_size": 211.48
     },
     {
       "market_id": "1.261734922",
@@ -2984,7 +2920,7 @@
       "start_time": "2026-09-05T14:30:00.000Z",
       "runner_id": 48456,
       "best_back_price": 2.98,
-      "best_back_size": 55.49
+      "best_back_size": 55.48
     },
     {
       "market_id": "1.261793247",
@@ -2992,7 +2928,7 @@
       "start_time": "2026-09-05T14:30:00.000Z",
       "runner_id": 36362918,
       "best_back_price": 2.76,
-      "best_back_size": 661.67
+      "best_back_size": 661.61
     },
     {
       "market_id": "1.261871288",
@@ -3000,7 +2936,7 @@
       "start_time": "2026-09-05T15:00:00.000Z",
       "runner_id": 52628041,
       "best_back_price": 1.15,
-      "best_back_size": 623.84
+      "best_back_size": 623.95
     },
     {
       "market_id": "1.261935348",
@@ -3016,7 +2952,7 @@
       "start_time": "2026-09-05T15:00:00.000Z",
       "runner_id": 7066086,
       "best_back_price": 2.28,
-      "best_back_size": 73.5
+      "best_back_size": 73.49
     },
     {
       "market_id": "1.261779141",
@@ -3024,7 +2960,7 @@
       "start_time": "2026-09-05T15:00:00.000Z",
       "runner_id": 502308,
       "best_back_price": 1.57,
-      "best_back_size": 294.92
+      "best_back_size": 294.9
     },
     {
       "market_id": "1.261935750",
@@ -3032,7 +2968,7 @@
       "start_time": "2026-09-05T15:15:00.000Z",
       "runner_id": 201261,
       "best_back_price": 2.18,
-      "best_back_size": 758.0
+      "best_back_size": 757.93
     },
     {
       "market_id": "1.261749341",
@@ -3040,7 +2976,7 @@
       "start_time": "2026-09-05T15:15:00.000Z",
       "runner_id": 44793,
       "best_back_price": 1.5,
-      "best_back_size": 108.53
+      "best_back_size": 108.52
     },
     {
       "market_id": "1.261872595",
@@ -3048,7 +2984,7 @@
       "start_time": "2026-09-05T15:30:00.000Z",
       "runner_id": 1209555,
       "best_back_price": 2.02,
-      "best_back_size": 311.0
+      "best_back_size": 310.97
     },
     {
       "market_id": "1.261814563",
@@ -3056,7 +2992,7 @@
       "start_time": "2026-09-05T15:30:00.000Z",
       "runner_id": 4638399,
       "best_back_price": 3.5,
-      "best_back_size": 64.0
+      "best_back_size": 63.99
     },
     {
       "market_id": "1.261936190",
@@ -3064,7 +3000,7 @@
       "start_time": "2026-09-05T15:30:00.000Z",
       "runner_id": 473659,
       "best_back_price": 1.89,
-      "best_back_size": 171.0
+      "best_back_size": 170.99
     },
     {
       "market_id": "1.261872316",
@@ -3072,7 +3008,7 @@
       "start_time": "2026-09-05T15:50:00.000Z",
       "runner_id": 22139784,
       "best_back_price": 2.14,
-      "best_back_size": 569.0
+      "best_back_size": 568.95
     },
     {
       "market_id": "1.261806767",
@@ -3080,7 +3016,7 @@
       "start_time": "2026-09-05T15:55:00.000Z",
       "runner_id": 12157288,
       "best_back_price": 1.78,
-      "best_back_size": 141.46
+      "best_back_size": 141.45
     },
     {
       "market_id": "1.261779225",
@@ -3095,8 +3031,8 @@
       "event_name": "Inter v Napoli",
       "start_time": "2026-09-05T16:00:00.000Z",
       "runner_id": 63347,
-      "best_back_price": 1.7,
-      "best_back_size": 104.0
+      "best_back_price": 1.68,
+      "best_back_size": 234.05
     },
     {
       "market_id": "1.261938873",
@@ -3104,7 +3040,7 @@
       "start_time": "2026-09-05T16:00:00.000Z",
       "runner_id": 11450136,
       "best_back_price": 1.67,
-      "best_back_size": 204.5
+      "best_back_size": 204.48
     },
     {
       "market_id": "1.261813133",
@@ -3136,7 +3072,7 @@
       "start_time": "2026-09-05T16:00:00.000Z",
       "runner_id": 4985275,
       "best_back_price": 1.79,
-      "best_back_size": 174.5
+      "best_back_size": 174.49
     },
     {
       "market_id": "1.261725249",
@@ -3168,7 +3104,7 @@
       "start_time": "2026-09-05T16:00:00.000Z",
       "runner_id": 85908106,
       "best_back_price": 5.1,
-      "best_back_size": 199.0
+      "best_back_size": 198.98
     },
     {
       "market_id": "1.261938252",
@@ -3176,7 +3112,7 @@
       "start_time": "2026-09-05T16:00:00.000Z",
       "runner_id": 189806,
       "best_back_price": 1.7,
-      "best_back_size": 259.5
+      "best_back_size": 259.48
     },
     {
       "market_id": "1.261939224",
@@ -3199,8 +3135,8 @@
       "event_name": "Rayo Vallecano v Racing Santander",
       "start_time": "2026-09-05T16:30:00.000Z",
       "runner_id": 10779,
-      "best_back_price": 2.32,
-      "best_back_size": 177.0
+      "best_back_price": 2.34,
+      "best_back_size": 12.0
     },
     {
       "market_id": "1.261826576",
@@ -3208,7 +3144,7 @@
       "start_time": "2026-09-05T16:30:00.000Z",
       "runner_id": 256120,
       "best_back_price": 1.66,
-      "best_back_size": 308.0
+      "best_back_size": 307.97
     },
     {
       "market_id": "1.261724564",
@@ -3224,7 +3160,7 @@
       "start_time": "2026-09-05T16:30:00.000Z",
       "runner_id": 8179917,
       "best_back_price": 2.02,
-      "best_back_size": 151.5
+      "best_back_size": 151.49
     },
     {
       "market_id": "1.261878160",
@@ -3232,7 +3168,7 @@
       "start_time": "2026-09-05T16:30:00.000Z",
       "runner_id": 5174666,
       "best_back_price": 2.32,
-      "best_back_size": 882.5
+      "best_back_size": 591.45
     },
     {
       "market_id": "1.261724377",
@@ -3240,23 +3176,31 @@
       "start_time": "2026-09-05T16:30:00.000Z",
       "runner_id": 70385,
       "best_back_price": 4.2,
-      "best_back_size": 38.29
+      "best_back_size": 165.69
     },
     {
       "market_id": "1.261737827",
       "event_name": "FC Utrecht v Go Ahead Eagles",
       "start_time": "2026-09-05T16:45:00.000Z",
       "runner_id": 50349,
-      "best_back_price": 1.87,
-      "best_back_size": 267.66
+      "best_back_price": 2.06,
+      "best_back_size": 159.49
+    },
+    {
+      "market_id": "1.261940876",
+      "event_name": "Maccabi Petach Tikva v Ironi Tiberias",
+      "start_time": "2026-09-05T16:45:00.000Z",
+      "runner_id": 939576,
+      "best_back_price": 1.01,
+      "best_back_size": 8.0
     },
     {
       "market_id": "1.261805589",
       "event_name": "Hapoel Jerusalem v Hapoel Kiryat Shmona",
       "start_time": "2026-09-05T16:45:00.000Z",
       "runner_id": 5810348,
-      "best_back_price": 1.01,
-      "best_back_size": 2.99
+      "best_back_price": 2.32,
+      "best_back_size": 162.99
     },
     {
       "market_id": "1.261870340",
@@ -3311,8 +3255,8 @@
       "event_name": "Tristan Suarez v San Martin de Tucuman",
       "start_time": "2026-09-05T18:00:00.000Z",
       "runner_id": 7128568,
-      "best_back_price": 2.14,
-      "best_back_size": 203.95
+      "best_back_price": 2.12,
+      "best_back_size": 207.98
     },
     {
       "market_id": "1.261737557",
@@ -3336,7 +3280,7 @@
       "start_time": "2026-09-05T18:00:00.000Z",
       "runner_id": 3727829,
       "best_back_price": 4.7,
-      "best_back_size": 62.97
+      "best_back_size": 62.96
     },
     {
       "market_id": "1.261877303",
@@ -3344,7 +3288,7 @@
       "start_time": "2026-09-05T18:00:00.000Z",
       "runner_id": 309689,
       "best_back_price": 1.48,
-      "best_back_size": 402.93
+      "best_back_size": 402.9
     },
     {
       "market_id": "1.261724700",
@@ -3352,7 +3296,7 @@
       "start_time": "2026-09-05T18:00:00.000Z",
       "runner_id": 9478922,
       "best_back_price": 2.6,
-      "best_back_size": 145.6
+      "best_back_size": 145.49
     },
     {
       "market_id": "1.261801926",
@@ -3360,7 +3304,7 @@
       "start_time": "2026-09-05T18:00:00.000Z",
       "runner_id": 50045,
       "best_back_price": 1.32,
-      "best_back_size": 727.69
+      "best_back_size": 727.62
     },
     {
       "market_id": "1.261724746",
@@ -3376,7 +3320,7 @@
       "start_time": "2026-09-05T18:15:00.000Z",
       "runner_id": 6635878,
       "best_back_price": 3.45,
-      "best_back_size": 94.93
+      "best_back_size": 94.92
     },
     {
       "market_id": "1.261813262",
@@ -3408,7 +3352,7 @@
       "start_time": "2026-09-05T18:45:00.000Z",
       "runner_id": 70446,
       "best_back_price": 2.74,
-      "best_back_size": 134.0
+      "best_back_size": 133.99
     },
     {
       "market_id": "1.261724209",
@@ -3416,7 +3360,7 @@
       "start_time": "2026-09-05T18:45:00.000Z",
       "runner_id": 56967,
       "best_back_price": 1.76,
-      "best_back_size": 401.0
+      "best_back_size": 400.97
     },
     {
       "market_id": "1.261749175",
@@ -3424,7 +3368,7 @@
       "start_time": "2026-09-05T18:45:00.000Z",
       "runner_id": 189829,
       "best_back_price": 1.86,
-      "best_back_size": 182.63
+      "best_back_size": 182.61
     },
     {
       "market_id": "1.261783638",
@@ -3447,8 +3391,8 @@
       "event_name": "Villarreal v Deportivo",
       "start_time": "2026-09-05T19:00:00.000Z",
       "runner_id": 28191,
-      "best_back_price": 1.52,
-      "best_back_size": 38.0
+      "best_back_price": 1.53,
+      "best_back_size": 59.99
     },
     {
       "market_id": "1.261915638",
@@ -3464,7 +3408,7 @@
       "start_time": "2026-09-05T19:00:00.000Z",
       "runner_id": 71387076,
       "best_back_price": 1.92,
-      "best_back_size": 253.37
+      "best_back_size": 253.35
     },
     {
       "market_id": "1.261831896",
@@ -3504,23 +3448,23 @@
       "start_time": "2026-09-05T19:00:00.000Z",
       "runner_id": 48455,
       "best_back_price": 2.52,
-      "best_back_size": 153.3
+      "best_back_size": 153.29
     },
     {
       "market_id": "1.261810327",
       "event_name": "Sporting Lisbon v CD Nacional Funchal",
       "start_time": "2026-09-05T19:30:00.000Z",
       "runner_id": 52495073,
-      "best_back_price": 1.21,
-      "best_back_size": 476.2
+      "best_back_price": 1.19,
+      "best_back_size": 989.91
     },
     {
       "market_id": "1.261878208",
       "event_name": "Gimnasia Mendoza v Boca Juniors",
       "start_time": "2026-09-05T19:30:00.000Z",
       "runner_id": 9229725,
-      "best_back_price": 2.78,
-      "best_back_size": 130.97
+      "best_back_price": 2.64,
+      "best_back_size": 141.99
     },
     {
       "market_id": "1.261934865",
@@ -3536,7 +3480,7 @@
       "start_time": "2026-09-05T21:30:00.000Z",
       "runner_id": 198126,
       "best_back_price": 1.97,
-      "best_back_size": 240.0
+      "best_back_size": 239.98
     },
     {
       "market_id": "1.261878407",
@@ -3559,8 +3503,8 @@
       "event_name": "Queretaro v Monterrey",
       "start_time": "2026-09-05T23:00:00.000Z",
       "runner_id": 328926,
-      "best_back_price": 2.8,
-      "best_back_size": 129.5
+      "best_back_price": 2.78,
+      "best_back_size": 130.99
     },
     {
       "market_id": "1.261725292",
@@ -3568,7 +3512,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 10962520,
       "best_back_price": 1.49,
-      "best_back_size": 475.83
+      "best_back_size": 475.46
     },
     {
       "market_id": "1.261725228",
@@ -3576,7 +3520,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 42741188,
       "best_back_price": 2.04,
-      "best_back_size": 224.44
+      "best_back_size": 224.48
     },
     {
       "market_id": "1.261725037",
@@ -3584,7 +3528,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 27785243,
       "best_back_price": 1.37,
-      "best_back_size": 443.11
+      "best_back_size": 443.08
     },
     {
       "market_id": "1.261724293",
@@ -3592,7 +3536,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 171903,
       "best_back_price": 1.89,
-      "best_back_size": 261.5
+      "best_back_size": 261.48
     },
     {
       "market_id": "1.261724974",
@@ -3600,7 +3544,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 4589333,
       "best_back_price": 1.36,
-      "best_back_size": 461.0
+      "best_back_size": 460.96
     },
     {
       "market_id": "1.261725334",
@@ -3608,7 +3552,7 @@
       "start_time": "2026-09-05T23:30:00.000Z",
       "runner_id": 2362969,
       "best_back_price": 2.52,
-      "best_back_size": 153.61
+      "best_back_size": 153.59
     },
     {
       "market_id": "1.261724995",
@@ -3632,7 +3576,7 @@
       "start_time": "2026-09-06T00:00:00.000Z",
       "runner_id": 198133,
       "best_back_price": 1.79,
-      "best_back_size": 294.7
+      "best_back_size": 294.68
     },
     {
       "market_id": "1.261878452",
@@ -3640,7 +3584,7 @@
       "start_time": "2026-09-06T00:15:00.000Z",
       "runner_id": 192085,
       "best_back_price": 2.14,
-      "best_back_size": 204.46
+      "best_back_size": 204.45
     },
     {
       "market_id": "1.261771417",
@@ -3656,7 +3600,7 @@
       "start_time": "2026-09-06T00:30:00.000Z",
       "runner_id": 4019787,
       "best_back_price": 1.76,
-      "best_back_size": 306.71
+      "best_back_size": 306.68
     },
     {
       "market_id": "1.261771913",
@@ -3664,7 +3608,7 @@
       "start_time": "2026-09-06T00:30:00.000Z",
       "runner_id": 2937353,
       "best_back_price": 1.39,
-      "best_back_size": 428.0
+      "best_back_size": 427.96
     },
     {
       "market_id": "1.261771998",
@@ -3680,7 +3624,7 @@
       "start_time": "2026-09-06T01:00:00.000Z",
       "runner_id": 328952,
       "best_back_price": 1.47,
-      "best_back_size": 495.63
+      "best_back_size": 495.59
     },
     {
       "market_id": "1.261806788",
@@ -3703,8 +3647,8 @@
       "event_name": "LA Galaxy v New England Revolution",
       "start_time": "2026-09-06T01:30:00.000Z",
       "runner_id": 2658589,
-      "best_back_price": 2.16,
-      "best_back_size": 201.0
+      "best_back_price": 2.18,
+      "best_back_size": 197.48
     },
     {
       "market_id": "1.261771935",
@@ -3712,7 +3656,7 @@
       "start_time": "2026-09-06T02:30:00.000Z",
       "runner_id": 5383053,
       "best_back_price": 1.38,
-      "best_back_size": 613.0
+      "best_back_size": 612.95
     },
     {
       "market_id": "1.261771829",
@@ -3751,8 +3695,8 @@
       "event_name": "Gimcheon Sangmu v Gwangju FC",
       "start_time": "2026-09-06T10:00:00.000Z",
       "runner_id": 41053763,
-      "best_back_price": 1.49,
-      "best_back_size": 475.12
+      "best_back_price": 1.48,
+      "best_back_size": 485.46
     },
     {
       "market_id": "1.261803542",
@@ -3760,7 +3704,7 @@
       "start_time": "2026-09-06T10:00:00.000Z",
       "runner_id": 5339134,
       "best_back_price": 1.52,
-      "best_back_size": 448.15
+      "best_back_size": 448.12
     },
     {
       "market_id": "1.261803694",
@@ -3776,7 +3720,7 @@
       "start_time": "2026-09-06T10:15:00.000Z",
       "runner_id": 24931403,
       "best_back_price": 3.0,
-      "best_back_size": 116.48
+      "best_back_size": 116.47
     },
     {
       "market_id": "1.261771396",
@@ -3808,7 +3752,7 @@
       "start_time": "2026-09-06T11:30:00.000Z",
       "runner_id": 13450471,
       "best_back_price": 2.06,
-      "best_back_size": 219.89
+      "best_back_size": 219.87
     },
     {
       "market_id": "1.261771480",
@@ -3816,7 +3760,7 @@
       "start_time": "2026-09-06T11:30:00.000Z",
       "runner_id": 64375,
       "best_back_price": 2.58,
-      "best_back_size": 147.42
+      "best_back_size": 147.41
     },
     {
       "market_id": "1.261794264",
@@ -3824,7 +3768,7 @@
       "start_time": "2026-09-06T11:30:00.000Z",
       "runner_id": 44518,
       "best_back_price": 1.81,
-      "best_back_size": 288.2
+      "best_back_size": 288.17
     },
     {
       "market_id": "1.261851617",
@@ -3839,8 +3783,8 @@
       "event_name": "Yunnan Yukun v Liaoning Tieren FC",
       "start_time": "2026-09-06T11:35:00.000Z",
       "runner_id": 55896077,
-      "best_back_price": 1.65,
-      "best_back_size": 358.09
+      "best_back_price": 1.64,
+      "best_back_size": 363.97
     },
     {
       "market_id": "1.261794130",
@@ -3872,7 +3816,7 @@
       "start_time": "2026-09-06T12:00:00.000Z",
       "runner_id": 247969,
       "best_back_price": 1.78,
-      "best_back_size": 293.5
+      "best_back_size": 293.47
     },
     {
       "market_id": "1.261785066",
@@ -3904,7 +3848,7 @@
       "start_time": "2026-09-06T12:30:00.000Z",
       "runner_id": 11534958,
       "best_back_price": 1.59,
-      "best_back_size": 395.27
+      "best_back_size": 395.24
     },
     {
       "market_id": "1.261928913",
@@ -3920,7 +3864,7 @@
       "start_time": "2026-09-06T12:30:00.000Z",
       "runner_id": 3630179,
       "best_back_price": 3.25,
-      "best_back_size": 103.37
+      "best_back_size": 103.36
     },
     {
       "market_id": "1.261929030",
@@ -3952,7 +3896,7 @@
       "start_time": "2026-09-06T13:00:00.000Z",
       "runner_id": 191607,
       "best_back_price": 2.66,
-      "best_back_size": 307.0
+      "best_back_size": 306.97
     },
     {
       "market_id": "1.261771277",
@@ -3960,7 +3904,7 @@
       "start_time": "2026-09-06T13:00:00.000Z",
       "runner_id": 924268,
       "best_back_price": 2.82,
-      "best_back_size": 243.51
+      "best_back_size": 243.49
     },
     {
       "market_id": "1.261782134",
@@ -3976,7 +3920,7 @@
       "start_time": "2026-09-06T13:00:00.000Z",
       "runner_id": 4864974,
       "best_back_price": 3.1,
-      "best_back_size": 68.71
+      "best_back_size": 68.7
     },
     {
       "market_id": "1.261934954",
@@ -3992,7 +3936,7 @@
       "start_time": "2026-09-06T13:30:00.000Z",
       "runner_id": 44784,
       "best_back_price": 2.94,
-      "best_back_size": 293.29
+      "best_back_size": 293.26
     },
     {
       "market_id": "1.261771794",
@@ -4008,7 +3952,7 @@
       "start_time": "2026-09-06T14:00:00.000Z",
       "runner_id": 6781499,
       "best_back_price": 1.6,
-      "best_back_size": 387.9
+      "best_back_size": 387.87
     },
     {
       "market_id": "1.261851596",
@@ -4064,15 +4008,15 @@
       "start_time": "2026-09-06T14:15:00.000Z",
       "runner_id": 21678,
       "best_back_price": 1.82,
-      "best_back_size": 284.13
+      "best_back_size": 284.11
     },
     {
       "market_id": "1.261816735",
       "event_name": "Santa Clara v Rio Ave",
       "start_time": "2026-09-06T14:30:00.000Z",
       "runner_id": 48793,
-      "best_back_price": 1.01,
-      "best_back_size": 4.99
+      "best_back_price": 1.67,
+      "best_back_size": 347.47
     },
     {
       "market_id": "1.261816756",
@@ -4152,7 +4096,7 @@
       "start_time": "2026-09-06T15:30:00.000Z",
       "runner_id": 347774,
       "best_back_price": 1.98,
-      "best_back_size": 91.0
+      "best_back_size": 90.99
     },
     {
       "market_id": "1.261934844",
@@ -4168,7 +4112,7 @@
       "start_time": "2026-09-06T16:00:00.000Z",
       "runner_id": 199545,
       "best_back_price": 2.04,
-      "best_back_size": 363.97
+      "best_back_size": 682.91
     },
     {
       "market_id": "1.261796984",
@@ -4176,7 +4120,7 @@
       "start_time": "2026-09-06T16:00:00.000Z",
       "runner_id": 5330852,
       "best_back_price": 2.94,
-      "best_back_size": 120.03
+      "best_back_size": 120.02
     },
     {
       "market_id": "1.261770940",
@@ -4200,7 +4144,7 @@
       "start_time": "2026-09-06T16:00:00.000Z",
       "runner_id": 28223,
       "best_back_price": 1.48,
-      "best_back_size": 485.37
+      "best_back_size": 485.33
     },
     {
       "market_id": "1.261826445",
@@ -4232,7 +4176,7 @@
       "start_time": "2026-09-06T16:30:00.000Z",
       "runner_id": 60324,
       "best_back_price": 2.38,
-      "best_back_size": 195.0
+      "best_back_size": 194.98
     },
     {
       "market_id": "1.261828618",
@@ -4248,7 +4192,7 @@
       "start_time": "2026-09-06T17:00:00.000Z",
       "runner_id": 113125,
       "best_back_price": 1.49,
-      "best_back_size": 475.83
+      "best_back_size": 475.79
     },
     {
       "market_id": "1.261828576",
@@ -4256,7 +4200,7 @@
       "start_time": "2026-09-06T17:00:00.000Z",
       "runner_id": 50085,
       "best_back_price": 1.46,
-      "best_back_size": 506.63
+      "best_back_size": 506.59
     },
     {
       "market_id": "1.261874572",
@@ -4272,7 +4216,7 @@
       "start_time": "2026-09-06T17:30:00.000Z",
       "runner_id": 866238,
       "best_back_price": 1.01,
-      "best_back_size": 3.0
+      "best_back_size": 2.99
     },
     {
       "market_id": "1.261878341",
@@ -4280,7 +4224,7 @@
       "start_time": "2026-09-06T17:45:00.000Z",
       "runner_id": 220949,
       "best_back_price": 1.59,
-      "best_back_size": 378.0
+      "best_back_size": 377.97
     },
     {
       "market_id": "1.261771734",
@@ -4288,7 +4232,7 @@
       "start_time": "2026-09-06T18:00:00.000Z",
       "runner_id": 9568569,
       "best_back_price": 2.76,
-      "best_back_size": 132.59
+      "best_back_size": 132.58
     },
     {
       "market_id": "1.261877387",
@@ -4327,8 +4271,8 @@
       "event_name": "Almagro BA v Gimnasia Jujuy",
       "start_time": "2026-09-06T18:30:00.000Z",
       "runner_id": 5499132,
-      "best_back_price": 2.52,
-      "best_back_size": 152.96
+      "best_back_price": 2.54,
+      "best_back_size": 151.49
     },
     {
       "market_id": "1.261772050",
@@ -4343,8 +4287,8 @@
       "event_name": "Juventus v AC Milan",
       "start_time": "2026-09-06T18:45:00.000Z",
       "runner_id": 52475015,
-      "best_back_price": 2.22,
-      "best_back_size": 14.97
+      "best_back_price": 2.2,
+      "best_back_size": 1031.96
     },
     {
       "market_id": "1.261771130",
@@ -4352,7 +4296,7 @@
       "start_time": "2026-09-06T18:45:00.000Z",
       "runner_id": 52457652,
       "best_back_price": 1.81,
-      "best_back_size": 181.88
+      "best_back_size": 181.86
     },
     {
       "market_id": "1.261916172",
@@ -4368,15 +4312,15 @@
       "start_time": "2026-09-06T19:00:00.000Z",
       "runner_id": 10723921,
       "best_back_price": 1.91,
-      "best_back_size": 256.0
+      "best_back_size": 255.98
     },
     {
       "market_id": "1.261771752",
       "event_name": "Internacional v Santos",
       "start_time": "2026-09-06T19:00:00.000Z",
       "runner_id": 198137,
-      "best_back_price": 1.78,
-      "best_back_size": 298.58
+      "best_back_price": 1.77,
+      "best_back_size": 302.47
     },
     {
       "market_id": "1.261771748",
@@ -4392,7 +4336,7 @@
       "start_time": "2026-09-06T19:00:00.000Z",
       "runner_id": 248020,
       "best_back_price": 1.46,
-      "best_back_size": 394.3
+      "best_back_size": 394.26
     },
     {
       "market_id": "1.261916473",
@@ -4424,7 +4368,7 @@
       "start_time": "2026-09-06T19:00:00.000Z",
       "runner_id": 10901767,
       "best_back_price": 1.71,
-      "best_back_size": 328.23
+      "best_back_size": 328.2
     },
     {
       "market_id": "1.261771850",
@@ -4432,7 +4376,7 @@
       "start_time": "2026-09-06T19:00:00.000Z",
       "runner_id": 59044,
       "best_back_price": 2.34,
-      "best_back_size": 252.41
+      "best_back_size": 252.39
     },
     {
       "market_id": "1.261797775",
@@ -4456,7 +4400,7 @@
       "start_time": "2026-09-06T20:00:00.000Z",
       "runner_id": 194513,
       "best_back_price": 1.62,
-      "best_back_size": 376.6
+      "best_back_size": 376.47
     },
     {
       "market_id": "1.261878588",
@@ -4480,7 +4424,7 @@
       "start_time": "2026-09-06T21:30:00.000Z",
       "runner_id": 11302836,
       "best_back_price": 3.0,
-      "best_back_size": 116.58
+      "best_back_size": 116.57
     },
     {
       "market_id": "1.261878118",
@@ -4504,7 +4448,7 @@
       "start_time": "2026-09-06T22:30:00.000Z",
       "runner_id": 198136,
       "best_back_price": 1.33,
-      "best_back_size": 445.0
+      "best_back_size": 444.96
     },
     {
       "market_id": "1.261878139",
@@ -4512,7 +4456,7 @@
       "start_time": "2026-09-07T00:30:00.000Z",
       "runner_id": 198558,
       "best_back_price": 1.63,
-      "best_back_size": 370.1
+      "best_back_size": 370.06
     },
     {
       "market_id": "1.261916978",
@@ -4536,7 +4480,7 @@
       "start_time": "2026-09-07T16:30:00.000Z",
       "runner_id": 60297,
       "best_back_price": 2.04,
-      "best_back_size": 72.85
+      "best_back_size": 72.84
     },
     {
       "market_id": "1.261836169",
@@ -4592,7 +4536,7 @@
       "start_time": "2026-09-07T17:00:00.000Z",
       "runner_id": 174383,
       "best_back_price": 1.59,
-      "best_back_size": 394.6
+      "best_back_size": 394.57
     },
     {
       "market_id": "1.261875228",
@@ -4624,7 +4568,7 @@
       "start_time": "2026-09-07T17:30:00.000Z",
       "runner_id": 2487036,
       "best_back_price": 1.56,
-      "best_back_size": 416.29
+      "best_back_size": 416.25
     },
     {
       "market_id": "1.261877744",
@@ -4640,7 +4584,7 @@
       "start_time": "2026-09-07T18:45:00.000Z",
       "runner_id": 215821,
       "best_back_price": 3.1,
-      "best_back_size": 464.11
+      "best_back_size": 464.07
     },
     {
       "market_id": "1.261836148",
@@ -4664,7 +4608,7 @@
       "start_time": "2026-09-07T19:30:00.000Z",
       "runner_id": 309111,
       "best_back_price": 3.0,
-      "best_back_size": 793.84
+      "best_back_size": 793.71
     },
     {
       "market_id": "1.261878181",
@@ -4672,7 +4616,7 @@
       "start_time": "2026-09-07T22:00:00.000Z",
       "runner_id": 5408226,
       "best_back_price": 4.0,
-      "best_back_size": 78.0
+      "best_back_size": 77.99
     },
     {
       "market_id": "1.261724799",
@@ -4680,7 +4624,7 @@
       "start_time": "2026-09-07T22:30:00.000Z",
       "runner_id": 194504,
       "best_back_price": 1.01,
-      "best_back_size": 3.0
+      "best_back_size": 2.99
     },
     {
       "market_id": "1.261836106",
@@ -4720,7 +4664,7 @@
       "start_time": "2026-09-08T16:45:00.000Z",
       "runner_id": 10762,
       "best_back_price": 2.8,
-      "best_back_size": 27.56
+      "best_back_size": 27.55
     },
     {
       "market_id": "1.261913884",
@@ -4736,7 +4680,7 @@
       "start_time": "2026-09-08T19:00:00.000Z",
       "runner_id": 44785,
       "best_back_price": 1.78,
-      "best_back_size": 179.05
+      "best_back_size": 178.98
     },
     {
       "market_id": "1.261913820",
