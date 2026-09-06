@@ -1192,6 +1192,7 @@ async function updateLive(){
     if(!ids.length)return;
     // PARALLELO: tutti i chunk insieme con timeout 8s ciascuno
     // (prima erano sequenziali: 8 chunk x 800ms = 6-7s di lag)
+    window._apiErr=false;
     var chunkPromises=[];
     for(var i=0;i<ids.length;i+=20){
       var chunk=ids.slice(i,i+20).join('-');
@@ -1200,13 +1201,23 @@ async function updateLive(){
         var timer=setTimeout(function(){ctrl.abort();},8000);
         return fetch(url,{signal:ctrl.signal})
           .then(function(r){clearTimeout(timer);return r.ok?r.json():null;})
-          .then(function(d){return (d&&d.response)||[];})
-          .catch(function(){clearTimeout(timer);return [];});
+          .then(function(d){
+            if(!d||(d.errors&&!Array.isArray(d.errors)&&Object.keys(d.errors).length>0))window._apiErr=true;
+            return (d&&d.response)||[];})
+          .catch(function(){clearTimeout(timer);window._apiErr=true;return [];});
       })(PROXY+'?endpoint=fixtures&ids='+chunk));
     }
     var chunkResults=await Promise.all(chunkPromises);
     var fixtures=[];
     chunkResults.forEach(function(arr){fixtures=fixtures.concat(arr);});
+    if(fixtures.length===0&&window._apiErr){
+      // API in errore (es. rate limit): non toccare la UI, segnala e rallenta
+      window._failStreak=(window._failStreak||0)+1;
+      var st=document.getElementById('live-ts');
+      if(st){st.textContent='\u26A0 dati fermi'+(window._lastGoodTs?' alle '+window._lastGoodTs:'');st.style.color='#ff9f43';}
+      return;
+    }
+    window._failStreak=0;
     var fmap={};
     fixtures.forEach(function(f){fmap[String(f.fixture.id)]=f;});
 
@@ -1318,7 +1329,8 @@ async function updateLive(){
     });
 
     var ts=document.getElementById('live-ts');
-    if(ts)ts.textContent=REFRESH+' '+new Date().toLocaleTimeString();
+    window._lastGoodTs=new Date().toLocaleTimeString();
+    if(ts){ts.textContent=REFRESH+' '+window._lastGoodTs;ts.style.color='';}
   }catch(e){console.log('live',e);}
 }
 // Guardia anti-overlap: skip se un update e' ancora in corso
@@ -1331,7 +1343,9 @@ async function updateLiveSafe(){
 // Refresh adattivo: 10s se ci sono live visibili, 45s altrimenti
 function scheduleNext(){
   var hasLive=document.querySelectorAll('#live-section .card[data-fid]').length>0;
-  setTimeout(function(){updateLiveSafe().then(scheduleNext);},hasLive?10000:45000);
+  var base=hasLive?10000:45000;
+  var mult=Math.min(Math.pow(2,window._failStreak||0),6); // backoff: x2,x4,x6 max
+  setTimeout(function(){updateLiveSafe().then(scheduleNext);},base*mult);
 }
 updateLiveSafe().then(scheduleNext);
 
